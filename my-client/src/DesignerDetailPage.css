@@ -1,0 +1,533 @@
+.designer-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: flex-end;
+  z-index: 2000;
+  animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .designer-detail-overlay::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    background-color: rgba(0, 0, 0, 0);
+  }
+  to {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+.designer-detail-container {
+  width: 100%;
+  max-width: 393px;
+  height: 90vh;
+  background-color: #f5f5f5;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: slideUpPage 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+@keyframes slideUpPage {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header */
+.designer-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.designer-detail-back {
+  background: none;
+  border: none;
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 14px;
+  color: #222;
+  cursor: pointer;
+  padding: 0;
+}
+
+.designer-detail-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.designer-detail-share,
+.designer-detail-more {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.designer-detail-share:hover,
+.designer-detail-more:hover {
+  transform: scale(1.1);
+  opacity: 0.7;
+}
+
+
+/* Scrollable Content */
+.designer-detail-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Hero Section */
+.designer-hero {
+  background: linear-gradient(180deg, #56505080 0%, #56505000 100%);
+  padding: 20px;
+  text-align: center;
+}
+
+.designer-image-wrapper {
+  margin-bottom: 16px;
+}
+
+.designer-image {
+  width: 116px;
+  height: 116px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin: 0 auto;
+  display: block;
+}
+
+/* 뱃지 */
+.designer-badges {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.designer-badge {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* 디자이너 소개 */
+.designer-intro {
+  margin: 16px 0;
+}
+
+.designer-name {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  margin: 0 0 8px 0;
+  color: #222;
+}
+
+.designer-location {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.location-icon {
+  font-size: 12px;
+}
+
+.location-text {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 10px;
+  color: #222;
+}
+
+.designer-motto {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 6px;
+  font-weight: 200;
+  color: #333;
+  line-height: 1.4;
+  margin: 8px 0;
+}
+
+/* 통계 카드 */
+.designer-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  background-color: #f0f2f5;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 8px;
+  font-weight: 200;
+  color: #666;
+}
+
+.stat-value {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #222;
+}
+
+/* 탭 내비게이션 */
+.designer-tabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #ffffff;
+  padding: 0 20px;
+}
+
+.designer-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 8px;
+  font-weight: 400;
+  color: #222;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.designer-tab.active {
+  font-weight: 600;
+  color: #222;
+}
+
+.designer-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #222;
+}
+
+/* 섹션 */
+.designer-section {
+  padding: 20px;
+  background-color: #ffffff;
+  margin-bottom: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.designer-section.active {
+  font-weight: 600;
+}
+
+.designer-section.active .section-title {
+  font-weight: 600;
+  color: #222;
+}
+
+.designer-section.active .section-text {
+  font-weight: 600;
+  color: #222;
+}
+
+.designer-section.active .career-list {
+  font-weight: 600;
+  color: #222;
+}
+
+.designer-section.active .career-list li {
+  font-weight: 600;
+}
+
+.designer-section.active .portfolio-label {
+  font-weight: 600;
+}
+
+.designer-section.active .review-text {
+  font-weight: 600;
+}
+
+/* 태그 */
+.section-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.tag {
+  display: inline-block;
+  background-color: #d9d9d9;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 6px;
+  font-weight: 300;
+  color: #222;
+}
+
+/* 섹션 컨텐츠 */
+.section-content {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 7px;
+  font-weight: 400;
+  color: #222;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.career-list {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 7px;
+  color: #333;
+  padding-left: 16px;
+  margin: 0;
+}
+
+.career-list li {
+  line-height: 10px;
+  margin-bottom: 4px;
+}
+
+.section-text {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 7px;
+  color: #333;
+  line-height: 10px;
+  margin: 0;
+  font-weight: 300;
+}
+
+/* 포트폴리오 그리드 */
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.portfolio-item {
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.portfolio-item:hover {
+  transform: scale(1.02);
+}
+
+.portfolio-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.portfolio-label {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 8px;
+  font-weight: 500;
+  color: #262626;
+  margin: 8px 0 0 0;
+  text-align: center;
+}
+
+/* 리뷰 섹션 */
+.review-header {
+  margin-bottom: 16px;
+}
+
+.review-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-stars {
+  font-size: 16px;
+}
+
+.rating-score {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #222;
+}
+
+.review-item {
+  background-color: #f9f9f9;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.review-header-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.reviewer-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.reviewer-info {
+  flex: 1;
+}
+
+.reviewer-name {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 6px;
+  font-weight: 400;
+  color: #222;
+  margin: 0;
+}
+
+.review-date {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 4px;
+  color: #999;
+  margin: 0;
+}
+
+.review-stars {
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.review-text {
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 6px;
+  color: #333;
+  line-height: 8px;
+  margin: 0;
+  font-weight: 300;
+}
+
+/* 스크롤 시 활성 섹션 텍스트 진해지기 */
+/* 이미 위에서 처리됨 */
+
+/* 스크롤바 스타일 */
+/* 스크롤바 숨기기 (스마트폰처럼) */
+.designer-detail-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.designer-detail-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.designer-detail-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.designer-detail-scroll::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
+}
+
+.designer-detail-scroll::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* 반응형 */
+@media (max-width: 480px) {
+  .designer-detail-container {
+    height: 95vh;
+  }
+
+  .designer-image {
+    width: 100px;
+    height: 100px;
+  }
+
+  .designer-badge {
+    width: 60px;
+    height: 60px;
+  }
+
+  .portfolio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-title {
+    font-size: 6px;
+  }
+
+  .section-text {
+    font-size: 6px;
+  }
+}

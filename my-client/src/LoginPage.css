@@ -1,6 +1,27 @@
 @import './fonts.css';
 
-@import './fonts.css';
+/* 애니메이션 정의 */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 /* Responsive, fluid layout for login page */
 .login-page {
@@ -14,6 +35,15 @@
   padding: 0;
   margin: 0;
   box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .login-page::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Logo centered at top */
@@ -25,6 +55,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: fadeInScale 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo-img {
@@ -41,6 +72,7 @@
   margin-bottom: 18px;
   color: #fbf9f6;
   text-align: center;
+  animation: slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
 }
 
 .greeting p {
@@ -61,6 +93,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  animation: slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
 
 .input-wrapper {
@@ -85,6 +118,11 @@
   outline: none;
   padding: 8px 0;
   text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-input:focus {
+  transform: scale(1.02);
 }
 
 .divider {
@@ -103,7 +141,11 @@
   margin-top: 6px;
 }
 
-.link-text { color: #222; text-decoration: none; }
+.link-text { color: #222; text-decoration: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+.link-text:hover {
+  opacity: 0.7;
+}
 
 .login-btn {
   margin-top: 22px;
@@ -117,6 +159,17 @@
   cursor: pointer;
   box-shadow: 3px 7px 30px rgba(196,196,196,0.3);
   text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 3px 10px 35px rgba(196,196,196,0.4);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: translateY(0px);
+  box-shadow: 3px 5px 20px rgba(196,196,196,0.2);
 }
 
 .signup-section { text-align: center; margin-top: 12px; font-size: 12px; }

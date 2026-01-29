@@ -1,5 +1,8 @@
 import './DashboardPage.css';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import LocationSelectModal from './LocationSelectModal';
+import DesignerDetailPage from './DesignerDetailPage';
 
 const dogLogo = "https://www.figma.com/api/mcp/asset/2e70b3bd-9dec-4a06-8933-29b0bc04a563";
 const bannerImage1 = "https://www.figma.com/api/mcp/asset/282241a6-a93a-4b11-a783-5038c6683694";
@@ -10,6 +13,13 @@ const radarData = "https://www.figma.com/api/mcp/asset/14732a99-c80a-413d-8ffc-f
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isDesignerDetailOpen, setIsDesignerDetailOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState({
+    region: '서울',
+    zone: '강남구',
+    district: '역삼동',
+  });
 
   return (
     <div className="dashboard-page">
@@ -28,12 +38,14 @@ export default function DashboardPage() {
       {/* Location Section */}
       <div className="dashboard-location-section">
         <span className="dashboard-location-icon">📍</span>
-        <span className="dashboard-location-text">강남구 역삼동</span>
+        <span className="dashboard-location-text">
+          {selectedLocation.zone} {selectedLocation.district}
+        </span>
       </div>
 
       {/* Banners */}
       <div className="dashboard-banners">
-        <div className="dashboard-banner banner-1">
+        <div className="dashboard-banner banner-1" onClick={() => setIsLocationModalOpen(true)}>
           <img src={bannerImage1} alt="배너1" className="dashboard-banner-img" />
           <div className="dashboard-banner-content">
             <h3>강남구 애견 미용샵</h3>
@@ -41,7 +53,7 @@ export default function DashboardPage() {
             <p className="banner-subtitle">가장 인기있는 샵을 만나보세요</p>
           </div>
         </div>
-        <div className="dashboard-banner banner-2">
+        <div className="dashboard-banner banner-2" onClick={() => setIsLocationModalOpen(true)}>
           <img src={bannerImage2} alt="배너2" className="dashboard-banner-img" />
           <div className="dashboard-banner-content">
             <h3>우리 집에서 만나는 미용사</h3>
@@ -113,9 +125,27 @@ export default function DashboardPage() {
       </div>
 
       {/* Unread Quote Banner */}
-      <button className="dashboard-unread-banner">
+      <button
+        className="dashboard-unread-banner"
+        onClick={() => setIsDesignerDetailOpen(true)}
+      >
         안 읽은 견적서 확인하러 가기
       </button>
+
+      {/* Location Select Modal */}
+      <LocationSelectModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        onSelectLocation={(location) => {
+          setSelectedLocation(location);
+        }}
+      />
+
+      {/* Designer Detail Modal */}
+      <DesignerDetailPage
+        isOpen={isDesignerDetailOpen}
+        onClose={() => setIsDesignerDetailOpen(false)}
+      />
     </div>
   );
 }
