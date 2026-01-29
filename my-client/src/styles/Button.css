@@ -1,0 +1,46 @@
+/* Button Component Styles */
+.button {
+  font-family: 'Paperlogy', system-ui, -apple-system, sans-serif;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 15px;
+  padding: 10px 20px;
+  min-height: 40px;
+  outline: none;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Primary Button */
+.button--primary {
+  background-color: #2c2c2c;
+  color: #f5f5f5;
+  box-shadow: 3px 7px 30px rgba(196, 196, 196, 0.3);
+}
+
+.button--primary:hover:not(:disabled) {
+  background-color: #1a1a1a;
+  box-shadow: 3px 7px 30px rgba(196, 196, 196, 0.5);
+}
+
+.button--primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 3px 5px 20px rgba(196, 196, 196, 0.2);
+}
+
+/* Secondary Button */
+.button--secondary {
+  background-color: transparent;
+  color: #222;
+  border: 1px solid #222;
+}
+
+.button--secondary:hover:not(:disabled) {
+  background-color: #f5f5f5;
+}
