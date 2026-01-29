@@ -265,10 +265,16 @@
 
 .signup-link {
   color: #222;
+  background: none;
+  border: none;
   text-decoration: none;
   font-weight: 300;
   transition: opacity 0.3s ease;
   cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 0;
+  margin: 0;
 }
 
 .signup-link:hover {

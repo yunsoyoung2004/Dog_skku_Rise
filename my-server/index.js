@@ -16,9 +16,9 @@ app.use((req, res, next) => {
 // ============================================
 // TEST DATA - In production, use a database
 // ============================================
-const testUsers = [
-  { userId: "test@example.com", password: "password123", name: "Test User" },
-  { userId: "demo", password: "demo123", name: "Demo User" }
+const users = [
+  { userId: "test@example.com", password: "password123", nickname: "테스트유저", phone: "010-1234-5678" },
+  { userId: "demo", password: "demo123", nickname: "데모계정", phone: "010-9999-8888" }
 ];
 
 // ============================================
@@ -30,7 +30,76 @@ app.get("/", (req, res) => {
   res.json({ message: "멍빗어 백엔드 서버 작동 중 🚀" });
 });
 
-// Login API
+// ============================================
+// SIGNUP API
+// ============================================
+app.post("/api/signup", (req, res) => {
+  try {
+    const { nickname, userId, password, passwordConfirm, phone } = req.body;
+
+    // Validation - 필수 필드 확인
+    if (!nickname || !userId || !password || !passwordConfirm || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: "모든 필드를 입력해주세요."
+      });
+    }
+
+    // 비밀번호 일치 확인
+    if (password !== passwordConfirm) {
+      return res.status(400).json({
+        success: false,
+        message: "비밀번호가 일치하지 않습니다."
+      });
+    }
+
+    // 비밀번호 길이 확인
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "비밀번호는 최소 6자 이상이어야 합니다."
+      });
+    }
+
+    // 중복 아이디 확인
+    if (users.find(u => u.userId === userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "이미 사용 중인 아이디입니다."
+      });
+    }
+
+    // 새 사용자 추가
+    const newUser = {
+      userId,
+      password,
+      nickname,
+      phone,
+      createdAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+
+    res.status(201).json({
+      success: true,
+      message: "회원가입이 완료되었습니다.",
+      user: {
+        userId: newUser.userId,
+        nickname: newUser.nickname
+      }
+    });
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({
+      success: false,
+      message: "회원가입 중 오류가 발생했습니다."
+    });
+  }
+});
+
+// ============================================
+// LOGIN API
+// ============================================
 app.post("/api/login", (req, res) => {
   try {
     const { userId, password } = req.body;
@@ -44,7 +113,7 @@ app.post("/api/login", (req, res) => {
     }
 
     // User lookup
-    const user = testUsers.find(u => u.userId === userId);
+    const user = users.find(u => u.userId === userId);
 
     if (!user) {
       return res.status(401).json({
@@ -70,7 +139,7 @@ app.post("/api/login", (req, res) => {
       token,
       user: {
         userId: user.userId,
-        name: user.name
+        nickname: user.nickname
       }
     });
   } catch (error) {
@@ -112,7 +181,7 @@ app.get("/api/user", (req, res) => {
     // In production, verify JWT token
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
     const userId = decoded.split(':')[0];
-    const user = testUsers.find(u => u.userId === userId);
+    const user = users.find(u => u.userId === userId);
 
     if (!user) {
       return res.status(401).json({
@@ -125,7 +194,7 @@ app.get("/api/user", (req, res) => {
       success: true,
       user: {
         userId: user.userId,
-        name: user.name
+        nickname: user.nickname
       }
     });
   } catch (error) {
@@ -150,6 +219,9 @@ app.use((err, req, res, next) => {
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`서버 실행: http://localhost:${PORT}`);
-  console.log(`테스트 계정 - ID: test@example.com / PW: password123`);
-  console.log(`테스트 계정 - ID: demo / PW: demo123`);
+  console.log(`\n테스트 계정:`);
+  console.log(`  - ID: test@example.com / PW: password123`);
+  console.log(`  - ID: demo / PW: demo123`);
+  console.log(`\n회원가입 엔드포인트: POST /api/signup`);
+  console.log(`로그인 엔드포인트: POST /api/login\n`);
 });

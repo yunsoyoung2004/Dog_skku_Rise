@@ -1,0 +1,385 @@
+@import './fonts.css';
+
+.dashboard-page {
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* Header */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.dashboard-logo-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-logo {
+  width: 30px;
+  height: auto;
+  opacity: 0.9;
+}
+
+.dashboard-title {
+  font-family: 'Gmarket Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #222;
+  letter-spacing: 1.96px;
+}
+
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-search-btn,
+.dashboard-menu-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Location Section */
+.dashboard-location-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: #222;
+}
+
+.dashboard-location-icon {
+  font-size: 12px;
+}
+
+.dashboard-location-text {
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 500;
+  letter-spacing: 1.96px;
+}
+
+/* Banners */
+.dashboard-banners {
+  display: flex;
+  overflow-x: auto;
+  gap: 0;
+  padding: 12px 14px;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+
+.dashboard-banner {
+  flex: 0 0 calc(100% - 28px);
+  height: 180px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  scroll-snap-align: start;
+  margin-right: 14px;
+}
+
+.dashboard-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.dashboard-banner-content {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  color: white;
+  z-index: 1;
+}
+
+.dashboard-banner-content h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  font-family: 'Paperlogy', sans-serif;
+  color: #222;
+}
+
+.banner-highlight {
+  margin: 4px 0;
+  font-size: 15px;
+  font-weight: 900;
+  font-family: 'Paperlogy', sans-serif;
+  color: white;
+}
+
+.banner-subtitle {
+  margin: 0;
+  font-size: 8px;
+  font-weight: 300;
+  font-family: 'Paperlogy', sans-serif;
+  color: white;
+}
+
+/* Menu Items */
+.dashboard-menu {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding: 20px 14px;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  margin: 8px 0;
+}
+
+.dashboard-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.dashboard-menu-icon {
+  font-size: 24px;
+  display: block;
+}
+
+.dashboard-menu-item p {
+  margin: 0;
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 6px;
+  font-weight: 500;
+  color: #222;
+  letter-spacing: 0.84px;
+}
+
+/* Radar Section */
+.dashboard-radar-section {
+  padding: 16px 14px;
+}
+
+.dashboard-radar-title {
+  margin: 0 0 16px 0;
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: #222;
+  letter-spacing: 1.4px;
+}
+
+.dashboard-radar-container {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+}
+
+.dashboard-radar {
+  position: relative;
+  width: 161px;
+  height: 161px;
+}
+
+.radar-grid,
+.radar-ray,
+.radar-data {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.radar-grid img,
+.radar-ray img,
+.radar-data img {
+  width: 100%;
+  height: 100%;
+}
+
+.radar-labels {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.radar-label {
+  position: absolute;
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 8px;
+  color: #222;
+  white-space: nowrap;
+}
+
+.radar-label.top {
+  left: 50%;
+  top: -8px;
+  transform: translateX(-50%);
+}
+
+.radar-label.right-top {
+  right: -8px;
+  top: 30%;
+}
+
+.radar-label.right-bottom {
+  right: -8px;
+  bottom: 20%;
+}
+
+.radar-label.bottom {
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+}
+
+.radar-label.left-bottom {
+  left: -24px;
+  bottom: 20%;
+}
+
+/* Stats Section */
+.dashboard-stats-section {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  background-color: #f0f2f5;
+  padding: 16px 14px;
+  margin: 16px 0;
+  border-radius: 0;
+}
+
+.dashboard-stat-box {
+  flex: 1;
+  text-align: center;
+  padding: 16px;
+}
+
+.stat-label {
+  margin: 0;
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 8px;
+  color: #222;
+}
+
+.stat-value {
+  margin: 8px 0 0 0;
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #222;
+}
+
+/* Unread Quote Banner */
+.dashboard-unread-banner {
+  width: calc(100% - 28px);
+  margin: 16px 14px;
+  padding: 12px;
+  background-color: #222;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 1.4px;
+  transition: background-color 0.3s ease;
+}
+
+.dashboard-unread-banner:hover {
+  background-color: #1a1a1a;
+}
+
+.dashboard-unread-banner:active {
+  background-color: #333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 10px 12px;
+  }
+
+  .dashboard-title {
+    font-size: 12px;
+  }
+
+  .dashboard-banner {
+    flex: 0 0 calc(100% - 24px);
+  }
+
+  .dashboard-radar {
+    width: 140px;
+    height: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header {
+    padding: 8px 10px;
+  }
+
+  .dashboard-logo {
+    width: 24px;
+  }
+
+  .dashboard-title {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+  }
+
+  .dashboard-location-text {
+    font-size: 12px;
+  }
+
+  .dashboard-banner {
+    flex: 0 0 calc(100% - 20px);
+    height: 140px;
+  }
+
+  .dashboard-banner-content h3 {
+    font-size: 14px;
+  }
+
+  .banner-highlight {
+    font-size: 13px;
+  }
+
+  .dashboard-menu {
+    padding: 16px 10px;
+  }
+
+  .dashboard-menu-item p {
+    font-size: 5px;
+  }
+
+  .dashboard-radar {
+    width: 120px;
+    height: 120px;
+  }
+
+  .dashboard-unread-banner {
+    width: calc(100% - 20px);
+    margin: 12px 10px;
+    font-size: 9px;
+  }
+}

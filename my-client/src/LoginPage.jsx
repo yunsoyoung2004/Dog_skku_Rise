@@ -1,5 +1,6 @@
 import './LoginPage.css';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from './components/Button';
 import Input from './components/Input';
 
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -33,7 +35,7 @@ export default function LoginPage() {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userId', userId);
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       } else {
         setError(data.message || '로그인에 실패했습니다.');
       }
@@ -109,7 +111,13 @@ export default function LoginPage() {
 
         {/* Signup Link */}
         <div className="signup-section">
-          <a href="/signup" className="signup-link">회원가입</a>
+          <button 
+            type="button" 
+            className="signup-link"
+            onClick={() => navigate('/signup')}
+          >
+            회원가입
+          </button>
         </div>
       </form>
     </div>
