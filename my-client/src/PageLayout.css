@@ -1,0 +1,87 @@
+/* Page Layout Component */
+.page-layout {
+  width: 100%;
+  max-width: 393px;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  font-family: 'Paperlogy', 'Gmarket Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  margin: 0 auto;
+}
+
+/* Header */
+.page-layout-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.page-layout-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.page-layout-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #222;
+}
+
+/* Content */
+.page-layout-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 0;
+}
+
+/* Bottom Navigation */
+.page-layout-bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  background-color: white;
+  border-top: 1px solid #e0e0e0;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.page-layout-bottom-nav .nav-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  transition: color 0.2s;
+}
+
+.page-layout-bottom-nav .nav-btn:hover {
+  color: #222;
+}
+
+.page-layout-bottom-nav .nav-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

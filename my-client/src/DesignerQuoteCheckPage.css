@@ -1,0 +1,153 @@
+.dq-filter-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px 4px;
+  overflow-x: auto;
+}
+
+.dq-filter-pill {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.dq-filter-pill.active {
+  background-color: #111827;
+  color: #ffffff;
+}
+
+.dq-card-list {
+  padding: 4px 16px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dq-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.dq-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 10px;
+}
+
+.dq-card-main {
+  display: flex;
+  gap: 10px;
+}
+
+.dq-card-images {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dq-dog-img.main {
+  width: 90px;
+  height: 90px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.dq-dog-img.sub {
+  width: 90px;
+  height: 54px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.dq-card-text-group {
+  flex: 1;
+  font-size: 11px;
+  color: #4b5563;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dq-card-text-group .label {
+  font-weight: 600;
+  color: #111827;
+  margin-right: 2px;
+}
+
+.dq-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 6px;
+}
+
+.dq-tag-pill {
+  font-size: 10px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+}
+
+.dq-bottom-info {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.dq-bottom-text {
+  font-size: 11px;
+  color: #4b5563;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dq-bottom-text .label {
+  font-weight: 600;
+  color: #111827;
+  margin-right: 2px;
+}
+
+.dq-send-row {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.dq-send-btn {
+  width: 70%;
+  padding: 10px 0;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(90deg, #111827, #4b5563);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.dq-send-btn:active {
+  opacity: 0.85;
+}
+
+.designer-page-header h1 {
+  font-size: 16px;
+}
+
+.designer-page-header button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}

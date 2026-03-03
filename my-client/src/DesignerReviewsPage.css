@@ -1,0 +1,187 @@
+/* Designer Reviews Page Styles */
+.designer-reviews-page {
+  padding: 0;
+}
+
+.reviews-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.reviews-back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  color: #222;
+}
+
+.reviews-header h1 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.rating-summary {
+  display: flex;
+  gap: 20px;
+  background-color: white;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.rating-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+}
+
+.score {
+  font-size: 32px;
+  font-weight: 700;
+  color: #222;
+}
+
+.stars {
+  font-size: 20px;
+}
+
+.rating-details {
+  flex: 1;
+}
+
+.rating-details p {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 12px 0;
+}
+
+.rating-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rating-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.bar-label {
+  width: 24px;
+  color: #999;
+}
+
+.bar-container {
+  flex: 1;
+  height: 6px;
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background-color: #f0c8d8;
+  transition: width 0.3s ease;
+}
+
+.bar-count {
+  width: 20px;
+  text-align: right;
+  color: #999;
+}
+
+.reviews-sort {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sort-btn {
+  padding: 8px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: white;
+  color: #666;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.sort-btn.active {
+  background-color: #222;
+  color: white;
+  border-color: #222;
+}
+
+.sort-btn:hover:not(.active) {
+  border-color: #999;
+}
+
+.reviews-container {
+  margin-top: 4px;
+  margin-bottom: 80px; /* bottom nav 여백 */
+}
+
+.review-card {
+  background-color: white;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reviewer-avatar {
+  font-size: 24px;
+}
+
+.reviewer-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+}
+
+.review-date {
+  font-size: 11px;
+  color: #999;
+}
+
+.review-rating {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.review-text {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}

@@ -1,276 +1,126 @@
+﻿/* Search Page - Exact Figma Design Alignment */
+
 .search-page {
   width: 100%;
-  height: 100vh;
-  background-color: #f5f5f5;
+  max-width: 393px;
+  min-height: 100vh;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  padding: 0;
-  margin: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  background-color: #f5f5f5;
+  font-family: 'Paperlogy', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #000;
+  overflow: hidden;
 }
 
-@media (max-width: 768px) {
-  .search-page::-webkit-scrollbar {
-    display: none;
-  }
+/* Search Bar Container */
+.search-bar-container {
+  padding: 16px;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
 }
 
-/* 검색 헤더 */
-.search-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  background-color: #ffffff;
-  padding: 16px 20px;
+.search-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 308px;
+  height: 37px;
+  border: 0.5px solid #222;
+  border-radius: 20px;
+  padding: 0 12px;
+  background-color: white;
+}
+
+.search-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.search-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .search-input {
   flex: 1;
-  height: 40px;
-  border: 1px solid #e0e0e0;
-  border-radius: 20px;
-  padding: 0 16px;
-  font-size: 16px;
-  font-family: 'Paperlogy', sans-serif;
-  color: #333;
-  background-color: #f9f9f9;
+  border: none;
   outline: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  font-family: 'Paperlogy', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: #000;
 }
 
 .search-input::placeholder {
   color: #999;
 }
 
-.search-input:focus {
-  border-color: #595959;
-  background-color: #ffffff;
-  transform: scale(1.02);
+/* Search Sections Wrapper */
+.search-sections-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 12px;
 }
 
-.search-back-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background-color: #e0e0e0;
-  border-radius: 50%;
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Search Section */
+.search-section {
+  padding: 0 16px;
+  margin-top: 24px;
+  flex-shrink: 0;
 }
 
-.search-back-btn:hover {
-  transform: scale(1.05);
+.search-sections-wrapper > .search-section:first-child {
+  margin-top: 24px;
 }
 
-.search-back-btn:active {
-  background-color: #d0d0d0;
-  transform: scale(0.95);
-}
-
-/* 검색 결과 */
-.search-results {
-  margin-top: 70px;
-  padding: 0 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.search-result-item {
-  padding: 16px 0;
-  border-bottom: 1px solid #e8e8e8;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.search-result-item:hover {
-  background-color: #f9f9f9;
-  transform: translateX(4px);
-}
-
-.search-result-item:active {
-  background-color: #f5f5f5;
-  transform: translateX(2px);
-}
-
-.search-result-title {
-  font-size: 16px;
-  font-family: 'Paperlogy', sans-serif;
-  color: #333;
-  font-weight: 500;
-}
-
-/* 검색 제안 (최근/인기 검색어) */
-.search-suggestions {
-  margin-top: 80px;
-  padding: 0 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.suggestions-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.suggestions-title {
+.search-section-title {
+  font-family: 'Paperlogy', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
-  font-family: 'Paperlogy', sans-serif;
-  color: #000;
   font-weight: 300;
-  margin-left: 0;
+  color: #000;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+  display: inline-block;
+  min-width: 176px;
 }
 
-.suggestions-divider {
-  height: 1px;
-  background-color: #d9d9d9;
-  width: 176px;
-}
-
-.suggestions-tags {
+.search-tags {
   display: flex;
   gap: 12px;
+  justify-content: flex-start;
   flex-wrap: wrap;
+  margin-top: 12px;
 }
 
-.tag {
-  padding: 8px 16px;
+.search-tag {
+  padding: 6px 16px;
   border: none;
   border-radius: 20px;
+  font-family: 'Paperlogy', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 10px;
-  font-family: 'Paperlogy', sans-serif;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-weight: 300;
+  font-weight: 400;
   color: #000;
-}
-
-.tag:hover {
-  transform: translateY(-2px);
-}
-
-.tag:active {
-  transform: translateY(0px);
-}
-
-.recent-tag {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
   background-color: #d9d9d9;
+  min-width: 70px;
+  text-align: center;
 }
 
-.recent-tag:active {
-  background-color: #c9c9c9;
-  transform: scale(0.98);
-}
-
-.popular-tag {
+.search-tag.popular {
   background-color: #d0d0d0;
 }
 
-.popular-tag:active {
-  background-color: #c0c0c0;
-  transform: scale(0.98);
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .search-header {
-    padding: 12px 16px;
-  }
-
-  .search-input {
-    height: 36px;
-    font-size: 14px;
-  }
-
-  .search-back-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-  }
-
-  .search-results {
-    margin-top: 60px;
-    padding: 0 16px;
-  }
-
-  .search-suggestions {
-    margin-top: 70px;
-    padding: 0 16px;
-    gap: 16px;
-  }
-
-  .suggestions-divider {
-    width: 120px;
-  }
-
-  .tag {
-    padding: 6px 12px;
-    font-size: 9px;
-  }
-}
-
-@media (max-width: 480px) {
-  .search-header {
-    padding: 10px 12px;
-  }
-
-  .search-input {
-    height: 32px;
-    font-size: 13px;
-    padding: 0 12px;
-  }
-
-  .search-back-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-  }
-
-  .search-results {
-    margin-top: 55px;
-    padding: 0 12px;
-  }
-
-  .search-result-item {
-    padding: 12px 0;
-    font-size: 14px;
-  }
-
-  .search-suggestions {
-    margin-top: 65px;
-    padding: 0 12px;
-    gap: 14px;
-  }
-
-  .suggestions-title {
-    font-size: 12px;
-  }
-
-  .suggestions-divider {
-    width: 100px;
-  }
-
-  .suggestions-tags {
-    gap: 8px;
-  }
-
-  .tag {
-    padding: 5px 10px;
-    font-size: 8px;
-  }
+.search-tag:active {
+  opacity: 0.8;
 }

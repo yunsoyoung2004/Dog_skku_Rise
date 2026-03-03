@@ -1,0 +1,263 @@
+/* Search Results Page */
+
+.search-results-page {
+  width: 100%;
+  max-width: 393px;
+  min-height: 100vh;
+  margin: 0 auto;
+  background-color: white;
+  font-family: 'Paperlogy', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.search-results-header {
+  background-color: white;
+  padding: 16px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #222;
+}
+
+.search-results-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: #222;
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Tabs */
+.search-tabs {
+  background-color: white;
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  padding: 0;
+}
+
+.tab {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  background-color: white;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+  color: #222;
+  border-bottom-color: #222;
+}
+
+/* Results Content */
+.search-results-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.no-results p {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+  color: #222;
+}
+
+.no-results small {
+  font-size: 12px;
+  color: #999;
+}
+
+/* Results Grid */
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.result-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 12px;
+}
+
+.result-card:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.result-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: #e0e0e0;
+}
+
+.result-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.result-info h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #222;
+  word-break: break-word;
+}
+
+.result-location {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.result-tags {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.tag-more {
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.result-rating {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.review-count {
+  color: #999;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+/* Scrollbar */
+.search-results-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.search-results-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.search-results-content::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+.search-results-content::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+/* Bottom Navigation */
+.search-bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  background-color: white;
+  border-top: 1px solid #e0e0e0;
+  margin-top: auto;
+}
+
+.nav-btn {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background-color: transparent;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.nav-btn:hover {
+  color: #222;
+}
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: none;
+  background-color: transparent;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.nav-btn:active {
+  color: #222;
+}
+
+.nav-btn svg {
+  width: 24px;
+  height: 24px;
+}

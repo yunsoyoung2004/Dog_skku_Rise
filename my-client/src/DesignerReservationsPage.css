@@ -1,0 +1,87 @@
+.reservation-item {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #e8e8e8;
+}
+
+.reservation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.reservation-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  margin: 0;
+}
+
+.reservation-status {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: #f0f0f0;
+  color: #666;
+}
+
+.reservation-status.confirmed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.reservation-status.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.reservation-date {
+  font-size: 12px;
+  color: #999;
+  margin: 8px 0;
+}
+
+.reservation-service {
+  font-size: 13px;
+  color: #333;
+}
+
+.reservation-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: #f9f9f9;
+  border-color: #999;
+}
+
+.empty-reservations {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-reservations-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-reservations-text {
+  font-size: 14px;
+  color: #999;
+}

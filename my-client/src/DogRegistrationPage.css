@@ -1,0 +1,383 @@
+/* Dog Registration Page Styles */
+.dog-registration-page {
+  width: 100%;
+  max-width: 393px;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+  font-family: 'Paperlogy', 'Gmarket Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.dog-registration-greeting {
+  padding: 24px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: left;
+  color: #222;
+}
+
+.dog-registration-greeting p {
+  margin: 0;
+}
+
+.dog-registration-container {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* Photo Upload */
+.photo-upload-box {
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.photo-input {
+  display: none;
+}
+
+.photo-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 140px;
+  border: 2px dashed #ddd;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  background-color: white;
+}
+
+.photo-upload-label:hover {
+  border-color: #bbb;
+}
+
+.photo-upload-icon {
+  font-size: 40px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.photo-upload-label p {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  margin: 0 0 4px 0;
+}
+
+.photo-upload-label span {
+  font-size: 11px;
+  color: #999;
+}
+
+/* Form Groups */
+.dog-form-group {
+  margin-bottom: 20px;
+}
+
+.dog-form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 8px;
+}
+
+.dog-form-input,
+.dog-form-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background-color: white;
+  color: #222;
+  box-sizing: border-box;
+}
+
+.dog-form-input:focus {
+  outline: none;
+  border-color: #999;
+}
+
+.dog-form-select {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background-color: white;
+}
+
+.dog-sex-options {
+  display: flex;
+  gap: 12px;
+}
+
+.dog-sex-btn {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: white;
+  color: #222;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dog-sex-btn.active {
+  background-color: #222;
+  color: white;
+  border-color: #222;
+}
+
+/* Summary */
+.dog-registration-summary {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+}
+
+.dog-registration-summary h2 {
+  font-size: 16px;
+  margin: 0 0 20px 0;
+}
+
+.summary-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.summary-item strong {
+  color: #666;
+  margin-right: 12px;
+}
+
+/* Health Step */
+.dog-health-card {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dog-health-group {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 16px;
+}
+
+.dog-health-group:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dog-health-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #222;
+}
+
+.dog-health-options {
+  display: flex;
+  gap: 12px;
+}
+
+.dog-health-options.vertical {
+  flex-direction: column;
+}
+
+.dog-health-option {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 20px;
+  border: 1px solid #e0e0e0;
+  background-color: #fff;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+}
+
+.dog-health-option.active {
+  border-color: #222;
+  background-color: #222;
+  color: #fff;
+}
+
+.dog-health-radio {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  background-color: transparent;
+}
+
+.dog-health-option.active .dog-health-radio {
+  background-color: #fff;
+}
+
+.dog-health-input-inline {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.dog-health-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  font-size: 12px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+/* Vaccine Step */
+.dog-vaccine-card {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+}
+
+.dog-vaccine-sub {
+  margin: 0 0 16px 0;
+  font-size: 11px;
+  color: #777;
+}
+
+.dog-vaccine-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dog-vaccine-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #333;
+}
+
+.dog-vaccine-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+}
+
+.dog-vaccine-item.other {
+  margin-top: 4px;
+}
+
+/* Footer */
+.dog-registration-footer {
+  padding: 24px;
+  border-top: 1px solid #e0e0e0;
+  background-color: white;
+}
+
+.dog-registration-next-btn {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  background-color: #222;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dog-registration-next-btn:hover {
+  background-color: #333;
+}
+
+.dog-registration-next-btn:disabled {
+  background-color: #222;
+  opacity: 0.7;
+  cursor: default;
+}
+
+.dog-registration-error {
+  padding: 12px 16px;
+  margin: 0 24px 8px 24px;
+  border-radius: 6px;
+  background-color: #ffeeee;
+  color: #c00;
+  font-size: 12px;
+}
+
+/* Breed Modal */
+.breed-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 1000;
+}
+
+.breed-modal {
+  width: 100%;
+  max-width: 393px;
+  background-color: white;
+  border-radius: 12px 12px 0 0;
+  padding: 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.breed-modal h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: #222;
+}
+
+.breed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.breed-item {
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: white;
+  color: #222;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.breed-item:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
+}
+

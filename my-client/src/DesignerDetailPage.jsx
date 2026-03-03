@@ -2,17 +2,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DesignerDetailPage.css';
 
-const designerImage = 'https://www.figma.com/api/mcp/asset/61a555ef-94d8-4db4-8b80-e2d9d100a67f';
-const badge1 = 'https://www.figma.com/api/mcp/asset/d9a48f89-d06a-45b1-897e-e0bbc0d1ea72';
-const badge2 = 'https://www.figma.com/api/mcp/asset/fe1dc8b2-68eb-44d3-a5f9-c16f7e95e5b5';
-const badge3 = 'https://www.figma.com/api/mcp/asset/a6536c49-afa5-476c-8adb-e97cacf62ec8';
-const portfolio1 = 'https://www.figma.com/api/mcp/asset/962774a0-c58e-4c5a-8f7a-1077fcafa130';
-const portfolio2 = 'https://www.figma.com/api/mcp/asset/07d0e2af-54f3-49df-9796-eec5e974d3ee';
-const portfolio3 = 'https://www.figma.com/api/mcp/asset/0327f5cc-4f56-4bd4-9e12-bf8e2798a803';
-const portfolio4 = 'https://www.figma.com/api/mcp/asset/64955b41-d810-4a13-b70a-7bb22e95507b';
-const reviewerImage = 'https://www.figma.com/api/mcp/asset/d9823294-a54e-41e6-9a81-ba2d953e4e6d';
+const designerImage = 'https://www.figma.com/api/mcp/asset/ee6fb520-45bd-4f25-bea3-0bd442880b9e';
+const badge1 = 'https://www.figma.com/api/mcp/asset/cf5688d2-afa0-4a9f-b7f5-eb573bbbe308';
+const badge2 = 'https://www.figma.com/api/mcp/asset/2b4bec9c-ca32-4cdc-9f71-4cd90593761e';
+const badge3 = 'https://www.figma.com/api/mcp/asset/e952489a-bb1c-4151-aa6e-40aa23b67242';
+const portfolio1 = 'https://www.figma.com/api/mcp/asset/eef3ccc1-8452-492a-b4fb-3a51c43f645e';
+const portfolio2 = 'https://www.figma.com/api/mcp/asset/a1c0cca9-f135-480f-afc1-eaa183a12b32';
+const portfolio3 = 'https://www.figma.com/api/mcp/asset/ff692a10-3bac-4fa0-b338-883aefc31861';
+const portfolio4 = 'https://www.figma.com/api/mcp/asset/b50e541f-e360-4814-ad5f-7bc13782c294';
+const reviewerImage = 'https://www.figma.com/api/mcp/asset/81d60902-a5be-40f1-84b5-39a8b3524020';
 
-export default function DesignerDetailPage({ isOpen, onClose }) {
+export default function DesignerDetailPage({ isOpen = true, onClose }) {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('info');
   const [scrolledSections, setScrolledSections] = useState({});
@@ -59,22 +59,26 @@ export default function DesignerDetailPage({ isOpen, onClose }) {
     }
   }, [isOpen]);
 
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      navigate(-1);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="designer-detail-overlay" onClick={onClose}>
-      <div
-        className="designer-detail-container"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="designer-detail-overlay">
+      <div className="designer-detail-container">
         {/* Header */}
         <div className="designer-detail-header">
-          <button className="designer-detail-back" onClick={onClose}>
-            ← 뒤로
+          <button className="designer-detail-back" onClick={handleClose}>
+            ←
           </button>
           <div className="designer-detail-actions">
-            <button className="designer-detail-share">📤</button>
-            <button className="designer-detail-more">⊕</button>
+            <button className="designer-detail-edit">✏</button>
           </div>
         </div>
 
@@ -176,11 +180,11 @@ export default function DesignerDetailPage({ isOpen, onClose }) {
 
             <div className="section-content">
               <h2 className="section-title">주요 근무 경력 | 총 10년</h2>
-              <ul className="career-list">
-                <li>강남권 반려견 전문 미용샵 근무 (4년)</li>
-                <li>출장 및 샵 미용 병행 경험 (6년)</li>
-                <li>예민견·노령견 케어 중심 실무</li>
-              </ul>
+              <p className="section-text">
+                강남권 반려견 전문 미용샵 근무 (4년)<br />
+                출장 및 샵 미용 병행 경험 (6년)<br />
+                예민견·노령견 케어 중심 실무
+              </p>
             </div>
 
             <div className="section-content">
@@ -228,16 +232,16 @@ export default function DesignerDetailPage({ isOpen, onClose }) {
                 <p className="portfolio-label">토이 푸들 (출장 미용)</p>
               </div>
               <div className="portfolio-item">
-                <img src={portfolio2} alt="비숑" className="portfolio-img" />
-                <p className="portfolio-label">비숑 (샵 미용)</p>
+                <img src={portfolio2} alt="비숑비숑" className="portfolio-img" />
+                <p className="portfolio-label">비숑비숑 (샵 미용)</p>
               </div>
               <div className="portfolio-item">
-                <img src={portfolio3} alt="푸들" className="portfolio-img" />
-                <p className="portfolio-label">푸들 (출장 미용)</p>
+                <img src={portfolio3} alt="푸들푸들" className="portfolio-img" />
+                <p className="portfolio-label">푸들푸들 (출장 미용)</p>
               </div>
               <div className="portfolio-item">
-                <img src={portfolio4} alt="푸들" className="portfolio-img" />
-                <p className="portfolio-label">푸들 (출장 미용)</p>
+                <img src={portfolio4} alt="푸들푸들" className="portfolio-img" />
+                <p className="portfolio-label">푸들푸들 (출장 미용)</p>
               </div>
             </div>
           </section>
@@ -284,7 +288,25 @@ export default function DesignerDetailPage({ isOpen, onClose }) {
           </section>
 
           {/* Bottom Spacing */}
-          <div style={{ height: '40px' }}></div>
+          <div style={{ height: '80px' }}></div>
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="designer-detail-footer">
+          <button
+            className="designer-footer-btn chat"
+            type="button"
+            onClick={() => navigate('/chat')}
+          >
+            채팅하기
+          </button>
+          <button
+            className="designer-footer-btn quote"
+            type="button"
+            onClick={() => navigate('/quote-request')}
+          >
+            견적서 보내기
+          </button>
         </div>
       </div>
     </div>

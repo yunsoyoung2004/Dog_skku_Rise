@@ -1,0 +1,113 @@
+@font-face {
+  font-family: 'Paperlogy';
+  src: local('Paperlogy');
+}
+
+.designer-portfolio-page {
+  padding-bottom: 80px;
+}
+
+.portfolio-hero {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #fef9ff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 20px;
+}
+
+.portfolio-photo {
+  width: 72px;
+  height: 88px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fdd6ff, #c6b7ff);
+}
+
+.portfolio-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.portfolio-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.portfolio-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #7a7a7a;
+}
+
+.portfolio-desc {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #555555;
+}
+
+.portfolio-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.portfolio-menu-item {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #f0e6ff;
+  background: #ffffff;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  color: #222222;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.portfolio-menu-item.primary {
+  background: linear-gradient(135deg, #7c5cff, #a873ff);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.portfolio-menu-item::after {
+  content: '›';
+  font-size: 16px;
+  color: inherit;
+}
+  margin-top: 8px;
+  text-align: center;
+}
+
+.portfolio-upload {
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.portfolio-upload:hover {
+  border-color: #999;
+  background: #f9f9f9;
+}
+
+.portfolio-upload-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.portfolio-upload-text {
+  font-size: 12px;
+  color: #999;
+}

@@ -1,0 +1,367 @@
+/* ========== DESIGNER LOGIN PAGE ========== */
+.designer-login-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--color-primary-light);
+  padding: 0;
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 400;
+  position: relative;
+  overflow-y: auto;
+}
+
+/* 로고 */
+.designer-login-logo-container {
+  width: 186px;
+  height: 186px;
+  margin-top: 37px;
+  margin-bottom: 39px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.designer-login-logo-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.designer-login-logo-button:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+.designer-login-logo-button:active {
+  transform: scale(0.98);
+}
+
+.designer-login-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 인사말 */
+.designer-login-greeting {
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.3;
+  text-align: left;
+  color: var(--color-text-on-dark);
+  margin: 0 0 51px 0;
+  padding: 0;
+  white-space: normal;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 331px;
+}
+
+.designer-login-greeting p {
+  margin: 0;
+  padding: 0;
+  font-size: 30px;
+  font-weight: 400;
+}
+
+/* 입력 박스 그룹 */
+.designer-login-form-bg {
+  width: 331px;
+  height: auto;
+  background-color: var(--color-bg-light);
+  border-radius: 17px;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 24px;
+  margin-bottom: 48px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.designer-login-error {
+  color: #e74c3c;
+  font-size: 12px;
+  margin: 0 0 12px 0;
+  padding: 0;
+  text-align: left;
+}
+
+/* 라벨 */
+.designer-login-label {
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 300;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text-dark);
+  margin: 0 0 8px 0;
+  padding: 0;
+  white-space: normal;
+  text-align: left;
+}
+
+/* 입력창 */
+.designer-login-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  border-bottom: 1px solid var(--color-text-dark);
+  font-family: 'Paperlogy', sans-serif;
+  font-size: 12px;
+  color: var(--color-text-dark);
+  padding: 8px 0;
+  margin: 0;
+  height: 40px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  font-weight: 400;
+}
+
+.designer-login-input:focus {
+  outline: none;
+  border-bottom-color: var(--color-primary-dark);
+  background-color: transparent;
+}
+
+.designer-login-input::placeholder {
+  color: #bbb;
+}
+
+/* 로그인 버튼 */
+.designer-login-button-container {
+  width: 235px;
+  margin: 0 auto 20px auto;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.designer-login-button {
+  width: 235px;
+  height: 39px;
+  background-color: var(--color-primary-dark);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.3s ease;
+  font-size: 15px;
+}
+
+.designer-login-button:hover:not(:disabled) {
+  background-color: #1a1a1a;
+  box-shadow: 3px 7px 35px 0px rgba(196, 196, 196, 0.9);
+}
+
+.designer-login-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.designer-login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.designer-login-button-text {
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: normal;
+  text-align: center;
+  color: var(--color-bg-light);
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+/* 로그인/회원가입 전환 */
+.designer-login-toggle {
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 300;
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--color-text-on-dark);
+  margin: 0 0 20px 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.designer-login-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-on-dark);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  text-decoration: underline;
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 300;
+}
+
+.designer-login-toggle-btn:hover {
+  opacity: 0.7;
+}
+
+/* 사용자 로그인 버튼 */
+.designer-login-user-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-on-dark);
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  text-decoration: underline;
+  font-family: 'Paperlogy', sans-serif;
+  font-weight: 300;
+  margin: 0;
+}
+
+.designer-login-user-btn:hover {
+  opacity: 0.7;
+}
+
+/* 반응형 디자인 - 태블릿 */
+@media (max-width: 768px) {
+  .designer-login-page {
+    padding: 40px 20px;
+  }
+
+  .designer-login-logo-container {
+    width: 160px;
+    height: 160px;
+    margin-top: 32px;
+    margin-bottom: 36px;
+  }
+
+  .designer-login-greeting {
+    font-size: 26px;
+    margin-bottom: 44px;
+    max-width: 300px;
+  }
+
+  .designer-login-form-bg {
+    width: 290px;
+    padding: 26px 18px;
+    gap: 20px;
+    margin-bottom: 42px;
+  }
+
+  .designer-login-label {
+    font-size: 11px;
+  }
+
+  .designer-login-input {
+    height: 36px;
+    padding: 6px 0;
+    font-size: 11px;
+  }
+
+  .designer-login-button-container {
+    width: 210px;
+    margin: 0 auto 20px auto;
+  }
+
+  .designer-login-button {
+    width: 100%;
+    height: 36px;
+  }
+
+  .designer-login-button-text {
+    font-size: 14px;
+  }
+
+  .designer-login-toggle {
+    font-size: 9px;
+    margin-bottom: 16px;
+  }
+
+  .designer-login-toggle-btn {
+    font-size: 9px;
+  }
+
+  .designer-login-user-btn {
+    font-size: 9px;
+  }
+}
+
+/* 반응형 디자인 - 모바일 */
+@media (max-width: 480px) {
+  .designer-login-page {
+    padding: 32px 16px;
+  }
+
+  .designer-login-logo-container {
+    width: 130px;
+    height: 130px;
+    margin-top: 28px;
+    margin-bottom: 28px;
+  }
+
+  .designer-login-greeting {
+    font-size: 22px;
+    margin-bottom: 36px;
+    max-width: 280px;
+  }
+
+  .designer-login-form-bg {
+    width: 100%;
+    max-width: 280px;
+    padding: 20px 16px;
+    gap: 18px;
+    margin-bottom: 36px;
+  }
+
+  .designer-login-label {
+    font-size: 10px;
+  }
+
+  .designer-login-input {
+    height: 32px;
+    padding: 4px 0;
+    font-size: 10px;
+  }
+
+  .designer-login-button-container {
+    width: 200px;
+    margin: 0 auto 20px auto;
+  }
+
+  .designer-login-button {
+    width: 100%;
+    height: 34px;
+  }
+
+  .designer-login-button-text {
+    font-size: 13px;
+  }
+
+  .designer-login-toggle {
+    font-size: 9px;
+    margin-bottom: 12px;
+  }
+
+  .designer-login-toggle-btn {
+    font-size: 9px;
+  }
+
+  .designer-login-user-btn {
+    font-size: 9px;
+  }
+}

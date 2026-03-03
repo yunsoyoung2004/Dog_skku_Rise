@@ -1,0 +1,185 @@
+/* My Page Styles */
+.mypage {
+  width: 100%;
+  max-width: 393px;
+  min-height: 100vh;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+  font-family: 'Paperlogy', 'Gmarket Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.mypage-main-container {
+  flex: 1;
+  padding: 24px 20px 80px;
+  overflow-y: auto;
+}
+.mypage-section {
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.section-divider {
+  width: 100%;
+  height: 1px;
+  background-color: #e0e0e0;
+  margin-bottom: 16px;
+}
+
+.mypage-dog-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dog-photo-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dog-photo-inner {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.dog-info-text {
+  flex: 1;
+}
+
+.dog-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.dog-meta-line {
+  font-size: 11px;
+  color: #666;
+  margin: 0 0 2px 0;
+}
+
+.dog-meta-line.small {
+  color: #999;
+}
+
+.mypage-grooming-thumbs {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.groom-thumb-card {
+  flex: 1;
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.groom-thumb-photo {
+  width: 100%;
+  height: 100px;
+  border-radius: 8px;
+  background-color: #ddd;
+}
+
+.groom-thumb-date {
+  font-size: 10px;
+  margin: 6px 0 2px 0;
+}
+
+.groom-thumb-designer {
+  font-size: 10px;
+  color: #666;
+  margin: 0;
+}
+
+.link-text-btn {
+  margin-top: 8px;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  font-size: 11px;
+  color: #666;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mypage-favorites-row {
+  display: flex;
+  gap: 12px;
+}
+
+.favorite-card {
+  flex: 1;
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.favorite-photo {
+  width: 100%;
+  height: 80px;
+  border-radius: 8px;
+  background-color: #eee;
+}
+
+.favorite-name {
+  font-size: 10px;
+  margin: 6px 0 0 0;
+  color: #666;
+}
+
+.mypage-upcoming-btn {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  margin: 8px 0 16px 0;
+  border-radius: 14px;
+  border: none;
+  background-color: #222;
+  color: #f5f5f5;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  line-height: 1.3;
+  white-space: normal;
+}
+
+.mypage-bottom-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bottom-action-btn {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+}

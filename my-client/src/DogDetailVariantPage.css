@@ -1,0 +1,255 @@
+/* Dog Detail Variant Page Styles */
+.dog-detail-variant-page {
+  width: 100%;
+  max-width: 393px;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+  font-family: 'Paperlogy', 'Gmarket Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.dog-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f5f5f5;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.dog-detail-logo {
+  width: 30px;
+  height: 30px;
+}
+
+.dog-detail-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.dog-detail-header h1 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: 1.96px;
+}
+
+.dog-detail-container {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.dog-profile {
+  background-color: white;
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.dog-image {
+  font-size: 80px;
+  margin-bottom: 16px;
+}
+
+.dog-profile h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #222;
+}
+
+.dog-breed {
+  font-size: 13px;
+  color: #999;
+  margin: 0;
+}
+
+.dog-stats-variant {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat {
+  background-color: white;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
+
+.stat span {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.stat strong {
+  display: block;
+  font-size: 18px;
+  color: #222;
+}
+
+.favorite-designers {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.favorite-designers h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: #222;
+}
+
+.designers-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.designer-card {
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: white;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.designer-card:hover {
+  border-color: #999;
+  background-color: #f5f5f5;
+}
+
+.designer-card.selected {
+  background-color: #f0c8d8;
+  border-color: #222;
+}
+
+.designer-avatar {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.designer-card h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #222;
+}
+
+.designer-card p {
+  font-size: 11px;
+  color: #999;
+  margin: 0;
+}
+
+.dog-notes {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.dog-notes h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #222;
+}
+
+.notes-box {
+  background-color: #f5f5f5;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.notes-box p {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.notes-box p:last-child {
+  margin-bottom: 0;
+}
+
+.dog-detail-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.schedule-btn,
+.edit-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  transition: all 0.2s;
+}
+
+.schedule-btn {
+  background-color: #222;
+  color: white;
+}
+
+.schedule-btn:hover {
+  background-color: #333;
+}
+
+.edit-btn {
+  background-color: white;
+  color: #222;
+  border: 1px solid #e0e0e0;
+}
+
+.edit-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.dog-detail-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  background-color: white;
+  border-top: 1px solid #e0e0e0;
+  margin-top: auto;
+}
+
+.dog-detail-nav button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background-color: transparent;
+  font-size: 24px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.dog-detail-nav button:hover {
+  opacity: 0.6;
+}

@@ -1,0 +1,242 @@
+/* Quote Detail Page Styles */
+.quote-detail-page {
+  width: 100%;
+  max-width: 393px;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+  font-family: 'Paperlogy', 'Gmarket Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.quote-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.quote-detail-back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  color: #222;
+}
+
+.quote-detail-header h1 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.quote-detail-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.quote-dog-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background-color: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.quote-dog-avatar {
+  font-size: 48px;
+}
+
+.quote-dog-details h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #222;
+}
+
+.quote-dog-details p {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+.quotes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quote-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.quote-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.quote-designer {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.quote-designer-avatar {
+  font-size: 36px;
+}
+
+.quote-designer-info h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 2px 0;
+  color: #222;
+}
+
+.quote-date {
+  font-size: 11px;
+  color: #999;
+  margin: 0;
+}
+
+.quote-price {
+  text-align: right;
+}
+
+.price-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #222;
+}
+
+.quote-message {
+  font-size: 13px;
+  color: #666;
+  margin: 12px 0;
+  line-height: 1.5;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.quote-services h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #222;
+  margin: 12px 0 8px 0;
+}
+
+.services-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.service-tag {
+  padding: 6px 12px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #666;
+}
+
+.quote-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quote-accept-btn,
+.quote-contact-btn {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.quote-accept-btn {
+  background-color: #222;
+  color: white;
+}
+
+.quote-accept-btn:hover {
+  background-color: #333;
+}
+
+.quote-contact-btn {
+  background-color: white;
+  color: #222;
+  border: 1px solid #e0e0e0;
+}
+
+.quote-contact-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.no-quotes {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.no-quotes p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.no-quotes button {
+  padding: 12px 24px;
+  background-color: #222;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.quote-detail-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  background-color: white;
+  border-top: 1px solid #e0e0e0;
+  margin-top: auto;
+}
+
+.quote-detail-nav button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background-color: transparent;
+  font-size: 24px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.quote-detail-nav button:hover {
+  opacity: 0.6;
+}

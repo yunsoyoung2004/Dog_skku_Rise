@@ -1,0 +1,249 @@
+/* Dog Info Page Styles */
+.dog-info-page {
+  width: 100%;
+  max-width: 393px;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+  font-family: 'Paperlogy', 'Gmarket Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.dog-info-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f5f5f5;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.dog-info-logo {
+  width: 30px;
+  height: 30px;
+}
+
+.dog-info-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.dog-info-header h1 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: 1.96px;
+}
+
+.dog-info-location {
+  padding: 12px 24px;
+  font-size: 12px;
+  color: #666;
+  background-color: white;
+}
+
+.dog-info-container {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.dog-info-container h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  color: #222;
+}
+
+.dog-info-container h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #222;
+}
+
+.designer-info-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background-color: white;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid #e0e0e0;
+}
+
+.designer-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.designer-details {
+  flex: 1;
+}
+
+.designer-details h3 {
+  margin: 0 0 8px 0;
+}
+
+.designer-details p {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.designer-msg-btn {
+  padding: 6px 12px;
+  background-color: #f0c8d8;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.grooming-date-section {
+  background-color: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.grooming-date-section p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.dog-info-radar {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.radar-placeholder {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.designer-comment {
+  background-color: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.designer-comment p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.dog-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-item {
+  background-color: white;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
+
+.stat-item span {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.stat-item strong {
+  display: block;
+  font-size: 18px;
+  color: #222;
+}
+
+.dog-info-review-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: #222;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 24px;
+}
+
+.dog-info-review-btn:hover {
+  background-color: #333;
+}
+
+.dog-info-bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid #e0e0e0;
+  background-color: white;
+  margin-top: auto;
+}
+
+.dog-info-bottom-nav button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  transition: color 0.2s;
+}
+
+.dog-info-bottom-nav button:hover {
+  color: #222;
+}
+
+.dog-info-bottom-nav button svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dog-info-bottom-nav button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background-color: transparent;
+  font-size: 24px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.dog-info-bottom-nav button:hover {
+  opacity: 0.6;
+}
