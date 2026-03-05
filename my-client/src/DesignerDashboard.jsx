@@ -19,6 +19,8 @@ export default function DesignerDashboard() {
     messages: 0
   });
   const [loading, setLoading] = useState(true);
+  const [showProfileReminder, setShowProfileReminder] = useState(false);
+  const [showQuoteAlert, setShowQuoteAlert] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -33,6 +35,8 @@ export default function DesignerDashboard() {
     try {
       setLoading(true);
 
+      let isProfileComplete = false;
+
       // 현재 사용자 정보 가져오기
       const userRef = collection(db, 'users');
       const q = query(userRef, where('__name__', '==', user.uid));
@@ -40,19 +44,30 @@ export default function DesignerDashboard() {
       
       if (!docs.empty) {
         const userData = { id: docs.docs[0].id, ...docs.docs[0].data() };
+
+        const location = userData.location || '';
+        const bio = userData.bio || '';
+        const specialty = userData.specialty || '';
+
+        // 위치와 소개만 입력되면 프로필을 "완료"로 간주
+        isProfileComplete = Boolean(location.trim() && bio.trim());
+
         setDesigner({
           name: user.displayName || '미용사',
           email: user.email,
           rating: userData.rating || 0,
           reviewCount: userData.reviewCount || 0,
-          specialty: userData.specialty || '일반 미용',
-          location: userData.location || '위치 미설정'
+          specialty: specialty || '일반 미용',
+          location: location || '위치 미설정'
         });
       }
 
-      // 통계 가져오기 (임시: 실제 데이터는 Firestore에서)
+      setShowProfileReminder(!isProfileComplete);
+
+      // 통계 가져오기
+      // - 견적 요청: quoteRequests 컬렉션에서 디자이너 기준
       const quotesSnap = await getDocs(query(
-        collection(db, 'quotes'),
+        collection(db, 'quoteRequests'),
         where('designerId', '==', user.uid)
       ));
 
@@ -65,43 +80,26 @@ export default function DesignerDashboard() {
         collection(db, 'reviews'),
         where('designerId', '==', user.uid)
       ));
-      // 오늘 일정 개수 계산
-      let todayReservations = 0;
-      const today = new Date();
-      reservationsSnap.forEach((docSnap) => {
-        const data = docSnap.data();
-        const bookingDate = data.bookingDate || data.date;
-        if (!bookingDate) return;
-        const d = bookingDate.toDate ? bookingDate.toDate() : new Date(bookingDate);
-        if (
-          d.getFullYear() === today.getFullYear() &&
-          d.getMonth() === today.getMonth() &&
-          d.getDate() === today.getDate()
-        ) {
-          todayReservations += 1;
-        }
-      });
+
+      const chatRoomsSnap = await getDocs(query(
+        collection(db, 'chatRooms'),
+        where('designerId', '==', user.uid)
+      ));
+
+      const quotesCount = quotesSnap.size;
 
       setStats({
-        quotes: quotesSnap.size,
+        quotes: quotesCount,
         reservations: reservationsSnap.size,
-        reservationsToday: todayReservations,
         reviews: reviewsSnap.size,
-        messages: 5 // 임시
+        messages: chatRoomsSnap.size
       });
+
+      setShowQuoteAlert(quotesCount > 0);
     } catch (err) {
       console.error('데이터 로드 실패:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      navigate('/designer-login');
-    } catch (err) {
-      console.error('로그아웃 실패:', err);
     }
   };
 
@@ -127,30 +125,94 @@ export default function DesignerDashboard() {
           </button>
           <span className="dd-logo-text">멍빗어</span>
         </div>
-        <div className="dd-header-right">
-          <button type="button" className="dd-icon-btn" aria-label="검색">
-            🔍
-          </button>
-          <button type="button" className="dd-icon-btn" aria-label="알림">
-            ↗
-          </button>
-        </div>
       </header>
+
+      {showQuoteAlert && (
+        <div className="dd-quote-alert-overlay">
+          <div className="dd-quote-alert-modal">
+            <h2 className="dd-quote-alert-title">새 견적 요청이 있습니다</h2>
+            <p className="dd-quote-alert-text">
+              고객이 보낸 견적서를 확인하고 응답해 주세요.
+            </p>
+            <div className="dd-quote-alert-actions">
+              <button
+                type="button"
+                className="dd-quote-alert-primary"
+                onClick={() => {
+                  setShowQuoteAlert(false);
+                  navigate('/designer-quotes-check');
+                }}
+              >
+                견적서 바로 확인하기
+              </button>
+              <button
+                type="button"
+                className="dd-quote-alert-secondary"
+                onClick={() => setShowQuoteAlert(false)}
+              >
+                나중에 볼게요
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showProfileReminder && (
+        <div className="dd-profile-reminder-overlay">
+          <div className="dd-profile-reminder-modal">
+            <h2 className="dd-profile-reminder-title">프로필 정보를 먼저 입력해 주세요</h2>
+            <p className="dd-profile-reminder-text">
+              위치, 소개, 전문 분야 등이 입력되지 않으면
+              <br />
+              고객님들께 디자이너 정보가 제대로 표시되지 않습니다.
+            </p>
+            <div className="dd-profile-reminder-actions">
+              <button
+                type="button"
+                className="dd-profile-reminder-primary"
+                onClick={() => navigate('/designer-profile')}
+              >
+                마이페이지에서 정보 입력하기
+              </button>
+              <button
+                type="button"
+                className="dd-profile-reminder-secondary"
+                onClick={() => setShowProfileReminder(false)}
+              >
+                나중에 할게요
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="designer-content dd-main">
         {/* 오늘의 AI 인사이트 카드 */}
         <section className="dd-ai-card">
-          <p className="dd-section-title">오늘의 AI 인사이트</p>
-          <div className="dd-ai-content">
-            <div className="dd-ai-radar">
-              <p className="dd-ai-caption">나의 매칭 경쟁력</p>
-              <p className="dd-ai-subcaption">가격 · 위치 · 리뷰 · 응답속도</p>
+          <p className="dd-section-title">AI 인사이트</p>
+          {stats.quotes === 0 && stats.reservations === 0 && stats.reviews === 0 && stats.messages === 0 ? (
+            <div className="dd-locked-panel dd-ai-locked">
+              <div className="dd-locked-icon">🔒</div>
+              <p className="dd-locked-text">
+                견적, 예약, 후기, 채팅 데이터가 쌓이면
+                <br />
+                나만의 AI 인사이트가 제공됩니다.
+              </p>
             </div>
-            <div className="dd-ai-graph">
-              <p className="dd-ai-graph-title">나의 견적 성사율</p>
-              <p className="dd-ai-graph-desc">현재 15% 상향 중 · 응답 경쟁력이 올라갔습니다!</p>
+          ) : (
+            <div className="dd-ai-content">
+              <div className="dd-ai-radar">
+                <p className="dd-ai-caption">나의 활동 현황</p>
+                <p className="dd-ai-subcaption">
+                  견적 {stats.quotes}건 · 예약 {stats.reservations}건 · 후기 {stats.reviews}개
+                </p>
+              </div>
+              <div className="dd-ai-graph">
+                <p className="dd-ai-graph-title">채팅/응답 현황</p>
+                <p className="dd-ai-graph-desc">채팅 요청 {stats.messages}건</p>
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* 오늘의 브리핑 */}
@@ -161,25 +223,26 @@ export default function DesignerDashboard() {
           </div>
           <div className="dd-briefing-line" />
           <div className="dd-briefing-list">
-            <div className="dd-briefing-card">
-              <p className="dd-briefing-dog">초코 · 푸들, 5KG</p>
-              <p className="dd-briefing-time">14:00</p>
-              <div className="dd-briefing-tags">
-                <span>예민견</span>
-                <span>노령견</span>
-                <span>곰돌이 컷</span>
+            {stats.reservations > 0 ? (
+              <div className="dd-locked-panel">
+                <div className="dd-locked-icon">📌</div>
+                <p className="dd-locked-text">
+                  오늘 예약이 {stats.reservations}건 있습니다.
+                  <br />
+                  상세 일정은 일정 메뉴에서 확인해 주세요.
+                </p>
               </div>
-              <p className="dd-briefing-note">위치: 강남역 인근 샵 142</p>
-            </div>
-            <div className="dd-briefing-card">
-              <p className="dd-briefing-dog">모카 · 포메라니안, 4KG</p>
-              <p className="dd-briefing-time">16:00</p>
-              <div className="dd-briefing-tags">
-                <span>스포팅</span>
-                <span>부분 미용</span>
+            ) : (
+              <div className="dd-locked-panel">
+                <div className="dd-locked-icon">🔒</div>
+                <p className="dd-locked-text">
+                  예약이 들어오면 오늘의 미용 브리핑을 확인할 수 있어요.
+                </p>
+                <button className="dd-locked-button" disabled>
+                  예약 대기 중
+                </button>
               </div>
-              <p className="dd-briefing-note">위치: 예약 상세에서 확인 가능</p>
-            </div>
+            )}
           </div>
         </section>
 
@@ -188,13 +251,18 @@ export default function DesignerDashboard() {
           <p className="dd-summary-title">이번 달 수익</p>
           <div className="dd-summary-row">
             <div className="dd-summary-card dd-summary-card-large">
-              <p className="dd-summary-amount">3,700,000원</p>
+              <p className="dd-summary-amount">- 원</p>
               <p className="dd-summary-meta">이번 달 매칭 건수: {stats.reservations}건</p>
-              <p className="dd-summary-meta">누적 매칭: 129건 (예시)</p>
+              {stats.reservations === 0 && (
+                <p className="dd-summary-meta">🔒 매칭 데이터가 아직 없습니다.</p>
+              )}
             </div>
             <div className="dd-summary-card dd-summary-card-small">
               <p className="dd-summary-label">새로운 채팅 요청</p>
               <p className="dd-summary-highlight">{stats.messages}건</p>
+              {stats.messages === 0 && (
+                <p className="dd-summary-meta">🔒 아직 도착한 채팅이 없습니다.</p>
+              )}
               <button
                 type="button"
                 className="dd-summary-link"
@@ -210,63 +278,101 @@ export default function DesignerDashboard() {
         <section className="designer-menu">
           <button 
             className="designer-menu-item"
-            onClick={() => navigate('/designer-quotes-check')}
+            onClick={() => {
+              if (stats.quotes > 0) navigate('/designer-quotes-check');
+            }}
+            disabled={stats.quotes === 0}
           >
-            <span className="icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <rect x="4" y="4" width="16" height="16" rx="3" ry="3"/>
-                <path d="M8 12l3 3 5-6"/>
+            <span className="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="4" width="18" height="16" rx="2" ry="2" />
+                <path d="M7 9h10" />
+                <path d="M7 13h6" />
               </svg>
             </span>
             <span className="label">견적 확인</span>
-            <span className="count">{stats.quotes}건</span>
+            <div className="menu-subtext">
+              {stats.quotes > 0 ? (
+                <span>{stats.quotes}건</span>
+              ) : (
+                <span className="menu-lock">🔒 잠금</span>
+              )}
+            </div>
           </button>
 
           <button 
             className="designer-menu-item"
-            onClick={() => navigate('/designer-reviews')}
+            onClick={() => {
+              if (stats.reviews > 0) navigate('/designer-reviews');
+            }}
+            disabled={stats.reviews === 0}
           >
-            <span className="icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path d="M12 3l2.3 4.7L19 8.5l-3.5 3.4.8 4.9L12 14.8l-4.3 2 0.8-4.9L5 8.5l4.7-.8L12 3z"/>
+            <span className="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 3.5 14.5 9l5.5.4-4.2 3.4 1.4 5.2L12 15.8 6.8 18l1.4-5.2L4 9.4 9.5 9 12 3.5z" />
               </svg>
             </span>
             <span className="label">후기</span>
-            <span className="count">{stats.reviews}개</span>
+            <div className="menu-subtext">
+              {stats.reviews > 0 ? (
+                <span>{stats.reviews}개</span>
+              ) : (
+                <span className="menu-lock">🔒 잠금</span>
+              )}
+            </div>
           </button>
 
           <button 
             className="designer-menu-item"
-            onClick={() => navigate('/designer-analytics')}
+            onClick={() => {
+              if (stats.quotes > 0 || stats.reservations > 0) {
+                navigate('/designer-analytics');
+              }
+            }}
+            disabled={!(stats.quotes > 0 || stats.reservations > 0)}
           >
-            <span className="icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path d="M5 19V9"/>
-                <path d="M12 19V5"/>
-                <path d="M19 19v-7"/>
+            <span className="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="4" y="10" width="3" height="8" />
+                <rect x="10.5" y="6" width="3" height="12" />
+                <rect x="17" y="3" width="3" height="15" />
               </svg>
             </span>
             <span className="label">통계</span>
-            <span className="count">예약 {stats.reservations}건</span>
+            <div className="menu-subtext">
+              {stats.quotes > 0 || stats.reservations > 0 ? (
+                <span>분석 가능</span>
+              ) : (
+                <span className="menu-lock">🔒 잠금</span>
+              )}
+            </div>
           </button>
 
           <button 
             className="designer-menu-item"
-            onClick={() => navigate('/designer-schedule')}
+            onClick={() => {
+              if (stats.reservations > 0) navigate('/designer-schedule');
+            }}
+            disabled={stats.reservations === 0}
           >
-            <span className="icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <rect x="4" y="5" width="16" height="15" rx="2" ry="2"/>
-                <path d="M9 3v4"/>
-                <path d="M15 3v4"/>
-                <path d="M4 10h16"/>
+            <span className="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="5" width="18" height="16" rx="2" ry="2" />
+                <path d="M8 3v4" />
+                <path d="M16 3v4" />
+                <path d="M3 10h18" />
               </svg>
             </span>
             <span className="label">일정</span>
-            <span className="count">오늘 {stats.reservationsToday || 0}건</span>
+            <div className="menu-subtext">
+              {stats.reservations > 0 ? (
+                <span>{stats.reservations}건</span>
+              ) : (
+                <span className="menu-lock">🔒 잠금</span>
+              )}
+            </div>
           </button>
         </section>
-
       </main>
 
       {/* Bottom Nav (디자이너 전용, 고객 페이지와 동일한 디자인 시스템) */}

@@ -154,9 +154,6 @@
 }
 
 .dd-briefing-list {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
   padding-bottom: 4px;
 }
 
@@ -285,15 +282,22 @@
   color: inherit;
 }
 
-.designer-menu-item:hover {
+.designer-menu-item:not(:disabled):hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .designer-menu-item .icon {
-  font-size: 24px;
   margin-bottom: 6px;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
+.designer-menu-item .icon svg {
+  width: 24px;
+  height: 24px;
 }
 
 .designer-menu-item .label {
@@ -301,23 +305,176 @@
   font-weight: 600;
 }
 
-.designer-logout {
-  margin-top: 20px;
+.designer-menu-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
 }
 
-.designer-logout button {
+.menu-subtext {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.menu-lock {
+  display: inline-block;
+}
+
+.dd-locked-panel {
   width: 100%;
-  padding: 12px;
-  background-color: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  color: #9ca3af;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.dd-locked-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.dd-locked-text {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dd-locked-button {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: none;
+  background: #e5e7eb;
+  color: #b0b8c4;
+  font-size: 12px;
+}
+
+.dd-ai-locked {
+  background: rgba(0, 0, 0, 0.08);
+  color: #e5e7eb;
+}
+
+.dd-profile-reminder-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.dd-profile-reminder-modal {
+  width: 88%;
+  max-width: 360px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 18px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+.dd-profile-reminder-title {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dd-profile-reminder-text {
+  margin: 0 0 16px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #4b5563;
+}
+
+.dd-profile-reminder-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.dd-profile-reminder-primary,
+.dd-profile-reminder-secondary {
+  flex: 1;
+  padding: 9px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+}
+
+.dd-profile-reminder-primary {
+  background: #111827;
+  color: #ffffff;
+}
+
+.dd-profile-reminder-secondary {
+  background: #ffffff;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+/* 견적 알림 팝업 */
+.dd-quote-alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+
+.dd-quote-alert-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px 20px 20px;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+.dd-quote-alert-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.dd-quote-alert-text {
+  font-size: 14px;
+  color: #555555;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.dd-quote-alert-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.dd-quote-alert-primary {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: none;
+  background: #ff7f50;
+  color: #ffffff;
   font-size: 14px;
   font-weight: 600;
-  color: #ff6b6b;
   cursor: pointer;
-  transition: background-color 0.2s;
 }
 
-.designer-logout button:hover {
-  background-color: #ffeeee;
+.dd-quote-alert-secondary {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid #dddddd;
+  background: #ffffff;
+  font-size: 14px;
+  color: #333333;
+  cursor: pointer;
 }

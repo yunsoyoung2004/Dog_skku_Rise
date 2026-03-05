@@ -7,11 +7,13 @@ import {
   getDocs,
   getDoc,
   doc,
+  setDoc,
   query,
   where,
   writeBatch,
   Timestamp,
   orderBy,
+  limit,
   onSnapshot
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -214,14 +216,21 @@ export const cancelBooking = async (bookingDocId) => {
 // ============= QUOTES SERVICE =============
 
 /**
- * 견적 요청 생성
+ * 견적 요청 생성 (사용자 → 디자이너)
+ * - quoteRequests 컬렉션에 저장
  */
-export const createQuoteRequest = async (userId, quoteData) => {
+export const createQuoteRequest = async (userId, designerId, payload) => {
   try {
     const quotesRef = collection(db, 'quoteRequests');
     const docRef = await addDoc(quotesRef, {
       userId,
-      ...quoteData,
+      designerId,
+      dogId: payload.dogId || '',
+      dogName: payload.dogName || '',
+      breed: payload.breed || '',
+      weight: payload.weight ?? null,
+      // 견적 폼에서 넘어온 세부 옵션들
+      ...(payload.quoteData || {}),
       status: 'pending',
       createdAt: Timestamp.now()
     });
@@ -233,20 +242,156 @@ export const createQuoteRequest = async (userId, quoteData) => {
 };
 
 /**
- * 사용자의 견적 요청 조회
+ * 디자이너가 견적서 전송/수정 (디자이너 → 사용자)
+ * - quotes 컬렉션에 저장
+ * - 동일한 요청(quoteRequest)에 대해 한 번 더 보내면 update 로 동작 (수정하기)
+ */
+export const sendDesignerQuote = async (designerId, requestId, quoteRequest, payload) => {
+  try {
+    const quotesRef = collection(db, 'quotes');
+
+    // 같은 요청 + 같은 디자이너의 견적이 이미 있는지 확인 (수정 모드 지원)
+    const existingQ = query(
+      quotesRef,
+      where('designerId', '==', designerId),
+      where('requestId', '==', requestId)
+    );
+    const existingSnap = await getDocs(existingQ);
+
+    const baseData = {
+      userId: quoteRequest.userId,
+      designerId,
+      requestId,
+      dogId: quoteRequest.dogId || '',
+      dogName: quoteRequest.dogName || '',
+      breed: quoteRequest.breed || '',
+      // 견적 상세 정보
+      price: Number(payload.amount || 0),
+      message: payload.message || '',
+      // 서비스 태그: 폼에서 들어온 옵션들을 합쳐서 저장
+      services: [
+        ...(quoteRequest.groomingStyle ? [quoteRequest.groomingStyle] : []),
+        ...(Array.isArray(quoteRequest.additionalOptions) ? quoteRequest.additionalOptions : []),
+        ...(Array.isArray(quoteRequest.dogTags) ? quoteRequest.dogTags : []),
+      ],
+      // 디자이너 표시용 정보 (있으면)
+      designerName: quoteRequest.designerName || '',
+      designerImage: quoteRequest.designerImage || '',
+      // 사용자 페이지에서 날짜 표시용 숫자 타임스탬프
+      timestamp: Date.now(),
+      status: 'sent',
+    };
+
+    let quoteId;
+
+    if (!existingSnap.empty) {
+      // 이미 견적이 있으면 수정 모드: 금액/메시지/서비스만 업데이트
+      const docSnap = existingSnap.docs[0];
+      const quoteRef = doc(db, 'quotes', docSnap.id);
+      await updateDoc(quoteRef, {
+        price: baseData.price,
+        message: baseData.message,
+        services: baseData.services,
+        timestamp: baseData.timestamp,
+        status: baseData.status,
+        updatedAt: Timestamp.now(),
+      });
+      quoteId = docSnap.id;
+    } else {
+      // 최초 전송: 새 문서 생성
+      const docRef = await addDoc(quotesRef, {
+        ...baseData,
+        createdAt: Timestamp.now(),
+      });
+      quoteId = docRef.id;
+    }
+
+    // 관련 quoteRequest 상태도 갱신 (디자이너가 답변 보냄)
+    try {
+      const requestRef = doc(db, 'quoteRequests', requestId);
+      await updateDoc(requestRef, {
+        status: 'responded',
+        lastQuotedAt: Timestamp.now(),
+        lastQuoteId: quoteId,
+      });
+    } catch (e) {
+      console.warn('quoteRequest 상태 업데이트 실패 (무시 가능):', e);
+    }
+
+    return { success: true, quoteId };
+  } catch (error) {
+    console.error('견적 전송/수정 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 사용자가 받은 최종 견적 조회 (디자이너 → 사용자)
+ * - quotes 컬렉션 기준
  */
 export const getUserQuotes = async (userId) => {
   try {
-    const quotesRef = collection(db, 'quoteRequests');
+    const quotesRef = collection(db, 'quotes');
     const q = query(quotesRef, where('userId', '==', userId));
     const quotesSnap = await getDocs(q);
     const quotes = [];
     quotesSnap.forEach((doc) => {
       quotes.push({ ...doc.data(), id: doc.id });
     });
-    return quotes;
+    // 최신순 정렬 (timestamp 숫자 기반)
+    return quotes.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   } catch (error) {
     console.error('견적 조회 오류:', error);
+    throw error;
+  }
+};
+
+// ============= SEARCH HISTORY SERVICE =============
+
+/**
+ * 최근 검색어 저장 (users/{userId}/searchHistory)
+ */
+export const addRecentSearch = async (userId, keyword) => {
+  try {
+    const historyRef = collection(db, `users/${userId}/searchHistory`);
+    await addDoc(historyRef, {
+      keyword,
+      createdAt: Timestamp.now(),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('최근 검색어 저장 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 최근 검색어 조회 (최신순, 기본 5개)
+ */
+export const getRecentSearches = async (userId, limitCount = 5) => {
+  try {
+    const historyRef = collection(db, `users/${userId}/searchHistory`);
+    const q = query(historyRef, orderBy('createdAt', 'desc'), limit(limitCount));
+    const snap = await getDocs(q);
+    const items = [];
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.keyword) {
+        items.push(data.keyword);
+      }
+    });
+    // 중복 제거 유지 (최근 순서)
+    const seen = new Set();
+    const unique = [];
+    for (const k of items) {
+      if (!seen.has(k)) {
+        seen.add(k);
+        unique.push(k);
+      }
+    }
+    return unique;
+  } catch (error) {
+    console.error('최근 검색어 조회 오류:', error);
     throw error;
   }
 };
@@ -328,6 +473,57 @@ export const getChatMessages = async (chatRoomId) => {
   }
 };
 
+/**
+ * 채팅방 생성 또는 조회 (사용자 ↔ 디자이너 1:1)
+ */
+export const createOrGetChatRoom = async (userId, designerId, meta = {}) => {
+  try {
+    const roomsRef = collection(db, 'chatRooms');
+
+    // 동일한 사용자-디자이너 조합의 채팅방이 이미 있으면 재사용
+    const q = query(
+      roomsRef,
+      where('userId', '==', userId),
+      where('designerId', '==', designerId)
+    );
+    const snap = await getDocs(q);
+
+    if (!snap.empty) {
+      const existing = snap.docs[0];
+      return { id: existing.id, ...existing.data() };
+    }
+
+    const now = Timestamp.now();
+    const docRef = await addDoc(roomsRef, {
+      userId,
+      designerId,
+      designerName: meta.designerName || '',
+      designerAvatar: meta.designerAvatar || '',
+      status: 'pending',
+      lastMessage: '',
+      lastMessageTime: '',
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return {
+      id: docRef.id,
+      userId,
+      designerId,
+      designerName: meta.designerName || '',
+      designerAvatar: meta.designerAvatar || '',
+      status: 'pending',
+      lastMessage: '',
+      lastMessageTime: '',
+      createdAt: now,
+      updatedAt: now,
+    };
+  } catch (error) {
+    console.error('채팅방 생성/조회 오류:', error);
+    throw error;
+  }
+};
+
 // ============= FAVORITES SERVICE =============
 
 /**
@@ -395,6 +591,38 @@ export const getAllDesigners = async () => {
     return designers;
   } catch (error) {
     console.error('디자이너 조회 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 디자이너 공개 프로필 동기화
+ * - 디자이너가 마이페이지/포트폴리오에서 정보를 등록하면,
+ *   사용자용 검색/리스트에서 볼 수 있도록 designers 컬렉션에 반영
+ */
+export const upsertDesignerPublicProfile = async (designerId, data) => {
+  try {
+    const designerRef = doc(db, 'designers', designerId);
+    const payload = {
+      name: data.name || '',
+      location: data.location || '',
+      image: data.photoURL || '',
+      bio: data.bio || '',
+      portfolioIntro: data.portfolioIntro || '',
+      announcements: data.announcements || '',
+      paymentInfo: data.paymentInfo || '',
+      supportInfo: data.supportInfo || '',
+      // 기본값: 아직 없으면 0으로 시작
+      rating: data.rating ?? 0,
+      reviews: data.reviews ?? 0,
+      priceMin: data.priceMin ?? 0,
+      priceMax: data.priceMax ?? 0,
+      updatedAt: Timestamp.now(),
+    };
+    await setDoc(designerRef, payload, { merge: true });
+    return { success: true };
+  } catch (error) {
+    console.error('디자이너 공개 프로필 동기화 오류:', error);
     throw error;
   }
 };
@@ -509,6 +737,37 @@ export const uploadReviewImage = async (userId, reviewId, imageFile) => {
   }
 };
 
+/**
+ * 디자이너 프로필 이미지 업로드 (선택 사항)
+ * @param {string} designerId - 디자이너 사용자 ID
+ * @param {File} imageFile - 업로드할 이미지 파일
+ * @returns {Promise<{success: boolean, url: string, fileName: string}>}
+ */
+export const uploadDesignerProfileImage = async (designerId, imageFile) => {
+  try {
+    if (!imageFile.type.startsWith('image/')) {
+      throw new Error('이미지 파일만 업로드 가능합니다');
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (imageFile.size > maxSize) {
+      throw new Error('파일 크기는 5MB 이하여야 합니다');
+    }
+
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${imageFile.name}`;
+    const storageRef = ref(storage, `designers/${designerId}/profile/${fileName}`);
+
+    const snapshot = await uploadBytes(storageRef, imageFile);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    return { success: true, url: downloadURL, fileName };
+  } catch (error) {
+    console.error('디자이너 프로필 이미지 업로드 오류:', error);
+    throw error;
+  }
+};
+
 // 기본 export 객체 (모든 서비스 함수 포함)
 export default {
   // Users
@@ -527,12 +786,15 @@ export default {
   // Quotes
   createQuoteRequest,
   getUserQuotes,
+  addRecentSearch,
+  getRecentSearches,
   // Reviews
   createReview,
   getDesignerReviews,
   // Messages
   sendMessage,
   getChatMessages,
+  createOrGetChatRoom,
   // Favorites
   addFavorite,
   removeFavorite,

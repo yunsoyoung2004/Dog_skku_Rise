@@ -6,70 +6,6 @@ import { getAllDesigners, addFavorite, removeFavorite, getUserFavorites } from '
 import PageLayout from './PageLayout';
 import './DesignerListPage.css';
 
-// 임시 데이터
-const TEMP_DESIGNERS = [
-  {
-    id: '1',
-    name: '찰리 미용실',
-    rating: 4.8,
-    reviews: 24,
-    priceMin: '50000',
-    priceMax: '80000',
-    image: '🐕',
-    location: '강남구 역삼동',
-  },
-  {
-    id: '2',
-    name: '폼폼 그루밍',
-    rating: 4.6,
-    reviews: 18,
-    priceMin: '45000',
-    priceMax: '75000',
-    image: '🐕',
-    location: '강남구 삼성동',
-  },
-  {
-    id: '3',
-    name: '뽀송이 살롱',
-    rating: 4.9,
-    reviews: 32,
-    priceMin: '55000',
-    priceMax: '85000',
-    image: '🐕',
-    location: '강남구 강남동',
-  },
-  {
-    id: '4',
-    name: '깨끗한 미용실',
-    rating: 4.7,
-    reviews: 21,
-    priceMin: '48000',
-    priceMax: '78000',
-    image: '🐕',
-    location: '강남구 논현동',
-  },
-  {
-    id: '5',
-    name: '프리미엄 그루밍',
-    rating: 5.0,
-    reviews: 15,
-    priceMin: '60000',
-    priceMax: '100000',
-    image: '🐕',
-    location: '강남구 청담동',
-  },
-  {
-    id: '6',
-    name: '행복한 미용실',
-    rating: 4.5,
-    reviews: 16,
-    priceMin: '40000',
-    priceMax: '70000',
-    image: '🐕',
-    location: '강남구 역삼동',
-  },
-];
-
 export default function DesignerListPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -91,17 +27,17 @@ export default function DesignerListPage() {
   const loadDesigners = async () => {
     setLoading(true);
     try {
-      // 임시: 샘플 데이터 사용
-      setDesigners(TEMP_DESIGNERS);
+      const allDesigners = await getAllDesigners();
+      setDesigners(allDesigners);
 
       const searchParams = new URLSearchParams(location.search);
       const mode = searchParams.get('mode') || 'all';
       const district = searchParams.get('district') || '';
 
-      let baseList = [...TEMP_DESIGNERS];
+      let baseList = [...allDesigners];
 
       if (mode === 'region' && district) {
-        baseList = baseList.filter((d) => d.location?.includes(district));
+        baseList = baseList.filter((d) => (d.location || '').includes(district));
       } else if (mode === 'custom') {
         // 맞춤별: 평점 높은 순으로 상위 3개 추천
         baseList.sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -109,11 +45,6 @@ export default function DesignerListPage() {
       }
 
       setFilteredDesigners(baseList);
-      
-      // 나중에 Firebase 적용:
-      // const allDesigners = await getAllDesigners();
-      // setDesigners(allDesigners);
-      // setFilteredDesigners(allDesigners);
     } catch (err) {
       console.error('디자이너 목록 로드 실패:', err);
       setError('디자이너 목록을 불러올 수 없습니다.');
@@ -239,7 +170,7 @@ export default function DesignerListPage() {
               ))
             ) : (
               <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-                디자이너가 없습니다.
+                🔒 현재 등록된 디자이너가 없습니다.
               </div>
             )}
           </div>

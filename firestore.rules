@@ -7,11 +7,21 @@ service cloud.firestore {
     // ==================== USER RULES ====================
     // 사용자는 자신의 데이터만 읽기/쓰기 가능
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
-      
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
       // 강아지 데이터 (서브컬렉션)
       match /dogs/{dogId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // 즐겨찾기 (users/{userId}/favorites)
+      match /favorites/{favoriteId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // 최근 검색어 (users/{userId}/searchHistory)
+      match /searchHistory/{searchId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
 
@@ -32,13 +42,43 @@ service cloud.firestore {
     }
 
     // ==================== QUOTE RULES ====================
-    // 견적 요청은 요청자와 디자이너만 접근 가능
+    // 견적 요청 (사용자 → 디자이너)
+    match /quoteRequests/{requestId} {
+      // 요청자와 디자이너만 읽기 가능
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.designerId);
+
+      // 생성: 로그인한 사용자가 자신의 userId 로 요청할 때만
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.userId;
+
+      // 수정: 해당 디자이너만 (예: 상태 변경 등)
+      allow update: if request.auth != null &&
+        request.auth.uid == resource.data.designerId;
+
+      // 삭제: 요청자만
+      allow delete: if request.auth != null &&
+        request.auth.uid == resource.data.userId;
+    }
+
+    // 최종 견적 (디자이너 → 사용자)
     match /quotes/{quoteId} {
-      allow read: if request.auth.uid == resource.data.userId || 
-                     request.auth.uid == resource.data.designerId;
-      allow create: if request.auth.uid == request.resource.data.userId;
-      allow update: if request.auth.uid == resource.data.designerId;
-      allow delete: if request.auth.uid == resource.data.userId;
+      // 견적서는 사용자와 디자이너만 읽기 가능
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.designerId);
+
+      // 생성/수정: 해당 디자이너만 가능
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.designerId;
+
+      allow update: if request.auth != null &&
+        request.auth.uid == resource.data.designerId;
+
+      // 삭제: 사용자만 (원하면 수정 가능)
+      allow delete: if request.auth != null &&
+        request.auth.uid == resource.data.userId;
     }
 
     // ==================== REVIEW RULES ====================
@@ -50,14 +90,33 @@ service cloud.firestore {
     }
 
     // ==================== MESSAGE RULES ====================
-    // 채팅 메시지는 해당 채팅방 참여자만 접근 가능
+    // 채팅방 및 메시지: 참여한 사용자/디자이너만 생성/읽기
     match /chatRooms/{chatRoomId} {
-      allow read: if true;
-      
+      // 방 읽기: 참여자만
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.designerId);
+
+      // 방 생성: userId 또는 designerId 중 본인일 때
+      allow create: if request.auth != null &&
+        (request.auth.uid == request.resource.data.userId ||
+         request.auth.uid == request.resource.data.designerId);
+
+      // 방 업데이트: 참여자만
+      allow update: if request.auth != null &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.designerId);
+
       match /messages/{messageId} {
-        allow read: if true;
-        allow create: if request.auth.uid == request.resource.data.userId;
-        allow update, delete: if request.auth.uid == resource.data.userId;
+        // 메시지 읽기: 임시로 로그인 사용자면 허용 (필요시 참여자 체크로 강화 가능)
+        allow read: if request.auth != null;
+
+        // 메시지 생성: 현재 로그인한 사용자가 senderId 인 경우만
+        allow create: if request.auth != null &&
+          request.auth.uid == request.resource.data.senderId;
+
+        // 메시지 수정/삭제는 금지 (필요시 별도 정책 추가)
+        allow update, delete: if false;
       }
     }
 
@@ -68,13 +127,6 @@ service cloud.firestore {
       allow create: if true; // 시스템이 생성
       allow update: if request.auth.uid == resource.data.userId;
       allow delete: if request.auth.uid == resource.data.userId;
-    }
-
-    // ==================== FAVORITES RULES ====================
-    // 즐겨찾기는 해당 사용자만 접근 가능
-    match /favorites/{favoriteId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
     }
 
     // ==================== DEFAULT DENY ====================

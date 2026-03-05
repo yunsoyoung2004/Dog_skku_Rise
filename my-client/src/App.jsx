@@ -46,6 +46,8 @@ import DesignerSchedulePage from './DesignerSchedulePage'
 import DesignerQuoteCheckPage from './DesignerQuoteCheckPage'
 import DesignerChatConversationPage from './DesignerChatConversationPage'
 import DesignerSendQuotePage from './DesignerSendQuotePage'
+import DesignerAnnouncementsPage from './DesignerAnnouncementsPage'
+import DesignerSupportPage from './DesignerSupportPage'
 import './App.css'
 
 function App() {
@@ -102,6 +104,8 @@ function App() {
         <Route path="/designer-analytics" element={<DesignerAnalyticsPage />} />
         <Route path="/designer-profile" element={<DesignerProfilePage />} />
         <Route path="/designer-schedule" element={<DesignerSchedulePage />} />
+        <Route path="/designer-announcements" element={<DesignerAnnouncementsPage />} />
+        <Route path="/designer-support" element={<DesignerSupportPage />} />
       </Routes>
     </Router>
     </div>

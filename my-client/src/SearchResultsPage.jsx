@@ -1,8 +1,7 @@
 import './SearchResultsPage.css';
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { collection, query, getDocs } from 'firebase/firestore';
-import { db } from './firebase';
+import { getAllDesigners } from './services';
 
 export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
@@ -11,85 +10,49 @@ export default function SearchResultsPage() {
 
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasDesigners, setHasDesigners] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [activeTab, setActiveTab] = useState('grooming'); // grooming, style
 
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
+      setLoadError('');
       try {
-        // 데모 데이터로 먼저 시작
-        const demoData = [
-          {
-            id: 'demo1',
-            name: '부드러운 손 미용실',
-            location: '서울 강남구',
-            rating: 4.8,
-            reviewCount: 156,
-            styles: ['곰돌이 컷', '예민견 전문', '노령견 관리']
-          },
-          {
-            id: 'demo2',
-            name: '푸들 전문점',
-            location: '서울 강북구',
-            rating: 4.6,
-            reviewCount: 89,
-            styles: ['푸들', '고급 미용', '색상 염색']
-          },
-          {
-            id: 'demo3',
-            name: '애완동물 미용 센터',
-            location: '경기도 수원',
-            rating: 4.5,
-            reviewCount: 234,
-            styles: ['노령견 전문', '예민견 관리', '일반 미용']
-          }
-        ];
-
+        const allDesigners = await getAllDesigners();
         const lowerQuery = searchQuery.toLowerCase();
-        const filtered = demoData.filter(item => 
-          item.name.toLowerCase().includes(lowerQuery) ||
-          item.styles.some(style => style.toLowerCase().includes(lowerQuery))
-        );
-        
-        setResults(filtered.length > 0 ? filtered : demoData);
 
-        // Firebase 데이터 시도 (선택사항)
-        try {
-          const designersQuery = query(collection(db, 'designerProfiles'));
-          const snapshot = await getDocs(designersQuery);
-          
-          const allResults = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
+        const filtered = allDesigners.filter((item) => {
+          const name = (item.name || '').toLowerCase();
+          const location = (item.location || '').toLowerCase();
+          const specialties = Array.isArray(item.styles)
+            ? item.styles
+            : Array.isArray(item.tags)
+            ? item.tags
+            : [];
 
-          if (allResults.length > 0) {
-            if (activeTab === 'grooming') {
-              const data = allResults.filter(item => {
-                const name = (item.name || '').toLowerCase();
-                const specialty = (item.specialty || '').toLowerCase();
-                return name.includes(lowerQuery) || specialty.includes(lowerQuery);
-              });
-              if (data.length > 0) {
-                setResults(data);
-              }
-            } else if (activeTab === 'style') {
-              const data = allResults.filter(item => {
-                const styles = Array.isArray(item.styles) ? item.styles : [];
-                return styles.some(style => 
-                  (style || '').toLowerCase().includes(lowerQuery)
-                );
-              });
-              if (data.length > 0) {
-                setResults(data);
-              }
-            }
+          const matchesText =
+            name.includes(lowerQuery) ||
+            location.includes(lowerQuery) ||
+            specialties.some((style) => (style || '').toLowerCase().includes(lowerQuery));
+
+          if (!matchesText) return false;
+
+          if (activeTab === 'style') {
+            return specialties.some((style) => (style || '').toLowerCase().includes(lowerQuery));
           }
-        } catch (fbError) {
-          console.log('Firebase not available, using demo data');
-        }
+
+          // grooming 탭은 텍스트 매칭만으로 충분
+          return true;
+        });
+
+        setHasDesigners(allDesigners.length > 0);
+        setResults(filtered);
       } catch (error) {
         console.error('Search error:', error);
+        setLoadError('디자이너 정보를 불러오지 못했습니다.');
+        setHasDesigners(false);
+        setResults([]);
       } finally {
         setLoading(false);
       }
@@ -101,7 +64,7 @@ export default function SearchResultsPage() {
   }, [searchQuery, activeTab]);
 
   const handleDesignerClick = (designerId) => {
-    navigate(`/designer-detail?id=${designerId}`);
+    navigate(`/designer?id=${designerId}`);
   };
 
   return (
@@ -134,6 +97,16 @@ export default function SearchResultsPage() {
       <div className="search-results-content">
         {loading ? (
           <div className="loading">검색 중...</div>
+        ) : loadError ? (
+          <div className="no-results">
+            <p>🔒 {loadError}</p>
+            <small>잠시 후 다시 시도해 주세요.</small>
+          </div>
+        ) : !hasDesigners ? (
+          <div className="no-results">
+            <p>🔒 현재 등록된 디자이너가 없습니다.</p>
+            <small>서비스 준비 중입니다.</small>
+          </div>
         ) : results.length === 0 ? (
           <div className="no-results">
             <p>"{searchQuery}"에 대한 결과가 없습니다</p>

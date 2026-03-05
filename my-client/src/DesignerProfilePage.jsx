@@ -61,23 +61,32 @@ export default function DesignerProfilePage() {
 
       <div className="designer-content designer-profile-page">
         <section className="designer-profile-hero">
-          <div className="designer-profile-photo" aria-hidden="true" />
-          <div className="designer-profile-main">
-            <p className="designer-profile-title">
-              {profile.name || user?.displayName || '김민지 디자이너'}
-            </p>
-            <p className="designer-profile-sub">강남구 역삼동</p>
-            <p className="designer-profile-desc">
-              {profile.bio || '우리 아이가 가장 편한 공간은 집이라는 말, 디자이너 김민지가 실현하고 있어요.'}
-            </p>
-
-            <div className="designer-profile-tags">
-              <button type="button" className="profile-tag">예약만 진행</button>
-              <button type="button" className="profile-tag">낮공개 가능</button>
-              <button type="button" className="profile-tag">퇴근</button>
-              <button type="button" className="profile-tag">소통 친화</button>
-            </div>
+          <div className="designer-profile-photo" aria-hidden="true">
+            {profile.photoURL && (
+              <img
+                src={profile.photoURL}
+                alt="디자이너 프로필"
+                className="designer-profile-photo-img"
+              />
+            )}
           </div>
+          <button
+            type="button"
+            className="designer-profile-main"
+            onClick={() => navigate('/designer-portfolio')}
+          >
+            <p className="designer-profile-title">
+              {profile.name || user?.displayName || '이름을 설정해 주세요'}
+            </p>
+            <p className="designer-profile-sub">
+              {profile.location || '위치를 설정해 주세요'}
+            </p>
+            <p className="designer-profile-desc">
+              {profile.bio || '소개를 작성해 주세요.'}
+            </p>
+          </button>
+
+            {/* 태그 영역은 추후 실제 설정 데이터가 생기면 노출 */}
         </section>
 
         <section className="designer-profile-menu">
@@ -88,13 +97,18 @@ export default function DesignerProfilePage() {
           >
             포트폴리오 수정하기
           </button>
-          <button type="button" className="profile-menu-item">
+          <button
+            type="button"
+            className="profile-menu-item"
+            onClick={() => navigate('/designer-announcements')}
+          >
             공지사항 및 이벤트
           </button>
-          <button type="button" className="profile-menu-item">
-            결제수단
-          </button>
-          <button type="button" className="profile-menu-item">
+          <button
+            type="button"
+            className="profile-menu-item"
+            onClick={() => navigate('/designer-support')}
+          >
             고객센터
           </button>
         </section>

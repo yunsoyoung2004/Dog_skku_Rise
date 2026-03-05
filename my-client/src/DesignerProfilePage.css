@@ -19,11 +19,23 @@
   background: #e5e7eb;
 }
 
+.designer-profile-photo-img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
 .designer-profile-main {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
 }
 
 .designer-profile-title {
@@ -87,11 +99,12 @@
   margin: 24px auto 0;
   padding: 12px;
   border-radius: 999px;
-  border: 1px solid #f44336;
-  background: #ffffff;
-  color: #f44336;
+  border: none;
+  background: #f44336;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   text-align: center;
+  display: block;
 }

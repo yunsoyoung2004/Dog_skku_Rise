@@ -1,51 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { auth, db } from './firebase';
 import './DesignerPageNav.css';
 import './DesignerQuoteCheckPage.css';
 
-const dogImg1 = "https://www.figma.com/api/mcp/asset/c7a241f3-8019-4aed-a7b9-1c4d8d932ea9";
-const dogImg2 = "https://www.figma.com/api/mcp/asset/b61b5a9c-dc45-4c44-82d4-ca7bc33c52fb";
-
 export default function DesignerQuoteCheckPage() {
   const navigate = useNavigate();
+  const [user] = useAuthState(auth);
   const [filter, setFilter] = useState('all');
+  const [quotes, setQuotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const quoteCards = [
-    {
-      id: 1,
-      title: '초코 | 푸들 | 5KG | 15살',
-      dogMainImg: dogImg1,
-      dogSubImg: dogImg2,
-      skin: '매우 민감',
-      disease: '없음',
-      bite: '가끔 있음',
-      etc: '없음',
-      vaccine: '종합백신, 광견병, 켄넬코프, 신종인플루엔자',
-      place: '샵',
-      method: '기계컷',
-      extra: '치석 관리, 귀청소',
-      time: '2월 20일 19:00 - 21:00',
-      tags: ['푸들', '곰돌이 컷', '소형견'],
-    },
-    {
-      id: 2,
-      title: '쿠키 | 푸들 | 3KG | 1살',
-      dogMainImg: dogImg2,
-      dogSubImg: dogImg1,
-      skin: '매우 민감',
-      disease: '없음',
-      bite: '가끔 있음',
-      etc: '없음',
-      vaccine: '종합백신, 광견병, 켄넬코프, 신종인플루엔자',
-      place: '샵',
-      method: '기계컷',
-      extra: '치석 관리, 귀청소',
-      time: '2월 20일 19:00 - 21:00',
-      tags: ['푸들', '곰돌이 컷', '소형견'],
-    },
-  ];
+  useEffect(() => {
+    if (!user) {
+      navigate('/designer-login');
+      return;
+    }
 
-  const filteredCards = quoteCards; // 필터 로직은 추후 확장 가능
+    const loadQuotes = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const q = query(
+          collection(db, 'quoteRequests'),
+          where('designerId', '==', user.uid),
+          orderBy('createdAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setQuotes(list);
+      } catch (e) {
+        console.error('견적 요청 로드 실패:', e);
+        setError('견적 요청을 불러오지 못했습니다.');
+        setQuotes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadQuotes();
+  }, [user, navigate]);
+
+  const filteredCards = quotes; // 필터 로직은 추후 확장
 
   return (
     <div className="designer-page">
@@ -63,76 +62,53 @@ export default function DesignerQuoteCheckPage() {
           >
             전체
           </button>
-          <button
-            type="button"
-            className={`dq-filter-pill ${filter === 'tag' ? 'active' : ''}`}
-            onClick={() => setFilter('tag')}
-          >
-            태그순
-          </button>
-          <button
-            type="button"
-            className={`dq-filter-pill ${filter === 'price' ? 'active' : ''}`}
-            onClick={() => setFilter('price')}
-          >
-            가격순
-          </button>
-          <button
-            type="button"
-            className={`dq-filter-pill ${filter === 'location' ? 'active' : ''}`}
-            onClick={() => setFilter('location')}
-          >
-            위치순
-          </button>
         </div>
 
-        <div className="dq-card-list">
-          {filteredCards.map(card => (
-            <div key={card.id} className="dq-card">
-              <p className="dq-card-title">{card.title}</p>
+        {loading ? (
+          <div className="dq-empty">
+            <p>견적 요청을 불러오는 중입니다...</p>
+          </div>
+        ) : error ? (
+          <div className="dq-empty">
+            <p>🔒 {error}</p>
+          </div>
+        ) : filteredCards.length === 0 ? (
+          <div className="dq-empty">
+            <p>아직 도착한 견적 요청이 없습니다.</p>
+          </div>
+        ) : (
+          <div className="dq-card-list">
+            {filteredCards.map((card) => (
+              <div key={card.id} className="dq-card">
+                <p className="dq-card-title">
+                  {card.dogName || '반려견'}
+                  {card.breed ? ` | ${card.breed}` : ''}
+                  {card.weight ? ` | ${card.weight}kg` : ''}
+                </p>
 
-              <div className="dq-card-main">
-                <div className="dq-card-images">
-                  <img src={card.dogMainImg} alt={card.title} className="dq-dog-img main" />
-                  <img src={card.dogSubImg} alt="서브" className="dq-dog-img sub" />
+                <div className="dq-card-main">
+                  <div className="dq-card-text-group">
+                    <p><span className="label">미용 진행 장소:</span> {card.knowledge || '-'}</p>
+                    <p><span className="label">미용 방식:</span> {card.groomingStyle || '-'}</p>
+                    <p><span className="label">희망 일정:</span> {card.preferredDate || '-'} {card.preferredTime || ''}</p>
+                    <p><span className="label">강아지 태그:</span> {(card.dogTags || []).join(', ') || '-'}</p>
+                    <p><span className="label">추가 사항:</span> {(card.additionalOptions || []).join(', ') || '-'}</p>
+                  </div>
                 </div>
 
-                <div className="dq-card-text-group">
-                  <p><span className="label">피부 민감도:</span> {card.skin}</p>
-                  <p><span className="label">피부 질환 :</span> {card.disease}</p>
-                  <p><span className="label">입질 여부:</span> {card.bite}</p>
-                  <p><span className="label">기타 지병 및 주의사항:</span> {card.etc}</p>
-                  <p><span className="label">예방 접종:</span> {card.vaccine}</p>
+                <div className="dq-send-row">
+                  <button
+                    type="button"
+                    className="dq-send-btn"
+                    onClick={() => navigate(`/designer-quote-send/${card.id}`, { state: { quote: card } })}
+                  >
+                    견적서 보내기
+                  </button>
                 </div>
               </div>
-
-              <div className="dq-tag-row">
-                {card.tags.map(tag => (
-                  <span key={tag} className="dq-tag-pill">{tag}</span>
-                ))}
-              </div>
-
-              <div className="dq-bottom-info">
-                <div className="dq-bottom-text">
-                  <p><span className="label">미용 장소:</span> {card.place}</p>
-                  <p><span className="label">미용 방식:</span> {card.method}</p>
-                  <p><span className="label">추가 미용:</span> {card.extra}</p>
-                  <p><span className="label">미용 가능 시간:</span> {card.time}</p>
-                </div>
-              </div>
-
-              <div className="dq-send-row">
-                <button
-                  type="button"
-                  className="dq-send-btn"
-                  onClick={() => navigate(`/designer-quote-send/${card.id}`, { state: { quote: card } })}
-                >
-                  견적서 보내기
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="designer-bottom-nav">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
 import { createQuoteRequest, getUserDogs } from './services';
@@ -9,6 +9,7 @@ const logoImg = "https://www.figma.com/api/mcp/asset/d3aedc85-e031-473e-aa91-014
 
 export default function QuoteRequestPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user] = useAuthState(auth);
   const [step, setStep] = useState(0);
   const [dogs, setDogs] = useState([]);
@@ -16,6 +17,8 @@ export default function QuoteRequestPage() {
   const [selectedDogId, setSelectedDogId] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
+
+  const { designerId, designerName } = location.state || {};
 
   const [quoteData, setQuoteData] = useState({
     knowledge: '', // 미용 진행 장소 (집, 샵, 둘 다 상관 없어요)
@@ -133,12 +136,22 @@ export default function QuoteRequestPage() {
       return;
     }
 
+    if (!designerId) {
+      alert('견적서를 보낼 디자이너를 선택해 주세요.');
+      navigate('/designers');
+      return;
+    }
+
     setLoading(true);
     try {
-      await createQuoteRequest(user.uid, {
+      const selectedDog = dogs.find((d) => d.id === selectedDogId) || {};
+
+      await createQuoteRequest(user.uid, designerId, {
         dogId: selectedDogId,
+        dogName: selectedDog.name || '',
+        breed: selectedDog.breed || '',
+        weight: selectedDog.weight,
         quoteData: quoteData,
-        photo: photoFile
       });
       setStep(7); // 완료 단계로
     } catch (err) {
@@ -166,6 +179,12 @@ export default function QuoteRequestPage() {
           <img src={logoImg} alt="멍빗어" className="logo-img" />
           <span className="logo-text">멍빗어</span>
         </div>
+        {designerName && (
+          <div className="quote-request-designer-label">
+            <span className="label">보낼 디자이너:</span>
+            <span className="name">{designerName}</span>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}

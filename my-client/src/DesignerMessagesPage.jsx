@@ -1,35 +1,43 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from './firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { auth, db } from './firebase';
 import './DesignerPageNav.css';
 import './DesignerMessagesPage.css';
-
-const INITIAL_MESSAGES = [
-  {
-    id: 'room_1',
-    title: '땅콩 (푸들 | 5KG)',
-    lastMessage: '안녕하세요,멍멍뷰티입니다 !',
-    time: '3분 전',
-  },
-  {
-    id: 'room_2',
-    title: '초코 (푸들 | 3KG)',
-    lastMessage: '넵 감사합니다, 다음에 또 이용해주세요 :)',
-    time: '2일 전',
-  },
-];
 
 export default function DesignerMessagesPage() {
   const navigate = useNavigate();
   const [user] = useAuthState(auth);
   const [filter, setFilter] = useState('all');
-  const [messages] = useState(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       navigate('/designer-login');
+      return;
     }
+
+    const loadRooms = async () => {
+      try {
+        setLoading(true);
+        const q = query(
+          collection(db, 'chatRooms'),
+          where('designerId', '==', user.uid)
+        );
+        const snap = await getDocs(q);
+        const rooms = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setMessages(rooms);
+      } catch (err) {
+        console.error('채팅방 로드 실패:', err);
+        setMessages([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRooms();
   }, [user, navigate]);
 
   return (
@@ -63,11 +71,15 @@ export default function DesignerMessagesPage() {
             매칭 완료
           </button>
         </div>
-
-        {messages.length === 0 ? (
+        {loading ? (
+          <div className="empty-messages">
+            <div className="empty-messages-icon">⌛</div>
+            <p className="empty-messages-text">채팅을 불러오는 중입니다...</p>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="empty-messages">
             <div className="empty-messages-icon">💬</div>
-            <p className="empty-messages-text">메시지가 없습니다</p>
+            <p className="empty-messages-text">채팅이 없습니다</p>
           </div>
         ) : (
           <div className="dm-list">
@@ -80,10 +92,10 @@ export default function DesignerMessagesPage() {
                 <div className="message-avatar">🐶</div>
                 <div className="message-content">
                   <div className="message-top-row">
-                    <p className="message-name">{msg.title}</p>
-                    <span className="message-time">{msg.time}</span>
+                    <p className="message-name">{msg.title || msg.roomName || '채팅방'}</p>
+                    <span className="message-time">{msg.lastMessageTime || ''}</span>
                   </div>
-                  <p className="message-preview">{msg.lastMessage}</p>
+                  <p className="message-preview">{msg.lastMessage || '최근 메시지가 없습니다'}</p>
                 </div>
               </div>
             ))}

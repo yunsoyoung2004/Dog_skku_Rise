@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyFirebaseToken } = require("./authMiddleware");
 const app = express();
 
 // Middleware
@@ -204,6 +205,19 @@ app.get("/api/user", (req, res) => {
       message: "사용자 정보 조회 중 오류가 발생했습니다."
     });
   }
+});
+
+// ============================================
+// Firebase Auth 연동 테스트 API
+// (프론트에서 Firebase 로그인 후 발급받은 idToken으로 호출)
+// ============================================
+app.get("/api/me", verifyFirebaseToken, (req, res) => {
+  const { uid, email } = req.user;
+  res.json({
+    success: true,
+    uid,
+    email: email || null,
+  });
 });
 
 // Error handling

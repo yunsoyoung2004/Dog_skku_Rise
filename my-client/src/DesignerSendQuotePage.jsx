@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from './firebase';
+import { sendDesignerQuote } from './services';
 import './DesignerPageNav.css';
 import './DesignerSendQuotePage.css';
 
@@ -9,16 +12,34 @@ export default function DesignerSendQuotePage() {
   const location = useLocation();
   const quote = location.state?.quote || {};
 
+  const [user] = useAuthState(auth);
+
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // 여기서는 실제 전송 대신 UI 상의 성공 상태만 처리합니다.
-    setSent(true);
-    // 필요하면 일정 시간 후 목록으로 이동하도록 할 수 있습니다.
-    // setTimeout(() => navigate('/designer-quotes'), 1200);
+
+    if (!user) {
+      navigate('/designer-login');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await sendDesignerQuote(user.uid, quoteId, quote, {
+        amount,
+        message,
+      });
+      setSent(true);
+    } catch (error) {
+      console.error('견적 전송/수정 실패:', error);
+      alert('견적을 전송하는 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -71,9 +92,9 @@ export default function DesignerSendQuotePage() {
           <button
             type="submit"
             className="send-quote-submit"
-            disabled={sent}
+            disabled={sent || submitting}
           >
-            {sent ? '전송 완료' : '견적서 보내기'}
+            {sent ? '전송 완료' : submitting ? '전송 중...' : '견적서 보내기'}
           </button>
         </form>
       </div>
