@@ -31,6 +31,7 @@ import DesignerReviewsPage from './DesignerReviewsPage'
 import PaymentPage from './PaymentPage'
 import BookingConfirmationPage from './BookingConfirmationPage'
 import DogEditPage from './DogEditPage'
+import DogGroomEditPage from './DogGroomEditPage'
 import LocationSelectPage from './LocationSelectPage'
 import QuoteDetailPage from './QuoteDetailPage'
 // Designer Pages
@@ -88,6 +89,7 @@ function App() {
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
         <Route path="/dog-edit" element={<DogEditPage />} />
+        <Route path="/dog-groom-edit" element={<DogGroomEditPage />} />
         <Route path="/location-select" element={<LocationSelectPage />} />
         <Route path="/quote-detail" element={<QuoteDetailPage />} />
 

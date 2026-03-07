@@ -88,6 +88,103 @@
   line-height: 1.4;
 }
 
+.quote-summary-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.quote-summary-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.quote-summary-label {
+  font-size: 13px;
+  color: #888;
+}
+
+.quote-summary-price {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+}
+
+.quote-summary-message {
+  margin: 6px 0 8px;
+  font-size: 13px;
+  color: #444;
+  line-height: 1.4;
+}
+
+.quote-summary-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.quote-summary-status {
+  font-size: 12px;
+  color: #777;
+}
+
+.quote-footer-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.quote-send-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  color: #222;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.quote-send-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #222;
+}
+
+.quote-send-btn:active {
+  background-color: #efefef;
+}
+
+.quote-confirm-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg, #ff7f50, #ff4b8b);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.quote-confirm-btn:hover {
+  opacity: 0.9;
+}
+
+.quote-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* Messages Area */
 .messages-area {
   flex: 1;

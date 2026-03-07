@@ -2,14 +2,14 @@
 .quote-request-page {
   width: 100%;
   max-width: 393px;
-  min-height: 100vh;
+  height: 100vh;
   margin: 0 auto;
   background-color: white;
   font-family: 'Paperlogy', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #222;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .quote-request-page * {
@@ -18,14 +18,16 @@
 
 .quote-request-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 16px 24px;
+  padding: 12px 16px;
   background-color: white;
   border-bottom: 1px solid #e0e0e0;
+  height: 56px;
   position: sticky;
   top: 0;
   z-index: 100;
+  flex-shrink: 0;
 }
 
 .quote-request-logo {
@@ -35,15 +37,35 @@
 }
 
 .logo-img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .logo-text {
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #222;
+  margin: 0;
+}
+
+.quote-request-designer-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.quote-request-designer-label .label {
+  font-weight: 400;
+  letter-spacing: 0.84px;
+  color: #999;
+}
+
+.quote-request-designer-label .name {
+  font-weight: 600;
+  color: #222;
 }
 
 .quote-request-content {

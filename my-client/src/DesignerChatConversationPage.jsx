@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { getChatMessages, sendMessage } from './services';
+import { getChatMessages, sendMessage, getDesignerQuoteRequests } from './services';
 import './DesignerPageNav.css';
 import './DesignerChatConversationPage.css';
 
@@ -16,9 +16,34 @@ export default function DesignerChatConversationPage() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [latestQuoteRequest, setLatestQuoteRequest] = useState(null);
+  const [quoteRequestLoading, setQuoteRequestLoading] = useState(true);
+  const [quoteError, setQuoteError] = useState('');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
+    const loadQuoteRequests = async (currentUser, userId) => {
+      if (!currentUser || !userId) {
+        setLatestQuoteRequest(null);
+        setQuoteRequestLoading(false);
+        return;
+      }
+
+      try {
+        setQuoteRequestLoading(true);
+        setQuoteError('');
+        const allRequests = await getDesignerQuoteRequests(currentUser.uid);
+        const filtered = allRequests.filter((q) => q.userId === userId);
+        setLatestQuoteRequest(filtered.length > 0 ? filtered[0] : null);
+      } catch (e) {
+        console.error('채팅용 견적 요청 로드 실패:', e);
+        setLatestQuoteRequest(null);
+        setQuoteError('견적 요청 정보를 불러오지 못했습니다.');
+      } finally {
+        setQuoteRequestLoading(false);
+      }
+    };
+
     const loadConversation = async () => {
       if (!roomId) return;
       if (!user) {
@@ -51,11 +76,15 @@ export default function DesignerChatConversationPage() {
         setRoom(roomData);
         const msgs = await getChatMessages(roomId);
         setMessages(msgs);
+
+        await loadQuoteRequests(user, roomData.userId);
       } catch (e) {
         console.error('채팅 로드 실패:', e);
         setRoom(null);
         setMessages([]);
         setError('채팅을 불러오지 못했습니다.');
+        setLatestQuoteRequest(null);
+        setQuoteRequestLoading(false);
       } finally {
         setLoading(false);
       }
@@ -93,6 +122,20 @@ export default function DesignerChatConversationPage() {
     });
   };
 
+  const handleSendQuote = () => {
+    if (!room || !room.userId || !latestQuoteRequest) {
+      alert('견적 요청 정보를 찾을 수 없습니다.');
+      return;
+    }
+    navigate('/designer-send-quote', {
+      state: {
+        userId: room.userId,
+        userName: room.userName || '고객',
+        quoteRequest: latestQuoteRequest,
+      },
+    });
+  };
+
   if (loading) {
     return (
       <div className="designer-page">
@@ -125,12 +168,60 @@ export default function DesignerChatConversationPage() {
     <div className="designer-page">
       <div className="designer-page-header">
         <button onClick={() => navigate(-1)}>←</button>
-        <h1>{room.roomName || room.title || '채팅'}</h1>
+        <h1>{room.userName || room.roomName || room.title || '채팅'}</h1>
         <button className="dc-menu-btn">⋮</button>
       </div>
 
       <div className="designer-content dc-content">
-        <div className="dc-bubbles">
+        {/* Quote Request Card (디자이너 입장) */}
+        {quoteRequestLoading ? (
+          <div className="quote-request-card">
+            <p className="quote-request-text">견적 요청 정보를 불러오는 중입니다...</p>
+          </div>
+        ) : (
+          <div className="quote-request-card">
+            {latestQuoteRequest ? (
+              <>
+                <div className="quote-request-main">
+                  <span className="quote-request-label">견적 요청</span>
+                  <span className="quote-request-dog">
+                    {latestQuoteRequest.dogName || '견종 미지정'}
+                  </span>
+                </div>
+                {latestQuoteRequest.notes && (
+                  <p className="quote-request-message">{latestQuoteRequest.notes}</p>
+                )}
+                {latestQuoteRequest.groomingStyle && (
+                  <div className="quote-request-tags">
+                    <span className="tag">{latestQuoteRequest.groomingStyle}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="quote-request-text">
+                사용자가 견적 요청을 하지 않았습니다.
+              </p>
+            )}
+
+            {quoteError && !latestQuoteRequest && (
+              <p className="quote-request-text">{quoteError}</p>
+            )}
+
+            <div className="quote-request-footer">
+              {latestQuoteRequest && (
+                <button
+                  type="button"
+                  className="quote-send-btn"
+                  onClick={handleSendQuote}
+                >
+                  견적 보내기
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+          <div className="dc-bubbles">
           {messages.length === 0 ? (
             <div className="dc-empty">아직 메시지가 없습니다. 첫 메시지를 보내보세요.</div>
           ) : (
@@ -161,6 +252,7 @@ export default function DesignerChatConversationPage() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Input */}
         <div className="dc-input-row">
           <input
             type="text"

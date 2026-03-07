@@ -25,10 +25,10 @@ export default function QuoteDetailPage() {
 
     setLoading(true);
     try {
-      const userQuotes = await getUserQuotes(user.uid);
-      setQuotes(userQuotes);
-      if (userQuotes.length > 0) {
-        setSelectedDog(userQuotes[0].dogName);
+      const receivedQuotes = await getUserQuotes(user.uid);
+      setQuotes(receivedQuotes);
+      if (receivedQuotes.length > 0) {
+        setSelectedDog(receivedQuotes[0].dogName);
       } else {
         setError('아직 받은 견적이 없습니다');
       }
@@ -45,7 +45,7 @@ export default function QuoteDetailPage() {
       {/* Header */}
       <div className="quote-detail-header">
         <button className="quote-detail-back-btn" onClick={() => navigate(-1)}>←</button>
-        <h1>견적 조회</h1>
+        <h1>받은 견적</h1>
         <div style={{ width: '24px' }}></div>
       </div>
 
@@ -74,43 +74,71 @@ export default function QuoteDetailPage() {
               </div>
             )}
 
-            {/* Quotes List */}
+            {/* Sent Quote Requests List */}
             <div className="quotes-list">
               {quotes.length > 0 ? (
                 quotes.map((quote) => (
                   <div key={quote.id} className="quote-card">
                     <div className="quote-header">
                       <div className="quote-designer">
-                        <span className="quote-designer-avatar">{quote.designerImage || '👤'}</span>
+                        <span className="quote-designer-avatar">👤</span>
                         <div className="quote-designer-info">
-                          <h3>{quote.designerName}</h3>
-                          <p className="quote-date">{new Date(quote.timestamp).toLocaleDateString('ko-KR')}</p>
+                          <h3>{quote.designerName || '디자이너'}</h3>
+                          <p className="quote-date">
+                            {quote.createdAt?.toDate
+                              ? quote.createdAt.toDate().toLocaleDateString('ko-KR')
+                              : ''}
+                          </p>
                         </div>
                       </div>
                       <div className="quote-price">
-                        <span className="price-value">{quote.price.toLocaleString()}원</span>
+                        <span className="price-value status-pill">
+                          {quote.status === 'responded' ? '응답 완료' : '대기 중'}
+                        </span>
                       </div>
                     </div>
 
-                    <p className="quote-message">{quote.message}</p>
+                    <p className="quote-message">{quote.notes || '요청 상세 정보가 없습니다.'}</p>
 
                     <div className="quote-services">
-                      <h4>서비스 내용</h4>
+                      <h4>요청한 서비스 / 옵션</h4>
                       <div className="services-list">
-                        {quote.services && quote.services.map((service, idx) => (
-                          <span key={idx} className="service-tag">
-                            {service}
-                          </span>
-                        ))}
+                        {quote.groomingStyle && (
+                          <span className="service-tag">{quote.groomingStyle}</span>
+                        )}
+                        {Array.isArray(quote.additionalGrooming) &&
+                          quote.additionalGrooming.map((g, idx) => (
+                            <span key={`g-${idx}`} className="service-tag">
+                              {g}
+                            </span>
+                          ))}
+                        {Array.isArray(quote.additionalOptions) &&
+                          quote.additionalOptions.map((opt, idx) => (
+                            <span key={`o-${idx}`} className="service-tag">
+                              {opt}
+                            </span>
+                          ))}
+                        {Array.isArray(quote.dogTags) &&
+                          quote.dogTags.map((tag, idx) => (
+                            <span key={`t-${idx}`} className="service-tag">
+                              {tag}
+                            </span>
+                          ))}
+                        {!quote.groomingStyle &&
+                          (!quote.additionalGrooming || quote.additionalGrooming.length === 0) &&
+                          (!quote.additionalOptions || quote.additionalOptions.length === 0) &&
+                          (!quote.dogTags || quote.dogTags.length === 0) && (
+                            <span className="service-tag">선택한 옵션이 없습니다</span>
+                          )}
                       </div>
                     </div>
 
                     <div className="quote-actions">
                       <button
                         className="quote-accept-btn"
-                        onClick={() => navigate('/calendar', { state: { designerId: quote.designerId } })}
+                        onClick={() => navigate('/quote-request', { state: { designerId: quote.designerId, designerName: quote.designerName, originalRequest: quote } })}
                       >
-                        이 견적으로 예약
+                        수정해서 다시 보내기
                       </button>
                       <button 
                         className="quote-contact-btn"
@@ -134,12 +162,28 @@ export default function QuoteDetailPage() {
         )}
       </div>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation (match global nav icons) */}
       <div className="quote-detail-nav">
-        <button onClick={() => navigate('/dashboard')}>🏠</button>
-        <button onClick={() => navigate('/search')}>💼</button>
-        <button onClick={() => navigate('/chat')}>💬</button>
-        <button onClick={() => navigate('/mypage')}>👤</button>
+        <button onClick={() => navigate('/dashboard')} title="대시보드">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </button>
+        <button onClick={() => navigate('/search')} title="검색">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+          </svg>
+        </button>
+        <button onClick={() => navigate('/chat')} title="채팅">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        </button>
+        <button onClick={() => navigate('/mypage')} title="마이페이지">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+          </svg>
+        </button>
       </div>
     </div>
   );

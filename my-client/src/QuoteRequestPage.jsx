@@ -5,7 +5,7 @@ import { auth } from './firebase';
 import { createQuoteRequest, getUserDogs } from './services';
 import './QuoteRequestPage.css';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/d3aedc85-e031-473e-aa91-014601f437ff";
+const logoImg = "https://www.figma.com/api/mcp/asset/1907ad64-acfb-41cd-bcbf-9299c17f709e";
 
 export default function QuoteRequestPage() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export default function QuoteRequestPage() {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
 
-  const { designerId, designerName } = location.state || {};
+  const { designerId, designerName, originalRequest } = location.state || {};
 
   const [quoteData, setQuoteData] = useState({
     knowledge: '', // 미용 진행 장소 (집, 샵, 둘 다 상관 없어요)
@@ -34,6 +34,26 @@ export default function QuoteRequestPage() {
   useEffect(() => {
     if (user) loadUserDogs();
   }, [user]);
+
+  // 수정하기로 들어온 경우, 기존 견적 데이터를 초기값으로 세팅
+  useEffect(() => {
+    if (originalRequest) {
+      setQuoteData((prev) => ({
+        ...prev,
+        knowledge: originalRequest.knowledge || '',
+        groomingStyle: originalRequest.groomingStyle || '',
+        additionalGrooming: originalRequest.additionalGrooming || [],
+        additionalOptions: originalRequest.additionalOptions || [],
+        dogTags: originalRequest.dogTags || [],
+        preferredDate: originalRequest.preferredDate || '',
+        preferredTime: originalRequest.preferredTime || '',
+        notes: originalRequest.notes || '',
+      }));
+      if (originalRequest.dogId) {
+        setSelectedDogId(originalRequest.dogId);
+      }
+    }
+  }, [originalRequest]);
 
   const loadUserDogs = async () => {
     if (!user) return;
@@ -147,6 +167,7 @@ export default function QuoteRequestPage() {
       const selectedDog = dogs.find((d) => d.id === selectedDogId) || {};
 
       await createQuoteRequest(user.uid, designerId, {
+        designerName: designerName || '',
         dogId: selectedDogId,
         dogName: selectedDog.name || '',
         breed: selectedDog.breed || '',
@@ -181,7 +202,7 @@ export default function QuoteRequestPage() {
         </div>
         {designerName && (
           <div className="quote-request-designer-label">
-            <span className="label">보낼 디자이너:</span>
+            <span className="label">→</span>
             <span className="name">{designerName}</span>
           </div>
         )}

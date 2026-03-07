@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { getChatMessages, sendMessage } from './services';
+import { getChatMessages, sendMessage, getUserQuotes, confirmLatestQuote } from './services';
 import PageLayout from './PageLayout';
 import './ChatConversationPage.css';
 
@@ -16,9 +16,35 @@ export default function ChatConversationPage() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+    const [latestQuote, setLatestQuote] = useState(null);
+    const [quoteLoading, setQuoteLoading] = useState(true);
+    const [confirming, setConfirming] = useState(false);
+    const [quoteError, setQuoteError] = useState('');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
+    const loadLatestQuote = async (currentUser, designerId) => {
+      if (!currentUser || !designerId) {
+        setLatestQuote(null);
+        setQuoteLoading(false);
+        return;
+      }
+
+      try {
+        setQuoteLoading(true);
+        setQuoteError('');
+        const allQuotes = await getUserQuotes(currentUser.uid);
+        const filtered = allQuotes.filter((q) => q.designerId === designerId);
+        setLatestQuote(filtered.length > 0 ? filtered[0] : null);
+      } catch (e) {
+        console.error('채팅용 견적 로드 실패:', e);
+        setLatestQuote(null);
+        setQuoteError('견적 정보를 불러오지 못했습니다.');
+      } finally {
+        setQuoteLoading(false);
+      }
+    };
+
     const loadConversation = async () => {
       if (!roomId) return;
       if (!user) {
@@ -44,11 +70,15 @@ export default function ChatConversationPage() {
 
         const msgs = await getChatMessages(roomId);
         setMessages(msgs);
+
+        await loadLatestQuote(user, roomData.designerId);
       } catch (err) {
         console.error('채팅 로드 실패:', err);
         setRoom(null);
         setMessages([]);
         setError('채팅을 불러오지 못했습니다.');
+        setLatestQuote(null);
+        setQuoteLoading(false);
       } finally {
         setLoading(false);
       }
@@ -84,6 +114,75 @@ export default function ChatConversationPage() {
 
     sendMessage(roomId, messageData).catch((err) => {
       console.error('메시지 전송 실패:', err);
+    });
+  };
+
+  const handleConfirmQuote = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!room || !room.designerId) {
+      alert('디자이너 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    if (!latestQuote || (latestQuote.status && latestQuote.status === 'confirmed')) {
+      alert('확정할 수 있는 견적이 없습니다.');
+      return;
+    }
+
+    try {
+      setConfirming(true);
+      const res = await confirmLatestQuote(user.uid, room.designerId);
+      if (!res.success) {
+        alert('확정할 견적을 찾을 수 없습니다.');
+        return;
+      }
+
+      setLatestQuote((prev) => (prev ? { ...prev, status: 'confirmed' } : prev));
+
+      // 채팅방 상태를 매칭 완료로 표시
+      try {
+        const roomRef = doc(db, 'chatRooms', room.id);
+        await updateDoc(roomRef, { status: 'completed' });
+        setRoom((prev) => (prev ? { ...prev, status: 'completed' } : prev));
+      } catch (e) {
+        console.warn('채팅방 상태 업데이트 실패(무시 가능):', e);
+      }
+
+      // 시스템 메시지로 기록
+      const systemMessage = {
+        senderId: user.uid,
+        senderType: 'user',
+        text: '사용자가 견적을 확정했어요.',
+      };
+      setMessages((prev) => [
+        ...prev,
+        { id: `local-confirm-${Date.now()}`, ...systemMessage },
+      ]);
+      sendMessage(roomId, systemMessage).catch((err) => {
+        console.error('확정 시스템 메시지 전송 실패:', err);
+      });
+    } catch (e) {
+      console.error('견적 확정 실패:', e);
+      alert('견적을 확정하는 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const handleSendQuote = () => {
+    if (!room || !room.designerId || !room.designerName) {
+      alert('디자이너 정보를 찾을 수 없습니다.');
+      return;
+    }
+    navigate('/quote-request', {
+      state: {
+        designerId: room.designerId,
+        designerName: room.designerName,
+        originalRequest: latestQuote || undefined,
+      },
     });
   };
 
@@ -126,7 +225,7 @@ export default function ChatConversationPage() {
     <PageLayout customHeader={customHeader}>
       <div className="chat-conversation-wrapper">
         {/* Designer Info Card */}
-        {room.summaryPrice || room.summaryTime || room.summaryDetail ? (
+        {(room.summaryPrice || room.summaryTime || room.summaryDetail) && (
           <div className="designer-info-card">
             {room.summaryPrice && (
               <div className="designer-rate">{room.summaryPrice}</div>
@@ -138,7 +237,65 @@ export default function ChatConversationPage() {
               <div className="designer-desc">{room.summaryDetail}</div>
             )}
           </div>
-        ) : null}
+        )}
+
+        {/* Quote summary & confirm button (사용자 입장 견적/예약 확정) */}
+        {quoteLoading ? (
+          <div className="quote-summary-card">
+            <p className="quote-summary-text">견적 정보를 불러오는 중입니다...</p>
+          </div>
+        ) : (
+          <div className="quote-summary-card">
+            {latestQuote ? (
+              <>
+                <div className="quote-summary-main">
+                  <span className="quote-summary-label">제안된 견적</span>
+                  <span className="quote-summary-price">
+                    {latestQuote.price ? `${latestQuote.price.toLocaleString()}원` : '금액 미정'}
+                  </span>
+                </div>
+                {latestQuote.message && (
+                  <p className="quote-summary-message">{latestQuote.message}</p>
+                )}
+              </>
+            ) : (
+              <p className="quote-summary-text">
+                아직 디자이너가 확정 가능한 견적을 보내지 않았어요.
+              </p>
+            )}
+
+            {quoteError && !latestQuote && (
+              <p className="quote-summary-text">{quoteError}</p>
+            )}
+
+            <div className="quote-summary-footer">
+              <span className="quote-summary-status">
+                {latestQuote && latestQuote.status === 'confirmed'
+                  ? '이미 확정된 견적입니다.'
+                  : '채팅 상담 후 견적/예약이 마음에 들면 아래 버튼으로 확정해 주세요.'}
+              </span>
+              <div className="quote-footer-buttons">
+                <button
+                  type="button"
+                  className="quote-send-btn"
+                  onClick={handleSendQuote}
+                >
+                  견적서 보내기
+                </button>
+                {(!latestQuote || latestQuote.status !== 'confirmed') && (
+                  <button
+                    type="button"
+                    className="quote-confirm-btn"
+                    onClick={handleConfirmQuote}
+                    disabled={confirming}
+                  >
+                    {confirming ? '확정 중...' : '예약/견적 확정하기'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Messages Area */}
         <div className="messages-area">

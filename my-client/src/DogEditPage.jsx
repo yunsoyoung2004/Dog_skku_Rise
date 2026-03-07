@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { updateDog, deleteDog } from './services';
+import { updateDog, deleteDog, getDog } from './services';
 import './DogEditPage.css';
 
 export default function DogEditPage() {
@@ -10,13 +10,11 @@ export default function DogEditPage() {
   const location = useLocation();
   const [user] = useAuthState(auth);
   const [formData, setFormData] = useState({
-    name: '우리 귀여운 강아지',
-    breed: '푸들',
-    age: 2,
-    gender: 'female',
-    weight: 4.5,
-    notes: '민감한 피부: 저자극 제품 사용\n입질 주의',
-    allergies: '닭고기'
+    name: '',
+    breed: '',
+    age: '',
+    gender: '',
+    weight: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,24 +23,38 @@ export default function DogEditPage() {
   const dogId = location.state?.dogId || 'default';
 
   useEffect(() => {
-    // 강아지 데이터 로드 (옵션)
-    // const loadDogData = async () => {
-    //   if (!user || !dogId) return;
-    //   try {
-    //     const dog = await getDog(user.uid, dogId);
-    //     setFormData(dog);
-    //   } catch (err) {
-    //     console.error('강아지 데이터 로드 실패:', err);
-    //   }
-    // };
-    // loadDogData();
+    const loadDogData = async () => {
+      if (!user || !dogId) return;
+      setLoading(true);
+      try {
+        const dog = await getDog(user.uid, dogId);
+        if (dog) {
+          setFormData({
+            name: dog.name || '',
+            breed: dog.breed || '',
+            age: dog.age ?? '',
+            gender: dog.gender || '',
+            weight: dog.weight ?? ''
+          });
+        }
+      } catch (err) {
+        console.error('강아지 데이터 로드 실패:', err);
+        setError('강아지 정보를 불러오지 못했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDogData();
   }, [user, dogId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'weight' || name === 'age' ? parseFloat(value) : value
+      [name]: ['weight', 'age']
+        .includes(name)
+        ? (value === '' ? '' : parseFloat(value))
+        : value
     }));
   };
 
@@ -68,7 +80,7 @@ export default function DogEditPage() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('이 강아지를 삭제하시겠습니까?')) return;
+    if (!window.confirm('강아지를 삭제하면 다시 등록해야 합니다. 그래도 삭제하시겠습니까?')) return;
 
     if (!user) {
       setError('로그인이 필요합니다');
@@ -78,6 +90,7 @@ export default function DogEditPage() {
 
     setLoading(true);
     try {
+      console.log('🐶 강아지 삭제 시도:', { userId: user.uid, dogId });
       await deleteDog(user.uid, dogId);
       console.log('✅ 강아지 삭제 완료');
       navigate('/mypage');
@@ -216,37 +229,6 @@ export default function DogEditPage() {
               />
             ) : (
               <div className="form-value">{formData.weight}kg</div>
-            )}
-          </div>
-
-          {/* Allergies */}
-          <div className="form-group">
-            <label>음식 알레르기</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="allergies"
-                value={formData.allergies}
-                onChange={handleChange}
-                placeholder="예: 닭고기, 소금"
-              />
-            ) : (
-              <div className="form-value">{formData.allergies || '없음'}</div>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div className="form-group">
-            <label>특이사항</label>
-            {isEditing ? (
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows="4"
-              />
-            ) : (
-              <div className="form-value textarea-value">{formData.notes}</div>
             )}
           </div>
         </div>

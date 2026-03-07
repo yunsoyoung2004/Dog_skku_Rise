@@ -16,6 +16,8 @@ export default function DesignerListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sortBy, setSortBy] = useState('all');
+  const [mode, setMode] = useState('all');
+  const [districtLabel, setDistrictLabel] = useState('');
 
   useEffect(() => {
     loadDesigners();
@@ -31,14 +33,17 @@ export default function DesignerListPage() {
       setDesigners(allDesigners);
 
       const searchParams = new URLSearchParams(location.search);
-      const mode = searchParams.get('mode') || 'all';
+      const urlMode = searchParams.get('mode') || 'all';
       const district = searchParams.get('district') || '';
+
+      setMode(urlMode);
+      setDistrictLabel(district);
 
       let baseList = [...allDesigners];
 
-      if (mode === 'region' && district) {
+      if (urlMode === 'region' && district) {
         baseList = baseList.filter((d) => (d.location || '').includes(district));
-      } else if (mode === 'custom') {
+      } else if (urlMode === 'custom') {
         // 맞춤별: 평점 높은 순으로 상위 3개 추천
         baseList.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         baseList = baseList.slice(0, 3);
@@ -64,6 +69,9 @@ export default function DesignerListPage() {
   };
 
   const handleSort = (sortType) => {
+    // 지역별 모드에서는 정렬 기능 비활성화
+    if (mode === 'region') return;
+
     setSortBy(sortType);
     let sorted = [...filteredDesigners.length ? filteredDesigners : designers];
 
@@ -80,7 +88,7 @@ export default function DesignerListPage() {
     setFilteredDesigners(sorted);
   };
 
-  const handleToggleFavorite = async (designerId) => {
+  const handleToggleFavorite = async (designerId, designer) => {
     if (!user) {
       setError('로그인이 필요합니다');
       navigate('/login');
@@ -92,7 +100,15 @@ export default function DesignerListPage() {
         await removeFavorite(user.uid, designerId);
         setFavorites(favorites.filter(f => f !== designerId));
       } else {
-        await addFavorite(user.uid, designerId);
+        await addFavorite(user.uid, designerId, {
+          name: designer.name,
+          image: designer.image,
+          rating: designer.rating,
+          reviews: designer.reviews,
+          priceMin: designer.priceMin,
+          priceMax: designer.priceMax,
+          specialty: designer.specialty,
+        });
         setFavorites([...favorites, designerId]);
       }
     } catch (err) {
@@ -104,27 +120,34 @@ export default function DesignerListPage() {
   return (
     <PageLayout title="멍빗어">
       <div className="designer-list-page" data-node-id="designer-list">
-        {/* Filter Bar */}
-        <div className="designer-list-filters">
-        <button 
-          className={`filter-btn ${sortBy === 'all' ? 'active' : ''}`}
-          onClick={() => handleSort('all')}
-        >
-          전체
-        </button>
-        <button 
-          className={`filter-btn ${sortBy === 'rating' ? 'active' : ''}`}
-          onClick={() => handleSort('rating')}
-        >
-          평가 높음
-        </button>
-        <button 
-          className={`filter-btn ${sortBy === 'price' ? 'active' : ''}`}
-          onClick={() => handleSort('price')}
-        >
-          가격 낮음
-        </button>
-      </div>
+        {mode === 'custom' && (
+          <div style={{ fontSize: '12px', color: '#777', margin: '8px 4px 4px' }}>
+            맞춤별은 태그가 같은 디자이너만 표시됩니다.
+          </div>
+        )}
+        {/* Filter Bar (지역별 모드에서는 정렬 숨김) */}
+        {mode !== 'region' && (
+          <div className="designer-list-filters">
+            <button 
+              className={`filter-btn ${sortBy === 'all' ? 'active' : ''}`}
+              onClick={() => handleSort('all')}
+            >
+              전체
+            </button>
+            <button 
+              className={`filter-btn ${sortBy === 'rating' ? 'active' : ''}`}
+              onClick={() => handleSort('rating')}
+            >
+              평가 높음
+            </button>
+            <button 
+              className={`filter-btn ${sortBy === 'price' ? 'active' : ''}`}
+              onClick={() => handleSort('price')}
+            >
+              가격 낮음
+            </button>
+          </div>
+        )}
 
         {/* Designer List */}
         <div className="designer-list-container">
@@ -162,16 +185,27 @@ export default function DesignerListPage() {
                   </div>
                   <button 
                     className="designer-list-favorite"
-                    onClick={() => handleToggleFavorite(designer.id)}
+                    onClick={() => handleToggleFavorite(designer.id, designer)}
                   >
                     {favorites.includes(designer.id) ? '♥' : '♡'}
                   </button>
                 </div>
               ))
             ) : (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-                🔒 현재 등록된 디자이너가 없습니다.
-              </div>
+              <>
+                {mode === 'region' ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#999', lineHeight: 1.5 }}>
+                    <p style={{ marginBottom: '4px' }}>지역별은 현재 가까이에 있는 디자이너만 표시됩니다.</p>
+                    {districtLabel && (
+                      <p style={{ fontSize: '12px' }}>선택한 지역: {districtLabel}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                    🔒 현재 등록된 디자이너가 없습니다.
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

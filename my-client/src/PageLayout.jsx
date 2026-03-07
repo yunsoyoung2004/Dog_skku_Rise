@@ -1,10 +1,34 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from './firebase';
+import { getUserQuotes } from './services';
 import './PageLayout.css';
 
 const logoImg = "https://www.figma.com/api/mcp/asset/1907ad64-acfb-41cd-bcbf-9299c17f709e";
 
 export default function PageLayout({ title, children, customHeader }) {
   const navigate = useNavigate();
+  const [user] = useAuthState(auth);
+  const [quoteCount, setQuoteCount] = useState(0);
+
+  useEffect(() => {
+    const loadQuotes = async () => {
+      if (!user) {
+        setQuoteCount(0);
+        return;
+      }
+      try {
+        const quotes = await getUserQuotes(user.uid);
+        setQuoteCount(quotes.length || 0);
+      } catch (e) {
+        console.warn('헤더용 받은 견적 수 로드 실패:', e);
+        setQuoteCount(0);
+      }
+    };
+
+    loadQuotes();
+  }, [user]);
 
   return (
     <div className="page-layout">
@@ -12,12 +36,39 @@ export default function PageLayout({ title, children, customHeader }) {
       {customHeader ? (
         customHeader
       ) : (
-        <div
-          className="page-layout-header"
-          onClick={() => navigate('/dashboard')}
-        >
-          <img src={logoImg} alt="멍빗어 로고" className="page-layout-logo" />
-          <h1 className="page-layout-title">{title}</h1>
+        <div className="page-layout-header">
+          <div
+            className="page-layout-header-main"
+            onClick={() => navigate('/dashboard')}
+          >
+            <img src={logoImg} alt="멍빗어 로고" className="page-layout-logo" />
+            <h1 className="page-layout-title">{title}</h1>
+          </div>
+          <button
+            type="button"
+            className="page-layout-header-bell"
+            onClick={() => navigate('/quote-detail')}
+            aria-label="받은 견적 알림"
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {quoteCount > 0 && (
+              <span className="page-layout-bell-badge">
+                {quoteCount > 9 ? '9+' : quoteCount}
+              </span>
+            )}
+          </button>
         </div>
       )}
 

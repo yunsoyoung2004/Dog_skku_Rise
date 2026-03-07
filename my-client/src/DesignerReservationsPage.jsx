@@ -144,8 +144,6 @@ export default function DesignerReservationsPage() {
 
   return (
     <div className="designer-page">
-      <style>{styles}</style>
-
       {/* Header */}
       <div className="designer-page-header">
         <button onClick={() => navigate(-1)}>←</button>

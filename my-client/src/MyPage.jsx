@@ -14,6 +14,7 @@ export default function MyPage() {
   const [bookings, setBookings] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showDogModal, setShowDogModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -40,6 +41,10 @@ export default function MyPage() {
 
       const userFavorites = await getUserFavorites(user.uid);
       setFavorites(userFavorites || []);
+
+      if (!userDogs || userDogs.length === 0) {
+        setShowDogModal(true);
+      }
     } catch (err) {
       console.error('사용자 데이터 로드 실패:', err);
     } finally {
@@ -84,6 +89,33 @@ export default function MyPage() {
     <PageLayout title="마이 페이지">
       {/* Content */}
       <div className="mypage-main-container">
+        {showDogModal && (
+          <div className="mypage-dog-modal-overlay">
+            <div className="mypage-dog-modal">
+              <h2>우리집 강아지를 먼저 등록해 주세요</h2>
+              <p>견적 요청, 예약 등 서비스를 이용하려면 강아지 정보를 등록해야 해요.</p>
+              <div className="mypage-dog-modal-actions">
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => {
+                    setShowDogModal(false);
+                    navigate('/dog-registration');
+                  }}
+                >
+                  강아지 등록하러 가기
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setShowDogModal(false)}
+                >
+                  나중에 할게요
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
             로딩 중...
@@ -95,7 +127,10 @@ export default function MyPage() {
               <h2 className="section-title">우리집 강아지 정보</h2>
               <div className="section-divider" />
               {primaryDog ? (
-                <div className="mypage-dog-info">
+                <div
+                  className="mypage-dog-info"
+                  onClick={() => navigate('/dog-edit', { state: { dogId: primaryDog.id } })}
+                >
                   <div className="dog-photo-circle">
                     <div className="dog-photo-inner">🐶</div>
                   </div>
@@ -111,9 +146,51 @@ export default function MyPage() {
               ) : (
                 <div className="mypage-dog-info-empty">
                   <p className="dog-meta-line">등록된 강아지 정보가 없습니다.</p>
+                  <button
+                    type="button"
+                    className="link-text-btn"
+                    onClick={() => navigate('/dog-registration')}
+                  >
+                    우리 집 강아지 등록하러 가기
+                  </button>
                 </div>
               )}
             </section>
+
+            {/* 우리집 강아지 미용 상태 (프로필 기준) */}
+            {primaryDog && (
+              <section
+                className="mypage-section mypage-section-clickable"
+                onClick={() => navigate('/dog-groom-edit', { state: { dogId: primaryDog.id } })}
+              >
+                <h2 className="section-title">우리집 강아지 미용 상태</h2>
+                <div className="section-divider" />
+                <p className="dog-meta-line small">
+                  털 엉킴 (0~100):{' '}
+                  {primaryDog.matting !== '' && primaryDog.matting != null ? primaryDog.matting : '입력 없음'}
+                </p>
+                <p className="dog-meta-line small">
+                  모질 (0~100):{' '}
+                  {primaryDog.coatQuality !== '' && primaryDog.coatQuality != null ? primaryDog.coatQuality : '입력 없음'}
+                </p>
+                <p className="dog-meta-line small">
+                  털 빠짐 (0~100):{' '}
+                  {primaryDog.shedding !== '' && primaryDog.shedding != null ? primaryDog.shedding : '입력 없음'}
+                </p>
+                <p className="dog-meta-line small">
+                  환경 적응도 (0~100):{' '}
+                  {primaryDog.environmentAdaptation !== '' && primaryDog.environmentAdaptation != null
+                    ? primaryDog.environmentAdaptation
+                    : '입력 없음'}
+                </p>
+                <p className="dog-meta-line small">
+                  피부 민감도 (0~100):{' '}
+                  {primaryDog.skinSensitivity !== '' && primaryDog.skinSensitivity != null
+                    ? primaryDog.skinSensitivity
+                    : '입력 없음'}
+                </p>
+              </section>
+            )}
 
             {/* 우리집 강아지 미용 내역 */}
             <section className="mypage-section">

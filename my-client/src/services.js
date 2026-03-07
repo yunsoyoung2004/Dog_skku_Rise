@@ -124,31 +124,127 @@ export const getUserDogs = async (userId) => {
   }
 };
 
-// ============= GROOMING HISTORY SERVICE (TEMP) =============
+/**
+ * 단일 강아지 조회 (강아지 수정 페이지용)
+ */
+export const getDog = async (userId, dogId) => {
+  try {
+    if (!userId || !dogId) return null;
+    const dogRef = doc(db, `users/${userId}/dogs`, dogId);
+    const snap = await getDoc(dogRef);
+    if (!snap.exists()) return null;
+    return { id: snap.id, ...snap.data() };
+  } catch (error) {
+    console.error('단일 강아지 조회 오류:', error);
+    throw error;
+  }
+};
+
+// ============= GROOMING HISTORY SERVICE =============
 
 /**
- * 최근 미용 내역 (임시 하드코딩)
- * TODO: 추후 Firestore에서 실제 미용 리포트 데이터를 읽어오도록 변경
+ * 강아지 미용 내역 추가
+ * metrics: { matting, coatQuality, shedding, environmentAdaptation, skinSensitivity }
+ */
+export const addGroomingHistory = async (userId, historyData) => {
+  try {
+    const colRef = collection(db, `users/${userId}/groomingHistory`);
+    const now = Timestamp.now();
+    const docRef = await addDoc(colRef, {
+      dogName: historyData.dogName || '',
+      date: historyData.date || '',
+      designerName: historyData.designerName || '',
+      title: historyData.title || '',
+      metrics: {
+        matting: Number(historyData.metrics?.matting ?? 0),
+        coatQuality: Number(historyData.metrics?.coatQuality ?? 0),
+        shedding: Number(historyData.metrics?.shedding ?? 0),
+        environmentAdaptation: Number(historyData.metrics?.environmentAdaptation ?? 0),
+        skinSensitivity: Number(historyData.metrics?.skinSensitivity ?? 0),
+      },
+      comment: historyData.comment || '',
+      createdAt: now,
+      updatedAt: now,
+    });
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error('미용 내역 추가 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 최근 미용 내역 1건 조회 (없으면 null)
  */
 export const getLatestGroomingHistory = async (userId) => {
-  // userId는 나중에 Firestore 쿼리에 사용할 예정
-  console.log('getLatestGroomingHistory (TEMP) for user:', userId);
+  try {
+    const colRef = collection(db, `users/${userId}/groomingHistory`);
+    const qSnap = await getDocs(query(colRef, orderBy('createdAt', 'desc'), limit(1)));
 
-  return {
-    dogName: '뽀또',
-    date: '2026. 02. 02.',
-    designerName: '김민지 디자이너',
-    title: '뽀또의 미용 상태 분석',
-    metrics: {
-      matting: 70.34, // 털 엉킴
-      environmentAdaptation: 84.45, // 환경 적응도
-      shedding: 30.7, // 털 빠짐
-      coatQuality: 63.17, // 모질
-      skinSensitivity: 97.84, // 피부 민감도
-    },
-    comment:
-      '오늘 미용 전반적으로 아이 컨디션을 보면서 천천히 진행했어요. 처음엔 조금 긴장했지만 중간부터는 많이 편안해진 게 보여서 다행이었어요. 특히 얼굴 쪽은 예민해 보여서 가위 사용 위주로 부드럽게 정리했습니다. 털 상태는 전체적으로 양호했지만 귀 뒤쪽은 엉킴이 생기기 쉬운 편이에요. 집에서는 오늘 하루만큼은 과한 산책보다는 충분히 쉬게 해주세요. 다음 미용 때도 이 성향 참고해서 더 편안하게 진행해드릴게요 😊',
-  };
+    if (qSnap.empty) {
+      return null;
+    }
+
+    const docSnap = qSnap.docs[0];
+    const data = docSnap.data();
+    let dateLabel = data.date;
+    if (!dateLabel) {
+      const ts = data.createdAt;
+      if (ts && ts.toDate) {
+        dateLabel = ts.toDate().toLocaleDateString('ko-KR');
+      }
+    }
+
+    return {
+      id: docSnap.id,
+      dogName: data.dogName || '',
+      date: dateLabel || '',
+      designerName: data.designerName || '',
+      title: data.title || '',
+      metrics: {
+        matting: Number(data.metrics?.matting ?? 0),
+        environmentAdaptation: Number(data.metrics?.environmentAdaptation ?? 0),
+        shedding: Number(data.metrics?.shedding ?? 0),
+        coatQuality: Number(data.metrics?.coatQuality ?? 0),
+        skinSensitivity: Number(data.metrics?.skinSensitivity ?? 0),
+      },
+      comment: data.comment || '',
+    };
+  } catch (error) {
+    console.error('최근 미용 내역 조회 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 현재 보여지는 미용 내역 삭제
+ */
+export const deleteGroomingHistory = async (userId, historyId) => {
+  try {
+    const refDoc = doc(db, `users/${userId}/groomingHistory`, historyId);
+    await deleteDoc(refDoc);
+    return { success: true };
+  } catch (error) {
+    console.error('미용 내역 삭제 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 미용 통계: 총 미용 횟수(=내역 개수)
+ */
+export const getGroomingStats = async (userId) => {
+  try {
+    const colRef = collection(db, `users/${userId}/groomingHistory`);
+    const snap = await getDocs(colRef);
+    const count = snap.size;
+    return {
+      totalGroomings: count,
+    };
+  } catch (error) {
+    console.error('미용 통계 조회 오류:', error);
+    throw error;
+  }
 };
 
 // ============= BOOKINGS SERVICE =============
@@ -225,6 +321,7 @@ export const createQuoteRequest = async (userId, designerId, payload) => {
     const docRef = await addDoc(quotesRef, {
       userId,
       designerId,
+      designerName: payload.designerName || '',
       dogId: payload.dogId || '',
       dogName: payload.dogName || '',
       breed: payload.breed || '',
@@ -346,6 +443,103 @@ export const getUserQuotes = async (userId) => {
   }
 };
 
+/**
+ * 디자이너가 받은 견적 요청 조회
+ * - designerId로 quoteRequests 컬렉션 조회
+ * - 최신순 정렬
+ */
+export const getDesignerQuoteRequests = async (designerId) => {
+  try {
+    const requestsRef = collection(db, 'quoteRequests');
+    const q = query(requestsRef, where('designerId', '==', designerId));
+    const requestsSnap = await getDocs(q);
+    const requests = [];
+    requestsSnap.forEach((doc) => {
+      requests.push({ ...doc.data(), id: doc.id });
+    });
+    // 최신순 정렬
+    return requests.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  } catch (error) {
+    console.error('견적 요청 조회 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 채팅에서 사용자가 최신 견적을 "확정"할 때 사용
+ * - userId + designerId 조합으로 가장 최근 quotes 1개를 찾아 status를 confirmed로 변경
+ * - 관련 quoteRequest가 있으면 그쪽 status도 confirmed로 갱신
+ */
+export const confirmLatestQuote = async (userId, designerId) => {
+  try {
+    const quotesRef = collection(db, 'quotes');
+    const q = query(
+      quotesRef,
+      where('userId', '==', userId),
+      where('designerId', '==', designerId),
+      orderBy('timestamp', 'desc'),
+      limit(1)
+    );
+
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      return { success: false, reason: 'NO_QUOTE' };
+    }
+
+    const docSnap = snap.docs[0];
+    const data = docSnap.data();
+    const quoteRef = doc(db, 'quotes', docSnap.id);
+
+    await updateDoc(quoteRef, {
+      status: 'confirmed',
+      confirmedAt: Timestamp.now(),
+    });
+
+    // 연결된 quoteRequest 상태도 가능하면 함께 갱신
+    if (data.requestId) {
+      try {
+        const requestRef = doc(db, 'quoteRequests', data.requestId);
+        await updateDoc(requestRef, {
+          status: 'confirmed',
+          confirmedAt: Timestamp.now(),
+        });
+      } catch (e) {
+        console.warn('quoteRequest 확정 상태 업데이트 실패(무시 가능):', e);
+      }
+    }
+
+    return { success: true, quoteId: docSnap.id };
+  } catch (error) {
+    console.error('견적 확정 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 사용자가 보낸 견적 요청 내역 조회 (user → designer)
+ * - quoteRequests 컬렉션 기준
+ */
+export const getUserQuoteRequests = async (userId) => {
+  try {
+    const reqRef = collection(db, 'quoteRequests');
+    const q = query(reqRef, where('userId', '==', userId));
+    const snap = await getDocs(q);
+    const list = [];
+    snap.forEach((docSnap) => {
+      list.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    // 최신순 정렬
+    return list.sort((a, b) => {
+      const at = a.createdAt?.toMillis ? a.createdAt.toMillis() : a.createdAt || 0;
+      const bt = b.createdAt?.toMillis ? b.createdAt.toMillis() : b.createdAt || 0;
+      return bt - at;
+    });
+  } catch (error) {
+    console.error('보낸 견적 요청 조회 오류:', error);
+    throw error;
+  }
+};
+
 // ============= SEARCH HISTORY SERVICE =============
 
 /**
@@ -442,11 +636,24 @@ export const getDesignerReviews = async (designerId) => {
  */
 export const sendMessage = async (chatRoomId, messageData) => {
   try {
+    const now = Timestamp.now();
     const messagesRef = collection(db, `chatRooms/${chatRoomId}/messages`);
     const docRef = await addDoc(messagesRef, {
       ...messageData,
-      timestamp: Timestamp.now()
+      timestamp: now
     });
+    // 채팅방에 최근 메시지/시간도 함께 반영해서 목록에서 미리보기로 사용
+    try {
+      const roomRef = doc(db, 'chatRooms', chatRoomId);
+      await updateDoc(roomRef, {
+        lastMessage: messageData.text || '',
+        lastMessageTime: now,
+        updatedAt: now,
+      });
+    } catch (e) {
+      console.warn('채팅방 최근 메시지 업데이트 실패(무시 가능):', e);
+    }
+
     return { success: true, messageId: docRef.id };
   } catch (error) {
     console.error('메시지 전송 오류:', error);
@@ -528,12 +735,20 @@ export const createOrGetChatRoom = async (userId, designerId, meta = {}) => {
 
 /**
  * 즐겨찾기 추가
+ * - 디자이너 기본 정보도 함께 저장해서 마이페이지/즐겨찾기 화면에서 바로 표시
  */
-export const addFavorite = async (userId, designerId) => {
+export const addFavorite = async (userId, designerId, designerMeta = {}) => {
   try {
     const favoritesRef = collection(db, `users/${userId}/favorites`);
     const docRef = await addDoc(favoritesRef, {
       designerId,
+      name: designerMeta.name || '',
+      image: designerMeta.image || '',
+      rating: designerMeta.rating ?? 0,
+      reviews: designerMeta.reviews ?? 0,
+      priceMin: designerMeta.priceMin ?? 0,
+      priceMax: designerMeta.priceMax ?? 0,
+      specialty: designerMeta.specialty || '',
       createdAt: Timestamp.now()
     });
     return { success: true };
@@ -546,10 +761,22 @@ export const addFavorite = async (userId, designerId) => {
 /**
  * 즐겨찾기 제거
  */
-export const removeFavorite = async (userId, favoriteId) => {
+export const removeFavorite = async (userId, designerId) => {
   try {
-    const favoriteRef = doc(db, `users/${userId}/favorites`, favoriteId);
-    await deleteDoc(favoriteRef);
+    const favoritesRef = collection(db, `users/${userId}/favorites`);
+    const q = query(favoritesRef, where('designerId', '==', designerId));
+    const snap = await getDocs(q);
+
+    const batchDeletes = [];
+    snap.forEach((docSnap) => {
+      batchDeletes.push(docSnap.id);
+    });
+
+    // 개수가 많지 않으므로 순차 삭제
+    for (const id of batchDeletes) {
+      const favoriteRef = doc(db, `users/${userId}/favorites`, id);
+      await deleteDoc(favoriteRef);
+    }
     return { success: true };
   } catch (error) {
     console.error('즐겨찾기 제거 오류:', error);
@@ -804,5 +1031,7 @@ export default {
   searchDesigners,
   // Image Upload
   uploadDogImage,
-  uploadReviewImage
+  uploadReviewImage,
+  // Quotes
+  getDesignerQuoteRequests
 };

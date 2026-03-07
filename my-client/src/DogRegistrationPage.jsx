@@ -15,7 +15,13 @@ export default function DogRegistrationPage() {
     breed: '',
     weight: '',
     sex: '',
-    notes: ''
+    notes: '',
+    // 미용 관련 기본 성향(강아지 프로필 기준)
+    matting: '',                // 털 엉킴 (0~100, 게이지)
+    coatQuality: '',            // 모질 (0~100, 게이지)
+    shedding: '',               // 털 빠짐 (0~100, 게이지)
+    environmentAdaptation: '',  // 환경 적응도 (0~100, 게이지)
+    skinSensitivity: ''         // 피부 민감도 (0~100, 게이지)
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -110,7 +116,13 @@ export default function DogRegistrationPage() {
       }
       setStep(2);
     } else if (step === 2) {
-      // 피부/건강 정보 단계에서는 필수값 없이 다음 단계로 이동
+      // 미용 성향(게이지) 5개는 필수 입력
+      const metricKeys = ['matting', 'coatQuality', 'shedding', 'environmentAdaptation', 'skinSensitivity'];
+      const missing = metricKeys.some((k) => dogData[k] === '' || dogData[k] === null);
+      if (missing) {
+        setError('털 상태 / 환경 적응도 게이지를 모두 설정해주세요');
+        return;
+      }
       setStep(3);
     } else if (step === 3) {
       if (!user) {
@@ -128,6 +140,13 @@ export default function DogRegistrationPage() {
           breed: dogData.breed,
           weight: parseFloat(dogData.weight),
           sex: dogData.sex,
+          // 강아지 기본 미용 성향 (0~100 스코어)
+          matting: dogData.matting !== '' ? parseFloat(dogData.matting) : null,
+          coatQuality: dogData.coatQuality !== '' ? parseFloat(dogData.coatQuality) : null,
+          shedding: dogData.shedding !== '' ? parseFloat(dogData.shedding) : null,
+          environmentAdaptation:
+            dogData.environmentAdaptation !== '' ? parseFloat(dogData.environmentAdaptation) : null,
+          skinSensitivity: dogData.skinSensitivity !== '' ? parseFloat(dogData.skinSensitivity) : null,
           notes: healthInfo.notes || '',
           healthInfo,
           vaccinationInfo,
@@ -243,8 +262,85 @@ export default function DogRegistrationPage() {
 
         {step === 2 && (
           <div className="dog-health-card">
+            {/* 미용 성향 (강아지 기본값) */}
             <div className="dog-health-group">
-              <p className="dog-health-label">피부 민감도</p>
+              <p className="dog-health-label">털 상태 / 환경 적응도 (0~100)</p>
+              <div className="dog-health-options vertical">
+                <div className="dog-health-metric-row">
+                  <span>털 엉킴</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    name="matting"
+                    value={dogData.matting === '' ? 50 : dogData.matting}
+                    onChange={handleInputChange}
+                    className="dog-health-slider"
+                  />
+                  <span className="dog-health-slider-value">{dogData.matting === '' ? 50 : dogData.matting}</span>
+                </div>
+                <div className="dog-health-metric-row">
+                  <span>모질</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    name="coatQuality"
+                    value={dogData.coatQuality === '' ? 50 : dogData.coatQuality}
+                    onChange={handleInputChange}
+                    className="dog-health-slider"
+                  />
+                  <span className="dog-health-slider-value">{dogData.coatQuality === '' ? 50 : dogData.coatQuality}</span>
+                </div>
+                <div className="dog-health-metric-row">
+                  <span>털 빠짐</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    name="shedding"
+                    value={dogData.shedding === '' ? 50 : dogData.shedding}
+                    onChange={handleInputChange}
+                    className="dog-health-slider"
+                  />
+                  <span className="dog-health-slider-value">{dogData.shedding === '' ? 50 : dogData.shedding}</span>
+                </div>
+                <div className="dog-health-metric-row">
+                  <span>환경 적응도</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    name="environmentAdaptation"
+                    value={dogData.environmentAdaptation === '' ? 50 : dogData.environmentAdaptation}
+                    onChange={handleInputChange}
+                    className="dog-health-slider"
+                  />
+                  <span className="dog-health-slider-value">{dogData.environmentAdaptation === '' ? 50 : dogData.environmentAdaptation}</span>
+                </div>
+                <div className="dog-health-metric-row">
+                  <span>피부 민감도</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    name="skinSensitivity"
+                    value={dogData.skinSensitivity === '' ? 50 : dogData.skinSensitivity}
+                    onChange={handleInputChange}
+                    className="dog-health-slider"
+                  />
+                  <span className="dog-health-slider-value">{dogData.skinSensitivity === '' ? 50 : dogData.skinSensitivity}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="dog-health-group">
+              <p className="dog-health-label">피부 민감도 (설명)</p>
               <div className="dog-health-options">
                 {['보통', '약간 민감', '매우 민감'].map((label) => (
                   <button

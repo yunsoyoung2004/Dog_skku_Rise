@@ -97,6 +97,8 @@
   background-position: top left;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -123,6 +125,63 @@
   position: relative;
   z-index: 2;
   background-color: #ffffff;
+}
+
+/* LOCATION GRID BUTTONS (대시보드 배너 안) */
+.dashboard-location-banner .location-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-location-banner .location-column-header {
+  font-family: 'Paperlogy ExtraLight', 'Paperlogy', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  color: #a5a3a3;
+  padding: 8px 6px;
+  text-align: center;
+  background-color: transparent;
+  line-height: normal;
+}
+
+.dashboard-location-banner .location-column-items {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  flex: 1;
+}
+
+.dashboard-location-banner .location-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 4px;
+  font-family: 'Paperlogy ExtraLight', 'Paperlogy', sans-serif;
+  font-size: 11px;
+  color: #333;
+  cursor: pointer;
+  text-align: center;
+  background: none;
+  border: none;
+  outline: none;
+  line-height: normal;
+}
+
+/* 선택 상태는 배경색/빨간색 없이 글자 굵기로만 표시 */
+.dashboard-location-banner .location-item.active {
+  background: none !important;
+  font-weight: 600;
+}
+
+/* hover/active 시에도 배경색 생기지 않도록 */
+.dashboard-location-banner .location-item:hover,
+.dashboard-location-banner .location-item:focus,
+.dashboard-location-banner .location-item:active {
+  background: none !important;
+  outline: none;
 }
 
 /* CATEGORIES SECTION */
@@ -210,20 +269,130 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
 }
 
+/* DOG METRICS LIST (from 강아지 정보) */
+.dashboard-dog-metrics {
+  padding: 0 16px 20px 16px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-dog-metric-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background-color: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+}
+
+.dashboard-dog-metric-label {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.7px;
+  color: var(--color-text-light);
+}
+
+.dashboard-dog-metric-value {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.7px;
+  color: var(--color-text-dark);
+  text-align: right;
+  white-space: pre-line;
+}
+
+.dashboard-dog-metric-gauge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-dog-metric-gauge-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background-color: #e0e0e0;
+  overflow: hidden;
+}
+
+.dashboard-dog-metric-gauge-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #222 0%, #555 100%);
+}
+
+.dashboard-dog-metric-gauge-text {
+  min-width: 42px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--color-text-dark);
+}
+
+/* RADAR CHART (우리집 강아지 미용 상태) */
+.dashboard-radar-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.dashboard-radar-svg {
+  width: 190px;
+  height: 190px;
+}
+
+.dashboard-radar-grid {
+  fill: none;
+  stroke: #e5e7eb;
+  stroke-width: 1;
+}
+
+.dashboard-radar-axis {
+  stroke: #d1d5db;
+  stroke-width: 1;
+}
+
+.dashboard-radar-value {
+  fill: url(#dogRadarFill);
+  stroke: #6366f1;
+  stroke-width: 2;
+}
+
+.dashboard-radar-label {
+  font-size: 10px;
+  fill: #4b5563;
+}
+
+.dashboard-section-title {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.9px;
+  text-align: center;
+  margin: 0 0 8px 0;
+}
+
+.dashboard-section-spacing {
+  margin-top: 16px;
+}
+
 /* STATISTICS */
 .dashboard-stats-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   padding: 0 16px 20px 16px;
-  background-color: white;
+  background-color: transparent;
 }
 
 .dashboard-stat-item {
-  padding: 12px;
-  background-color: var(--color-bg-light);
-  border-radius: 6px;
-  border: 1px solid var(--color-border-light);
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
   text-align: center;
 }
 
@@ -236,8 +405,8 @@
 }
 
 .stat-value {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   letter-spacing: 0.9px;
   color: var(--color-text-dark);
   margin: 0;
@@ -245,7 +414,11 @@
 
 /* CTA BUTTON */
 .dashboard-cta-button {
-  width: 300px;
+  width: 80%;
+  max-width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 44px;
   margin: 20px auto;
   padding: 0;
@@ -399,6 +572,10 @@
   .dashboard-radar-chart {
     width: 180px;
     height: 180px;
+  }
+
+  .dashboard-dog-metrics {
+    padding: 0 12px 16px 12px;
   }
 
   .dashboard-stats-section {

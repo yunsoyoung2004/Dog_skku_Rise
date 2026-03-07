@@ -40,6 +40,24 @@ export default function DesignerMessagesPage() {
     loadRooms();
   }, [user, navigate]);
 
+  const formatTime = (ts) => {
+    if (!ts) return '';
+    if (typeof ts === 'string') return ts;
+    try {
+      if (typeof ts.toDate === 'function') {
+        const d = ts.toDate();
+        return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      }
+      if (ts.seconds != null) {
+        const d = new Date(ts.seconds * 1000);
+        return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      }
+    } catch (e) {
+      return '';
+    }
+    return '';
+  };
+
   return (
     <div className="designer-page">
       <div className="designer-page-header">
@@ -93,7 +111,7 @@ export default function DesignerMessagesPage() {
                 <div className="message-content">
                   <div className="message-top-row">
                     <p className="message-name">{msg.title || msg.roomName || '채팅방'}</p>
-                    <span className="message-time">{msg.lastMessageTime || ''}</span>
+                    <span className="message-time">{formatTime(msg.lastMessageTime)}</span>
                   </div>
                   <p className="message-preview">{msg.lastMessage || '최근 메시지가 없습니다'}</p>
                 </div>

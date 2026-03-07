@@ -3,7 +3,8 @@
   width: 100%;
   max-width: 393px;
   height: 100vh;
-  overflow-y: auto;
+  margin: 0 auto;
+  overflow: hidden;
   background-color: #f5f5f5;
   font-family: 'Paperlogy', 'Gmarket Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #222;
@@ -16,12 +17,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  height: 56px;
+  padding: 12px 16px;
   border-bottom: 1px solid #e0e0e0;
   background-color: white;
   position: sticky;
   top: 0;
   z-index: 10;
+  box-sizing: border-box;
 }
 
 .quote-detail-back-btn {
@@ -42,7 +45,7 @@
 .quote-detail-container {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 20px 20px 76px 20px;
 }
 
 .quote-dog-info {
@@ -221,22 +224,33 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 12px 0;
+  height: 56px;
+  padding: 0;
   background-color: white;
   border-top: 1px solid #e0e0e0;
-  margin-top: auto;
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 393px;
+  z-index: 100;
+  box-sizing: border-box;
 }
 
 .quote-detail-nav button {
   flex: 1;
-  padding: 12px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   background-color: transparent;
-  font-size: 24px;
+  color: #666;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: color 0.2s;
 }
 
 .quote-detail-nav button:hover {
-  opacity: 0.6;
+  color: #222;
 }

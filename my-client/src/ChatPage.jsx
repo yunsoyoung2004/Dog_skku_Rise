@@ -49,6 +49,24 @@ export default function ChatPage() {
     navigate(`/chat/${roomId}`);
   };
 
+  const formatTime = (ts) => {
+    if (!ts) return '';
+    if (typeof ts === 'string') return ts;
+    try {
+      if (typeof ts.toDate === 'function') {
+        const d = ts.toDate();
+        return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      }
+      if (ts.seconds != null) {
+        const d = new Date(ts.seconds * 1000);
+        return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      }
+    } catch (e) {
+      return '';
+    }
+    return '';
+  };
+
   return (
     <PageLayout title="채팅">
       {/* Filter Tabs */}
@@ -95,7 +113,7 @@ export default function ChatPage() {
               <div className="room-info">
                 <div className="room-header">
                   <h3 className="room-name">{room.designerName || room.title || room.roomName || '채팅방'}</h3>
-                  <span className="room-time">{room.lastMessageTime || ''}</span>
+                  <span className="room-time">{formatTime(room.lastMessageTime)}</span>
                 </div>
                 <p className="room-message">{room.lastMessage || '최근 메시지가 없습니다'}</p>
               </div>

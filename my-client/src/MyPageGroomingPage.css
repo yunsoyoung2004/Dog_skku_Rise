@@ -41,6 +41,68 @@
   padding: 24px 20px 80px;
   overflow-y: auto;
 }
+
+.grooming-add-btn {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.grooming-form {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  font-size: 11px;
+}
+
+.grooming-form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.grooming-form-row label {
+  margin-bottom: 4px;
+  color: #555;
+}
+
+.grooming-form-row input,
+.grooming-form-row textarea {
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  font-size: 11px;
+  outline: none;
+}
+
+.grooming-form-row input:focus,
+.grooming-form-row textarea:focus {
+  border-color: #222;
+}
+
+.grooming-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+
+.grooming-save-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: none;
+  background-color: #222;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
 .grooming-top-photo {
   display: flex;
   align-items: center;
@@ -114,6 +176,18 @@
   font-size: 10px;
   line-height: 1.5;
   color: #444;
+}
+
+.grooming-delete-btn {
+  width: 100%;
+  margin: 12px 0;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: 1px solid #f0bcbc;
+  background-color: #fff5f5;
+  color: #c62828;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 .review-btn {
