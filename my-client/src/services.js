@@ -865,16 +865,27 @@ export const createNotification = async (userId, notificationData) => {
       createdAt: now,
       isRead: false,
     });
-    
+
     // 사용자의 unreadNotificationCount 증가
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-    const currentCount = userSnap.data()?.unreadNotificationCount || 0;
-    
-    await updateDoc(userRef, {
-      unreadNotificationCount: currentCount + 1,
-    });
-    
+    // Firestore 규칙상, users/{userId} 문서는 해당 사용자 본인만 수정 가능
+    // (채팅 상대/디자이너가 대신 수정하려고 하면 권한 오류가 발생함)
+    // 따라서 현재 로그인한 사용자가 userId와 동일한 경우에만 카운트를 갱신하고,
+    // 그 외에는 카운트 갱신을 건너뛰어 알림 생성 자체는 항상 성공하게 둔다.
+    const currentUser = auth.currentUser;
+    if (currentUser && currentUser.uid === userId) {
+      try {
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        const currentCount = userSnap.data()?.unreadNotificationCount || 0;
+
+        await updateDoc(userRef, {
+          unreadNotificationCount: currentCount + 1,
+        });
+      } catch (countError) {
+        console.warn('unreadNotificationCount 갱신 실패(알림 항목 생성은 완료됨):', countError);
+      }
+    }
+
     return { id: docRef.id, ...notificationData };
   } catch (error) {
     console.error('알림 생성 오류:', error);
