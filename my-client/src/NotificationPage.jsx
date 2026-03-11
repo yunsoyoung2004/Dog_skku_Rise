@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, query, where, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { markNotificationAsRead, deleteNotification } from './services';
+import PageLayout from './PageLayout';
 import './NotificationPage.css';
-
-const logoImg = "https://www.figma.com/api/mcp/asset/d3aedc85-e031-473e-aa91-014601f437ff";
 
 export default function NotificationPage() {
   const navigate = useNavigate();
@@ -14,10 +14,39 @@ export default function NotificationPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = loadNotifications();
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Firestore에서 실시간 알림 가져오기
+      const q = query(
+        collection(db, `users/${user.uid}/notifications`),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      );
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const notifData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          time: formatTime(doc.data().createdAt)
+        }));
+        setNotifications(notifData);
+        setLoading(false);
+      }, (error) => {
+        console.error('알림 로드 오류:', error);
+        setNotifications([]);
+        setLoading(false);
+      });
+
+      return unsubscribe;
+    } catch (err) {
+      console.error('알림 설정 오류:', err);
+      setLoading(false);
+    }
   }, [user]);
 
   const formatTime = (timestamp) => {
@@ -36,88 +65,59 @@ export default function NotificationPage() {
     return date.toLocaleDateString('ko-KR');
   };
 
-  const loadNotifications = async () => {
-    if (!user) {
-      navigate('/login');
-      return () => {};
-    }
-
-    setLoading(true);
+  const handleMarkAsRead = async (notifId) => {
     try {
-      // Firestore에서 실시간 알림 가져오기
-      const q = query(
-        collection(db, 'notifications'),
-        where('userId', '==', user.uid),
-        orderBy('timestamp', 'desc')
-      );
-
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const notifData = snapshot.docs.map((doc) => ({
-          docId: doc.id,
-          ...doc.data(),
-          time: formatTime(doc.data().timestamp)
-        }));
-        setNotifications(notifData);
-        setLoading(false);
-      }, (error) => {
-        console.error('알림 로드 오류:', error);
-        // 임시 데이터로 폴백
-        setNotifications([
-          {
-            id: 1,
-            type: 'message',
-            title: '새 메시지가 도착했습니다',
-            message: '디자이너 홍길동이 메시지를 보냈습니다.',
-            time: '5분 전',
-            read: false
-          }
-        ]);
-        setLoading(false);
-      });
-
-      return unsubscribe;
-    } catch (err) {
-      console.error('알림 설정 오류:', err);
-      setLoading(false);
-      return () => {};
-    }
-  };
-
-  const markAsRead = async (notifId) => {
-    try {
-      const notifRef = doc(db, 'notifications', notifId);
-      await updateDoc(notifRef, { read: true });
+      await markNotificationAsRead(user.uid, notifId);
     } catch (err) {
       console.error('알림 읽음 처리 실패:', err);
     }
   };
 
-  const handleClearNotification = (docId) => {
-    setNotifications(notifications.filter(notif => notif.docId !== docId));
+  const handleDeleteNotification = async (notifId) => {
+    try {
+      await deleteNotification(user.uid, notifId);
+      setNotifications(notifications.filter(notif => notif.id !== notifId));
+    } catch (err) {
+      console.error('알림 삭제 실패:', err);
+    }
   };
 
   const getIcon = (type) => {
     switch (type) {
       case 'message': return '💬';
-      case 'appointment': return '📅';
+      case 'booking': return '📅';
       case 'review': return '⭐';
+      case 'quote': return '💌';
       case 'system': return '🔔';
+      case 'event': return '🎉';
       default: return '📢';
     }
   };
 
-  return (
-    <div className="notification-page" data-node-id="notification-page">
-      {/* Header */}
-      <div className="notification-header">
-        <div className="notification-logo">
-          <img src={logoImg} alt="멍빗어" />
-        </div>
-        <h1>알림</h1>
-      </div>
+  const getTypeLabel = (type) => {
+    switch (type) {
+      case 'message':
+        return '메시지';
+      case 'booking':
+        return '예약';
+      case 'review':
+        return '리뷰';
+      case 'quote':
+        return '견적';
+      case 'system':
+        return '시스템';
+      case 'event':
+        return '이벤트';
+      default:
+        return '알림';
+    }
+  };
 
-      {/* Notifications Container */}
-      <div className="notification-container">
+  return (
+    <PageLayout title="알림">
+      <div className="notification-page" data-node-id="notification-page">
+        {/* Notifications Container */}
+        <div className="notification-container">
         {loading ? (
           <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
             로딩 중...
@@ -130,17 +130,38 @@ export default function NotificationPage() {
           <div className="notification-list">
             {notifications.map((notif) => (
               <div
-                key={notif.docId}
-                className={`notification-item ${notif.read ? 'read' : 'unread'}`}
+                key={notif.id}
+                className={`notification-item ${notif.isRead ? 'read' : 'unread'} notification-type-${notif.type || 'default'}`}
                 onClick={() => {
-                  if (!notif.read) {
-                    markAsRead(notif.docId);
+                  if (!notif.isRead) {
+                    handleMarkAsRead(notif.id);
+                  }
+                  // 알림 타입에 따라 페이지 이동
+                  if (notif.type === 'review' && notif.designerId && notif.bookingId) {
+                    navigate('/write-review', {
+                      state: {
+                        designerId: notif.designerId,
+                        designerName: notif.designerName || '',
+                        bookingId: notif.bookingId,
+                      },
+                    });
+                  } else if (notif.type === 'quote' || notif.type === 'booking') {
+                    // 견적/예약 관련 알림 클릭 시, 견적 알림 전용 페이지로 이동
+                    navigate('/quote-alerts');
+                  } else if (notif.chatRoomId) {
+                    // 그 외 채팅방이 연결된 알림은 해당 채팅방으로 이동
+                    navigate(`/chat/${notif.chatRoomId}`);
                   }
                 }}
               >
                 <div className="notification-icon">{getIcon(notif.type)}</div>
                 <div className="notification-content">
-                  <h3>{notif.title}</h3>
+                  <div className="notification-header-row">
+                    <h3>{notif.title}</h3>
+                    <span className="notification-type-badge">
+                      {getTypeLabel(notif.type)}
+                    </span>
+                  </div>
                   <p>{notif.message}</p>
                   <span className="notification-time">{notif.time}</span>
                 </div>
@@ -148,7 +169,7 @@ export default function NotificationPage() {
                   className="close-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleClearNotification(notif.docId);
+                    handleDeleteNotification(notif.id);
                   }}
                   aria-label="Close notification"
                 >
@@ -159,14 +180,7 @@ export default function NotificationPage() {
           </div>
         )}
       </div>
-
-      {/* Bottom Navigation */}
-      <div className="notification-nav">
-        <button onClick={() => navigate('/dashboard')}>🏠</button>
-        <button onClick={() => navigate('/search')}>💼</button>
-        <button onClick={() => navigate('/chat')}>💬</button>
-        <button onClick={() => navigate('/mypage')}>👤</button>
       </div>
-    </div>
+    </PageLayout>
   );
 }

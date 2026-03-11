@@ -263,3 +263,104 @@
   cursor: pointer;
   text-align: left;
 }
+/* 예약 알림 */
+.booking-alert {
+  margin-top: 12px;
+  padding: 0;
+  background: transparent;
+}
+
+.booking-alert-content {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+
+.booking-alert-content.alert-critical {
+  background: #fff3e0;
+  border-left-color: #ff6b6b;
+}
+
+.booking-alert-content.alert-warning {
+  background: #fff8f0;
+  border-left-color: #ff8c42;
+}
+
+.booking-alert-content.alert-info {
+  background: #f0f7ff;
+  border-left-color: #2196f3;
+}
+
+.alert-message {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+}
+
+.alert-detail {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.alert-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ff7f50 0%, #ff4b8b 100%);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.alert-btn:hover {
+  opacity: 0.9;
+}
+
+/* 리뷰 작성 알림 */
+.review-alert {
+  margin-top: 12px;
+  padding: 0;
+  background: transparent;
+}
+
+.review-alert-content {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe8f0 100%);
+  border-left: 4px solid #ff6b6b;
+}
+
+.review-alert .alert-message {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+}
+
+.review-alert .alert-detail {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.review-alert-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ff7f50 0%, #ff4b8b 100%);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.review-alert-btn:hover {
+  opacity: 0.9;
+}

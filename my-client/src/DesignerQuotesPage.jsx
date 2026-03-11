@@ -109,7 +109,7 @@ export default function DesignerQuotesPage() {
                     </button>
                     <button
                       className="btn-send"
-                      onClick={() => navigate(`/designer-quote-send/${quote.id}`, { state: { quote } })}
+                      onClick={() => navigate(`/designer-send-quote/${quote.id}`, { state: { quote } })}
                     >
                       견적서 보내기
                     </button>

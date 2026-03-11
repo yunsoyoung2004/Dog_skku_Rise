@@ -2,11 +2,11 @@ import './DesignerLoginPage.css';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { setDoc, doc } from 'firebase/firestore';
+import { setDoc, doc, getDoc } from 'firebase/firestore';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/79118139-4029-4aea-b28d-90db843c35d7";
+const logoImg = "/vite.svg";
 
 export default function DesignerLoginPage() {
   const [user] = useAuthState(auth);
@@ -42,7 +42,22 @@ export default function DesignerLoginPage() {
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log('✅ 디자이너 로그인 성공:', userCredential.user.email);
+      console.log('✅ 디자이너 로그인 시도:', userCredential.user.email);
+
+      // Firestore에서 역할(role) 확인
+      const uid = userCredential.user.uid;
+      const userDocRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userDocRef);
+      const role = userSnap.exists() ? userSnap.data().role : 'user';
+
+      // 일반 사용자 계정은 디자이너 로그인 페이지에서 로그인 불가
+      if (role !== 'designer') {
+        await signOut(auth);
+        setError('일반 사용자 계정은 사용자 로그인 페이지에서 로그인해주세요.');
+        return;
+      }
+
+      console.log('✅ 디자이너 로그인 성공 (role 확인 완료):', userCredential.user.email);
       navigate('/designer-dashboard');
     } catch (err) {
       console.error('❌ 로그인 실패:', err.code, err.message);

@@ -5,7 +5,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
-const img2 = "https://www.figma.com/api/mcp/asset/79118139-4029-4aea-b28d-90db843c35d7";
+const img2 = "/vite.svg";
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({

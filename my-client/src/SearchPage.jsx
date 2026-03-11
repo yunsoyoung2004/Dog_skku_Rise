@@ -6,7 +6,7 @@ import { auth } from './firebase';
 import { addRecentSearch, getRecentSearches } from './services';
 import PageLayout from './PageLayout';
 
-const imgSearch = 'https://www.figma.com/api/mcp/asset/9bf497b9-d113-417f-b6c7-0435c3ca0abf';
+const imgSearch = '/vite.svg';
 
 const LOCAL_RECENT_KEY = 'recentSearches';
 

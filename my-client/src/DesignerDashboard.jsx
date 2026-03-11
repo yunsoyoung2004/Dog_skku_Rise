@@ -6,7 +6,7 @@ import { auth, db } from './firebase';
 import './DesignerPageNav.css';
 import './DesignerDashboard.css';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/a74ada5d-7974-4caa-89a9-1b46a6727731";
+const logoImg = "/vite.svg";
 
 export default function DesignerDashboard() {
   const navigate = useNavigate();

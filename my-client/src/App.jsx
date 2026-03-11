@@ -8,9 +8,11 @@ import SearchResultsPage from './SearchResultsPage'
 import DesignerDetailPage from './DesignerDetailPage'
 import DogRegistrationPage from './DogRegistrationPage'
 import DogRegistrationSuccessPage from './DogRegistrationSuccessPage'
-import QuoteRequestPage from './QuoteRequestPage'
 import QuoteRequestSuccessPage from './QuoteRequestSuccessPage'
+import QuoteRequestPage from './QuoteRequestPage'
 import DogInfoPage from './DogInfoPage'
+import QuoteDetailPage from './QuoteDetailPage'
+import QuoteAlertPage from './QuoteAlertPage'
 import ChatPage from './ChatPage'
 import ChatConversationPage from './ChatConversationPage'
 import MyPageGroomingPage from './MyPageGroomingPage'
@@ -33,7 +35,6 @@ import BookingConfirmationPage from './BookingConfirmationPage'
 import DogEditPage from './DogEditPage'
 import DogGroomEditPage from './DogGroomEditPage'
 import LocationSelectPage from './LocationSelectPage'
-import QuoteDetailPage from './QuoteDetailPage'
 // Designer Pages
 import DesignerLoginPage from './DesignerLoginPage'
 import DesignerDashboard from './DesignerDashboard'
@@ -69,6 +70,8 @@ function App() {
         <Route path="/dog-info" element={<DogInfoPage />} />
         <Route path="/quote-request" element={<QuoteRequestPage />} />
         <Route path="/quote-request-success" element={<QuoteRequestSuccessPage />} />
+        <Route path="/quote-detail" element={<QuoteDetailPage />} />
+        <Route path="/quote-alerts" element={<QuoteAlertPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/chat/:roomId" element={<ChatConversationPage />} />
         <Route path="/mypage-grooming" element={<MyPageGroomingPage />} />
@@ -80,6 +83,7 @@ function App() {
         <Route path="/write-review" element={<ReviewPage />} />
         <Route path="/chat-messages" element={<ChatVariant1Page />} />
         <Route path="/dog-detail" element={<DogDetailVariantPage />} />
+        <Route path="/notification" element={<NotificationPage />} />
         <Route path="/notifications" element={<NotificationPage />} />
         <Route path="/favorites" element={<FavoritesPage />} />
         <Route path="/help" element={<HelpPage />} />
@@ -91,14 +95,13 @@ function App() {
         <Route path="/dog-edit" element={<DogEditPage />} />
         <Route path="/dog-groom-edit" element={<DogGroomEditPage />} />
         <Route path="/location-select" element={<LocationSelectPage />} />
-        <Route path="/quote-detail" element={<QuoteDetailPage />} />
 
         {/* Designer Routes */}
         <Route path="/designer-login" element={<DesignerLoginPage />} />
         <Route path="/designer-dashboard" element={<DesignerDashboard />} />
         <Route path="/designer-quotes" element={<DesignerQuotesPage />} />
-        <Route path="/designer-quote-send/:quoteId" element={<DesignerSendQuotePage />} />
         <Route path="/designer-quotes-check" element={<DesignerQuoteCheckPage />} />
+        <Route path="/designer-send-quote/:quoteId" element={<DesignerSendQuotePage />} />
           <Route path="/designer-chat/:roomId" element={<DesignerChatConversationPage />} />
         <Route path="/designer-reservations" element={<DesignerReservationsPage />} />
         <Route path="/designer-portfolio" element={<DesignerPortfolioPage />} />

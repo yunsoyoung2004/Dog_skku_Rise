@@ -5,7 +5,7 @@ import { auth } from './firebase';
 import { getUserFavorites, removeFavorite } from './services';
 import './FavoritesPage.css';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/d3aedc85-e031-473e-aa91-014601f437ff";
+const logoImg = "/vite.svg";
 
 export default function FavoritesPage() {
   const navigate = useNavigate();

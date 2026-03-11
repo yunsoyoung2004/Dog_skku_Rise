@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from './firebase';
-import { getUserQuotes } from './services';
+import { doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { auth, db } from './firebase';
+import { getUserQuotes, createBooking, sendMessage, createNotification } from './services';
 import './QuoteDetailPage.css';
 
 export default function QuoteDetailPage() {
@@ -37,6 +38,132 @@ export default function QuoteDetailPage() {
       setError('견적을 불러올 수 없습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getStatusLabel = (quote) => {
+    if (quote.status === 'confirmed') return '확정됨';
+    if (quote.status === 'sent' || quote.status === 'responded') return '응답 완료';
+    return '대기 중';
+  };
+
+  const handleConfirmQuote = async (quote) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    // 이미 확정된 견적에 대해 다시 수락을 시도하는 경우 방어
+    if (quote.status === 'confirmed') {
+      alert('이미 수락된 견적입니다.');
+      alert('수락은 완료된 후 취소할 수 없습니다.');
+      return;
+    }
+
+    try {
+      // 1) 예약 생성
+      // 견적에서 선택한 희망 일정/시간을 실제 예약 날짜/타임슬롯으로 매핑
+      let bookingDate = null;
+      if (quote.preferredDate) {
+        try {
+          bookingDate = new Date(quote.preferredDate);
+          // 하루 동안 "다가오는 예약"으로 보이도록, 날짜의 끝 시간으로 설정
+          bookingDate.setHours(23, 59, 59, 999);
+        } catch (e) {
+          console.warn('예약 날짜 파싱 실패(무시 가능):', e);
+          bookingDate = null;
+        }
+      }
+
+      const bookingPayload = {
+        designerId: quote.designerId,
+        designerName: quote.designerName || '',
+        dogId: quote.dogId || '',
+        dogName: quote.dogName || '',
+        quoteId: quote.id,
+        price: quote.price || 0,
+        preferredDate: quote.preferredDate || '',
+        preferredTime: quote.preferredTime || '',
+        // MyPage의 "다가오는 예약" 카드에서 사용되는 필드
+        bookingDate: bookingDate,
+        timeSlot: quote.preferredTime || '',
+      };
+      const bookingResult = await createBooking(user.uid, bookingPayload);
+
+      // 예약/수락 성공 팝업
+      alert('견적이 수락되었습니다!');
+      alert('수락은 완료된 후 취소할 수 없습니다.');
+
+      // 디자이너/사용자 모두에게 예약 확정 알림 생성
+      try {
+        if (quote.designerId) {
+          await createNotification(quote.designerId, {
+            title: '예약이 확정되었어요',
+            message: `${quote.dogName || '반려견'} 예약이 확정되었습니다.`,
+            type: 'booking',
+            chatRoomId: quote.chatRoomId || '',
+            bookingId: bookingResult?.bookingId || '',
+          });
+        }
+
+        await createNotification(user.uid, {
+          title: '예약이 확정되었어요',
+          message: `${quote.designerName || '디자이너'}와의 예약이 확정되었습니다.`,
+          type: 'booking',
+          chatRoomId: quote.chatRoomId || '',
+          bookingId: bookingResult?.bookingId || '',
+        });
+      } catch (e) {
+        console.warn('예약 알림 생성 실패(무시 가능):', e);
+      }
+
+      // 2) 채팅방에 시스템 메시지 남기기 (있다면)
+      if (quote.chatRoomId) {
+        await sendMessage(quote.chatRoomId, {
+          senderId: user.uid,
+          senderType: 'user',
+          text: '견적을 확정하고 예약을 완료했어요.',
+          isSystemMessage: true,
+          messageType: 'bookingConfirmed',
+          timestamp: new Date().toISOString(),
+        });
+
+        // 채팅방 상태를 "매칭 완료"로 업데이트해서 채팅 리스트 필터와 맞춰줌
+        try {
+          const roomRef = doc(db, 'chatRooms', quote.chatRoomId);
+          await updateDoc(roomRef, {
+            status: 'completed',
+            updatedAt: Timestamp.now(),
+          });
+        } catch (e) {
+          console.warn('채팅방 상태 업데이트 실패(무시 가능):', e);
+        }
+
+        // 확정 후 바로 해당 채팅방으로 이동해 변경된 배너/메시지를 보여줌
+        navigate(`/chat/${quote.chatRoomId}`);
+      } else {
+        alert('예약이 생성되었습니다. 예약 내역은 마이페이지에서 확인할 수 있습니다.');
+      }
+
+      // 로컬 상태에서도 해당 견적을 확정 상태로 표시해, 재수락을 막고 UI를 일관되게 유지
+      setQuotes((prev) =>
+        prev.map((q) =>
+          q.id === quote.id
+            ? { ...q, status: 'confirmed' }
+            : q
+        )
+      );
+
+      // Firestore 상에서도 해당 견적 상태를 확정으로 반영
+      try {
+        const quoteRef = doc(db, 'quotes', quote.id);
+        await updateDoc(quoteRef, { status: 'confirmed' });
+      } catch (e) {
+        console.warn('견적 상태 업데이트 실패(무시 가능):', e);
+      }
+    } catch (err) {
+      console.error('견적 확정/예약 생성 실패:', err);
+      alert('견적을 확정하는 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -93,12 +220,18 @@ export default function QuoteDetailPage() {
                       </div>
                       <div className="quote-price">
                         <span className="price-value status-pill">
-                          {quote.status === 'responded' ? '응답 완료' : '대기 중'}
+                          {getStatusLabel(quote)}
                         </span>
                       </div>
                     </div>
 
-                    <p className="quote-message">{quote.notes || '요청 상세 정보가 없습니다.'}</p>
+                    {/* 사용자가 폼에서 입력했던 내용을 요약으로 표시 */}
+                    <div className="quote-summary">
+                      <h4>요청 요약</h4>
+                      <p><span className="summary-label">미용 진행 장소:</span> {quote.knowledge || '-'}</p>
+                      <p><span className="summary-label">희망 일정:</span> {quote.preferredDate || '-'} {quote.preferredTime || ''}</p>
+                      <p><span className="summary-label">요청 메모:</span> {quote.requestNotes || '요청 메모가 없습니다.'}</p>
+                    </div>
 
                     <div className="quote-services">
                       <h4>요청한 서비스 / 옵션</h4>
@@ -133,18 +266,36 @@ export default function QuoteDetailPage() {
                       </div>
                     </div>
 
+                    {/* 디자이너가 견적 작성 시 남긴 메모 */}
+                    {quote.message && (
+                      <div className="quote-designer-note">
+                        <h4>디자이너 메모</h4>
+                        <p>{quote.message}</p>
+                      </div>
+                    )}
+
                     <div className="quote-actions">
                       <button
                         className="quote-accept-btn"
-                        onClick={() => navigate('/quote-request', { state: { designerId: quote.designerId, designerName: quote.designerName, originalRequest: quote } })}
+                        disabled={quote.status === 'confirmed'}
+                        onClick={() =>
+                          navigate('/quote-request', {
+                            state: {
+                              designerId: quote.designerId,
+                              designerName: quote.designerName,
+                              originalRequest: quote,
+                            },
+                          })
+                        }
                       >
-                        수정해서 다시 보내기
+                        {quote.status === 'confirmed' ? '이미 확정된 견적' : '수정 제안하기'}
                       </button>
-                      <button 
+                      <button
                         className="quote-contact-btn"
-                        onClick={() => navigate('/chat')}
+                        disabled={quote.status === 'confirmed'}
+                        onClick={() => handleConfirmQuote(quote)}
                       >
-                        미용사에게 문의
+                        {quote.status === 'confirmed' ? '확정 완료' : '견적 확정하기'}
                       </button>
                     </div>
                   </div>

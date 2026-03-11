@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { createQuoteRequest, getUserDogs } from './services';
+import { createQuoteRequest, getUserDogs, sendMessage, createNotification } from './services';
 import './QuoteRequestPage.css';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/1907ad64-acfb-41cd-bcbf-9299c17f709e";
+const logoImg = "/vite.svg";
 
 export default function QuoteRequestPage() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export default function QuoteRequestPage() {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
 
-  const { designerId, designerName, originalRequest } = location.state || {};
+  const { designerId, designerName, originalRequest, roomId, fromChat } = location.state || {};
 
   const [quoteData, setQuoteData] = useState({
     knowledge: '', // 미용 진행 장소 (집, 샵, 둘 다 상관 없어요)
@@ -164,19 +164,121 @@ export default function QuoteRequestPage() {
 
     setLoading(true);
     try {
+      console.log('\\n========== [상세 견적 요청 제출 - QuoteRequestPage] ==========');
+      console.log('📝 [1] 제출 시작:', { 
+        userId: user.uid,
+        roomId, 
+        designerId, 
+        selectedDogId,
+        stepInfo: quoteData
+      });
+      
       const selectedDog = dogs.find((d) => d.id === selectedDogId) || {};
+      console.log('🐕 [2] 강아지 정보:', { 
+        dogId: selectedDogId,
+        name: selectedDog.name,
+        breed: selectedDog.breed,
+        weight: selectedDog.weight
+      });
 
-      await createQuoteRequest(user.uid, designerId, {
+      console.log('📤 [3] createQuoteRequest 호출 중...');
+      const result = await createQuoteRequest(user.uid, designerId, {
         designerName: designerName || '',
         dogId: selectedDogId,
         dogName: selectedDog.name || '',
         breed: selectedDog.breed || '',
         weight: selectedDog.weight,
+        // 채팅에서 온 경우, 해당 채팅방 ID를 함께 저장해 이후 견적/예약과 연결
+        roomId: roomId || '',
         quoteData: quoteData,
       });
-      setStep(7); // 완료 단계로
+      
+      console.log('✅ [4] createQuoteRequest 완료:', { 
+        success: result?.success,
+        quoteRequestId: result?.quoteId,
+        message: result?.message,
+        timestamp: new Date().toISOString()
+      });
+
+      // 디자이너에게 견적 요청 알림 생성
+      try {
+        await createNotification(designerId, {
+          title: '새 견적 요청이 도착했어요',
+          message: `${selectedDog.name || '반려견'} 견적 요청이 도착했습니다.`,
+          type: 'quote',
+          chatRoomId: roomId || '',
+          quoteRequestId: result?.quoteId || '',
+        });
+      } catch (e) {
+        console.warn('견적 요청 알림 생성 실패(무시 가능):', e);
+      }
+      
+      // 견적 요청이 성공하면, 전역 이벤트를 쏴서 헤더 배지(견적 카운트) 즉시 갱신
+      try {
+        console.log('📣 [QuoteRequestPage] quoteRequestCompleted 이벤트 디스패치:', {
+          userId: user?.uid,
+          designerId,
+          quoteRequestId: result?.quoteId
+        });
+        window.dispatchEvent(
+          new CustomEvent('quoteRequestCompleted', {
+            detail: {
+              userId: user?.uid,
+              designerId,
+              quoteRequestId: result?.quoteId,
+            },
+          })
+        );
+      } catch (e) {
+        console.warn('⚠️  quoteRequestCompleted 이벤트 디스패치 실패(무시 가능):', e);
+      }
+
+      // 채팅방에서 온 견적 요청이라면, 채팅방에도 시스템 메시지로 확실히 남겨줌
+      // (quoteId 유무와 상관없이 메시지는 항상 기록)
+      if (roomId && result?.success && user) {
+        console.log('\n💬 [5] 채팅방 메시지 전송 시작...');
+        const systemMessage = {
+          senderId: user.uid,
+          senderType: 'user',
+          text: '견적을 보냈습니다.',
+          isSystemMessage: true,
+          messageType: 'quoteRequest',
+          quoteRequestId: result?.quoteId || null,
+          timestamp: new Date().toISOString(),
+        };
+
+        try {
+          console.log('📤 [6] sendMessage 호출:', { 
+            roomId, 
+            messageType: systemMessage.messageType,
+            quoteRequestId: result.quoteId
+          });
+          await sendMessage(roomId, systemMessage);
+          console.log('✅ [7] 채팅 메시지 Firestore 저장 완료');
+          console.log('========== [✅ 상세 견적 요청 완료] ==========' );
+        } catch (e) {
+          console.warn('⚠️  견적 요청 채팅 메시지 기록 실패(무시 가능):', e);
+        }
+      } else {
+        console.warn('⚠️  [8] 채팅 메시지 스킵:', { 
+          hasRoomId: !!roomId,
+          success: result?.success, 
+          hasQuoteId: !!result?.quoteId,
+          hasUser: !!user,
+          skipReason: !roomId ? '채팅방 없음' : !result?.success ? '생성 실패' : !result?.quoteId ? '견적ID 없음' : '알려지지 않음'
+        });
+        console.log('========== [⚠️  견적 생성은 성공했으나 채팅 메시지는 스킵] ==========\n');
+      }
+      // 채팅에서 온 견적 요청이라면, 완료 후 바로 채팅방으로 돌아가서
+      // "견적을 보냈습니다." 메시지와 변경된 배너를 바로 볼 수 있게 한다.
+      if (fromChat && roomId) {
+        navigate(`/chat/${roomId}`);
+        return;
+      }
+
+      setStep(7); // 그 외의 경우에는 완료 단계로 이동
     } catch (err) {
-      console.error('견적 요청 실패:', err);
+      console.error('👹 견적 요청 실패:', err);
       alert('견적 요청에 실패했습니다');
     } finally {
       setLoading(false);
@@ -228,6 +330,29 @@ export default function QuoteRequestPage() {
                   {option}
                 </button>
               ))}
+            </div>
+            <div className="quote-step-subsection">
+              <div className="quote-step-question" style={{ marginTop: '24px' }}>
+                어떤 강아지에 대한 미용인가요?
+              </div>
+              {dogs && dogs.length > 0 ? (
+                <div className="quote-options">
+                  {dogs.map((dog) => (
+                    <button
+                      key={dog.id}
+                      className={`quote-option-btn ${selectedDogId === dog.id ? 'active' : ''}`}
+                      onClick={() => setSelectedDogId(dog.id)}
+                    >
+                      {dog.name || '이름 없음'}
+                      {dog.breed ? ` · ${dog.breed}` : ''}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="quote-helper-text" style={{ marginTop: '8px' }}>
+                  등록된 강아지가 없어요. 마이페이지에서 강아지를 먼저 등록해 주세요.
+                </p>
+              )}
             </div>
             <button className="quote-next-btn" onClick={handleNext}>
               다음
@@ -412,16 +537,13 @@ export default function QuoteRequestPage() {
                   </button>
                 ))}
               </div>
-              <div className="quote-available-times">
-                <h4>가능 시간</h4>
-                <p>2월 2일 11:00 - 12:00</p>
-                <p>18:00 - 22:00</p>
-                <p>2월 9일 11:00 - 12:00</p>
-                <p>18:00 - 22:00</p>
-              </div>
             </div>
-            <button className="quote-next-btn" onClick={handleNext}>
-              다음
+            <button
+              className="quote-next-btn"
+              onClick={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? '보내는 중...' : '견적 제출하기'}
             </button>
           </div>
         )}
@@ -430,13 +552,25 @@ export default function QuoteRequestPage() {
         {step === 7 && (
           <div className="quote-step completion">
             <div className="quote-step-header">
-              <button className="back-btn" onClick={handleBack}>←</button>
+              <button className="back-btn" onClick={() => {
+                console.log('🎯 [QuoteRequestPage] Step 7 뒤로가기 - quoteRequestCompleted 이벤트 발생');
+                window.dispatchEvent(new CustomEvent('quoteRequestCompleted', { 
+                  detail: { userId: user?.uid } 
+                }));
+                navigate(-1);
+              }}>←</button>
             </div>
             <div className="quote-completion-content">
               <div className="completion-dog-icon">🐕</div>
               <h2 className="completion-message">견적사가 무사히 전송 되였습니다 :)</h2>
-              <button className="completion-btn" onClick={() => navigate('/quote-detail')}>
-                견적서 확인하러 가기
+              <button className="completion-btn" onClick={() => {
+                console.log('🎯 [QuoteRequestPage] Step 7 돌아가기 - quoteRequestCompleted 이벤트 발생');
+                window.dispatchEvent(new CustomEvent('quoteRequestCompleted', { 
+                  detail: { userId: user?.uid } 
+                }));
+                navigate(-1);
+              }}>
+                돌아가기
               </button>
             </div>
           </div>

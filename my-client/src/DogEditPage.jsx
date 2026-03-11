@@ -14,7 +14,15 @@ export default function DogEditPage() {
     breed: '',
     age: '',
     gender: '',
-    weight: ''
+    weight: '',
+    notes: '',
+    allergies: '',
+    // 미용 관련 기본 성향 (프로필 기준 0~100)
+    matting: '',                // 털 엉킴
+    coatQuality: '',            // 모질
+    shedding: '',               // 털 빠짐
+    environmentAdaptation: '',  // 환경 적응도
+    skinSensitivity: ''         // 피부 민감도
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,7 +42,14 @@ export default function DogEditPage() {
             breed: dog.breed || '',
             age: dog.age ?? '',
             gender: dog.gender || '',
-            weight: dog.weight ?? ''
+            weight: dog.weight ?? '',
+            notes: dog.notes || '',
+            allergies: dog.allergies || '',
+            matting: dog.matting ?? '',
+            coatQuality: dog.coatQuality ?? '',
+            shedding: dog.shedding ?? '',
+            environmentAdaptation: dog.environmentAdaptation ?? '',
+            skinSensitivity: dog.skinSensitivity ?? ''
           });
         }
       } catch (err) {
@@ -51,7 +66,7 @@ export default function DogEditPage() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: ['weight', 'age']
+      [name]: ['weight', 'age', 'matting', 'coatQuality', 'shedding', 'environmentAdaptation', 'skinSensitivity']
         .includes(name)
         ? (value === '' ? '' : parseFloat(value))
         : value
@@ -229,6 +244,131 @@ export default function DogEditPage() {
               />
             ) : (
               <div className="form-value">{formData.weight}kg</div>
+            )}
+          </div>
+
+          {/* Grooming profile: 털 엉킴 */}
+          <div className="form-group">
+            <label>털 엉킴 (0~100)</label>
+            {isEditing ? (
+              <input
+                type="number"
+                name="matting"
+                value={formData.matting}
+                onChange={handleChange}
+                placeholder="0 ~ 100"
+              />
+            ) : (
+              <div className="form-value">
+                {formData.matting !== '' && formData.matting != null ? `${formData.matting}` : '입력 없음'}
+              </div>
+            )}
+          </div>
+
+          {/* Grooming profile: 모질 */}
+          <div className="form-group">
+            <label>모질 (0~100)</label>
+            {isEditing ? (
+              <input
+                type="number"
+                name="coatQuality"
+                value={formData.coatQuality}
+                onChange={handleChange}
+                placeholder="0 ~ 100"
+              />
+            ) : (
+              <div className="form-value">
+                {formData.coatQuality !== '' && formData.coatQuality != null ? `${formData.coatQuality}` : '입력 없음'}
+              </div>
+            )}
+          </div>
+
+          {/* Grooming profile: 털 빠짐 */}
+          <div className="form-group">
+            <label>털 빠짐 (0~100)</label>
+            {isEditing ? (
+              <input
+                type="number"
+                name="shedding"
+                value={formData.shedding}
+                onChange={handleChange}
+                placeholder="0 ~ 100"
+              />
+            ) : (
+              <div className="form-value">
+                {formData.shedding !== '' && formData.shedding != null ? `${formData.shedding}` : '입력 없음'}
+              </div>
+            )}
+          </div>
+
+          {/* Grooming profile: 환경 적응도 */}
+          <div className="form-group">
+            <label>환경 적응도 (0~100)</label>
+            {isEditing ? (
+              <input
+                type="number"
+                name="environmentAdaptation"
+                value={formData.environmentAdaptation}
+                onChange={handleChange}
+                placeholder="0 ~ 100"
+              />
+            ) : (
+              <div className="form-value">
+                {formData.environmentAdaptation !== '' && formData.environmentAdaptation != null
+                  ? `${formData.environmentAdaptation}`
+                  : '입력 없음'}
+              </div>
+            )}
+          </div>
+
+          {/* Grooming profile: 피부 민감도 */}
+          <div className="form-group">
+            <label>피부 민감도 (0~100)</label>
+            {isEditing ? (
+              <input
+                type="number"
+                name="skinSensitivity"
+                value={formData.skinSensitivity}
+                onChange={handleChange}
+                placeholder="0 ~ 100"
+              />
+            ) : (
+              <div className="form-value">
+                {formData.skinSensitivity !== '' && formData.skinSensitivity != null
+                  ? `${formData.skinSensitivity}`
+                  : '입력 없음'}
+              </div>
+            )}
+          </div>
+
+          {/* Allergies */}
+          <div className="form-group">
+            <label>음식 알레르기</label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="allergies"
+                value={formData.allergies}
+                onChange={handleChange}
+                placeholder="예: 닭고기, 소금"
+              />
+            ) : (
+              <div className="form-value">{formData.allergies || '없음'}</div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div className="form-group">
+            <label>특이사항</label>
+            {isEditing ? (
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows="4"
+              />
+            ) : (
+              <div className="form-value textarea-value">{formData.notes}</div>
             )}
           </div>
         </div>

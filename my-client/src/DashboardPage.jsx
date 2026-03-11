@@ -7,7 +7,7 @@ import PageLayout from './PageLayout';
 import './DashboardPage.css';
 
 // Figma에서 사용하던 원래 TOP 카드 이미지
-const topCardImage = 'https://www.figma.com/api/mcp/asset/6ff4a18f-d433-401b-8c09-280194b24689';
+const topCardImage = '/vite.svg';
 
 // 지역/구/동 정보 (LocationSelectModal과 동일 구조)
 const locations = {
@@ -518,16 +518,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* CTA Button */}
-          <button
-            type="button"
-            className="dashboard-cta-button"
-            onClick={() => navigate('/quote-detail')}
-          >
-            {receivedQuoteCount > 0
-              ? `받은 견적 ${receivedQuoteCount}개 확인하기`
-              : '받은 견적 확인하기'}
-          </button>
+          {/* CTA Button: 받은 견적 확인하기 버튼 제거 (요청에 따라 삭제) */}
         </>
       ) : (
         // ===== LOCKED STATE (강아지 정보 없음) =====

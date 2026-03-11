@@ -1,3 +1,4 @@
+
 // Firebase 데이터 관리 서비스
 import {
   collection,
@@ -317,8 +318,17 @@ export const cancelBooking = async (bookingDocId) => {
  */
 export const createQuoteRequest = async (userId, designerId, payload) => {
   try {
+    console.log('\n🔧 [services.js] createQuoteRequest 호출:', { 
+      userId, 
+      designerId,
+      dogId: payload.dogId,
+      dogName: payload.dogName,
+      hasQuoteData: !!payload.quoteData,
+      roomId: payload.roomId || null
+    });
+    
     const quotesRef = collection(db, 'quoteRequests');
-    const docRef = await addDoc(quotesRef, {
+    const documentData = {
       userId,
       designerId,
       designerName: payload.designerName || '',
@@ -326,14 +336,30 @@ export const createQuoteRequest = async (userId, designerId, payload) => {
       dogName: payload.dogName || '',
       breed: payload.breed || '',
       weight: payload.weight ?? null,
+      // 채팅에서 온 견적 요청인 경우, 연결된 채팅방 ID 저장
+      roomId: payload.roomId || '',
       // 견적 폼에서 넘어온 세부 옵션들
       ...(payload.quoteData || {}),
       status: 'pending',
       createdAt: Timestamp.now()
+    };
+    
+    console.log('💾 [Firestore] addDoc 호출 - quoteRequests 컬렉션에 저장 시작');
+    const docRef = await addDoc(quotesRef, documentData);
+    
+    console.log('✅ [Firestore] 저장 완료:', {
+      docId: docRef.id,
+      path: `quoteRequests/${docRef.id}`,
+      documentData
     });
-    return { success: true, quoteId: docRef.id };
+    
+    return { 
+      success: true, 
+      quoteId: docRef.id,
+      message: '견적 요청이 생성되었습니다.'
+    };
   } catch (error) {
-    console.error('견적 요청 오류:', error);
+    console.error('❌ [services.js] createQuoteRequest 오류:', error);
     throw error;
   }
 };
@@ -345,6 +371,12 @@ export const createQuoteRequest = async (userId, designerId, payload) => {
  */
 export const sendDesignerQuote = async (designerId, requestId, quoteRequest, payload) => {
   try {
+    console.log('🎯 sendDesignerQuote 호출:', { 
+      designerId, 
+      requestId, 
+      userId: quoteRequest?.userId,
+      amount: payload.amount 
+    });
     const quotesRef = collection(db, 'quotes');
 
     // 같은 요청 + 같은 디자이너의 견적이 이미 있는지 확인 (수정 모드 지원)
@@ -354,30 +386,47 @@ export const sendDesignerQuote = async (designerId, requestId, quoteRequest, pay
       where('requestId', '==', requestId)
     );
     const existingSnap = await getDocs(existingQ);
+    console.log('  📋 기존 견적 확인:', existingSnap.size, '개');
 
     const baseData = {
-      userId: quoteRequest.userId,
+      userId: quoteRequest?.userId,
       designerId,
       requestId,
-      dogId: quoteRequest.dogId || '',
-      dogName: quoteRequest.dogName || '',
-      breed: quoteRequest.breed || '',
-      // 견적 상세 정보
+      dogId: quoteRequest?.dogId || '',
+      dogName: quoteRequest?.dogName || '',
+      breed: quoteRequest?.breed || '',
+      // 관련 채팅방과 연결 (있다면)
+      chatRoomId: quoteRequest?.roomId || '',
+      // 사용자가 견적 폼에서 입력했던 원본 요청 정보 (요약용)
+      knowledge: quoteRequest?.knowledge || '',
+      groomingStyle: quoteRequest?.groomingStyle || '',
+      additionalGrooming: Array.isArray(quoteRequest?.additionalGrooming)
+        ? quoteRequest.additionalGrooming
+        : [],
+      additionalOptions: Array.isArray(quoteRequest?.additionalOptions)
+        ? quoteRequest.additionalOptions
+        : [],
+      dogTags: Array.isArray(quoteRequest?.dogTags) ? quoteRequest.dogTags : [],
+      preferredDate: quoteRequest?.preferredDate || '',
+      preferredTime: quoteRequest?.preferredTime || '',
+      requestNotes: quoteRequest?.notes || '',
+      // 견적 상세 정보 (디자이너가 입력한 내용)
       price: Number(payload.amount || 0),
       message: payload.message || '',
       // 서비스 태그: 폼에서 들어온 옵션들을 합쳐서 저장
       services: [
-        ...(quoteRequest.groomingStyle ? [quoteRequest.groomingStyle] : []),
-        ...(Array.isArray(quoteRequest.additionalOptions) ? quoteRequest.additionalOptions : []),
-        ...(Array.isArray(quoteRequest.dogTags) ? quoteRequest.dogTags : []),
+        ...(quoteRequest?.groomingStyle ? [quoteRequest.groomingStyle] : []),
+        ...(Array.isArray(quoteRequest?.additionalOptions) ? quoteRequest.additionalOptions : []),
+        ...(Array.isArray(quoteRequest?.dogTags) ? quoteRequest.dogTags : []),
       ],
       // 디자이너 표시용 정보 (있으면)
-      designerName: quoteRequest.designerName || '',
-      designerImage: quoteRequest.designerImage || '',
+      designerName: quoteRequest?.designerName || '',
+      designerImage: quoteRequest?.designerImage || '',
       // 사용자 페이지에서 날짜 표시용 숫자 타임스탬프
       timestamp: Date.now(),
       status: 'sent',
     };
+    console.log('  💾 저장할 데이터:', { userId: baseData.userId, designerId: baseData.designerId, dogName: baseData.dogName });
 
     let quoteId;
 
@@ -385,6 +434,7 @@ export const sendDesignerQuote = async (designerId, requestId, quoteRequest, pay
       // 이미 견적이 있으면 수정 모드: 금액/메시지/서비스만 업데이트
       const docSnap = existingSnap.docs[0];
       const quoteRef = doc(db, 'quotes', docSnap.id);
+      console.log('  🔄 [UPDATE] 기존 견적 수정:', { quoteId: docSnap.id, newPrice: baseData.price });
       await updateDoc(quoteRef, {
         price: baseData.price,
         message: baseData.message,
@@ -394,27 +444,33 @@ export const sendDesignerQuote = async (designerId, requestId, quoteRequest, pay
         updatedAt: Timestamp.now(),
       });
       quoteId = docSnap.id;
+      console.log('  ✅ [UPDATE] 수정 완료:', docSnap.id);
     } else {
       // 최초 전송: 새 문서 생성
+      console.log('  ➕ [INSERT] 새 견적 생성:', { price: baseData.price });
       const docRef = await addDoc(quotesRef, {
         ...baseData,
         createdAt: Timestamp.now(),
       });
       quoteId = docRef.id;
+      console.log('  ✅ [INSERT] 생성 완료:', { docId: docRef.id, path: `quotes/${docRef.id}` });
     }
 
     // 관련 quoteRequest 상태도 갱신 (디자이너가 답변 보냄)
     try {
+      console.log('  🔗 [UPDATE] quoteRequest 상태 갱신:', { requestId, newStatus: 'responded' });
       const requestRef = doc(db, 'quoteRequests', requestId);
       await updateDoc(requestRef, {
         status: 'responded',
         lastQuotedAt: Timestamp.now(),
         lastQuoteId: quoteId,
       });
+      console.log('  ✅ [UPDATE] quoteRequest 갱신 완료');
     } catch (e) {
       console.warn('quoteRequest 상태 업데이트 실패 (무시 가능):', e);
     }
 
+    console.log('✅ [services.js] sendDesignerQuote 완료\n');
     return { success: true, quoteId };
   } catch (error) {
     console.error('견적 전송/수정 오류:', error);
@@ -428,15 +484,26 @@ export const sendDesignerQuote = async (designerId, requestId, quoteRequest, pay
  */
 export const getUserQuotes = async (userId) => {
   try {
+    console.log('🔍 [getUserQuotes] 조회 시작:', { userId });
     const quotesRef = collection(db, 'quotes');
     const q = query(quotesRef, where('userId', '==', userId));
     const quotesSnap = await getDocs(q);
     const quotes = [];
     quotesSnap.forEach((doc) => {
-      quotes.push({ ...doc.data(), id: doc.id });
+      const data = doc.data();
+      console.log('  📄 Document found:', { 
+        docId: doc.id,
+        userId: data.userId,
+        designerId: data.designerId,
+        dogName: data.dogName,
+        price: data.price
+      });
+      quotes.push({ ...data, id: doc.id });
     });
     // 최신순 정렬 (timestamp 숫자 기반)
-    return quotes.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    const sorted = quotes.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    console.log('✅ [getUserQuotes] 조회 완료:', { totalCount: sorted.length });
+    return sorted;
   } catch (error) {
     console.error('견적 조회 오류:', error);
     throw error;
@@ -450,17 +517,29 @@ export const getUserQuotes = async (userId) => {
  */
 export const getDesignerQuoteRequests = async (designerId) => {
   try {
+    console.log('🔎 [getDesignerQuoteRequests] 시작:', { designerId });
     const requestsRef = collection(db, 'quoteRequests');
     const q = query(requestsRef, where('designerId', '==', designerId));
     const requestsSnap = await getDocs(q);
+    console.log('📚 [getDesignerQuoteRequests] 조회 완료:', {
+      totalDocuments: requestsSnap.size,
+      documents: requestsSnap.docs.map(doc => ({
+        id: doc.id,
+        userId: doc.data().userId,
+        dogName: doc.data().dogName,
+        status: doc.data().status
+      }))
+    });
     const requests = [];
     requestsSnap.forEach((doc) => {
       requests.push({ ...doc.data(), id: doc.id });
     });
     // 최신순 정렬
-    return requests.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const sorted = requests.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    console.log('✅ [getDesignerQuoteRequests] 정렬 완료:', { finalCount: sorted.length });
+    return sorted;
   } catch (error) {
-    console.error('견적 요청 조회 오류:', error);
+    console.error('❌ [getDesignerQuoteRequests] 견적 요청 조회 오류:', error);
     throw error;
   }
 };
@@ -472,6 +551,8 @@ export const getDesignerQuoteRequests = async (designerId) => {
  */
 export const confirmLatestQuote = async (userId, designerId) => {
   try {
+    console.log('\n🔧 [services.js] confirmLatestQuote 호출:', { userId, designerId });
+    
     const quotesRef = collection(db, 'quotes');
     const q = query(
       quotesRef,
@@ -481,36 +562,51 @@ export const confirmLatestQuote = async (userId, designerId) => {
       limit(1)
     );
 
+    console.log('🔍 [Firestore] quotes 컬렉션 조회 중...');
     const snap = await getDocs(q);
+    console.log('📊 [Firestore] 조회 결과:', snap.size, '개');
+    
     if (snap.empty) {
+      console.log('⚠️  [ERROR] 확정할 견적 없음');
       return { success: false, reason: 'NO_QUOTE' };
     }
 
     const docSnap = snap.docs[0];
     const data = docSnap.data();
+    console.log('✅ [Firestore] 최신 견적 발견:', {
+      quoteId: docSnap.id,
+      currentStatus: data.status,
+      price: data.price,
+      timestamp: data.timestamp
+    });
+    
     const quoteRef = doc(db, 'quotes', docSnap.id);
-
+    console.log('🔄 [Firestore] quotes status 업데이트: confirmed');
     await updateDoc(quoteRef, {
       status: 'confirmed',
       confirmedAt: Timestamp.now(),
     });
+    console.log('✅ [Firestore] quotes 상태 업데이트 완료');
 
     // 연결된 quoteRequest 상태도 가능하면 함께 갱신
     if (data.requestId) {
       try {
+        console.log('🔗 [Firestore] quoteRequest 상태 갱신:', { requestId: data.requestId });
         const requestRef = doc(db, 'quoteRequests', data.requestId);
         await updateDoc(requestRef, {
           status: 'confirmed',
           confirmedAt: Timestamp.now(),
         });
+        console.log('✅ [Firestore] quoteRequest 상태 업데이트 완료');
       } catch (e) {
         console.warn('quoteRequest 확정 상태 업데이트 실패(무시 가능):', e);
       }
     }
 
-    return { success: true, quoteId: docSnap.id };
+    console.log('✅ [services.js] confirmLatestQuote 완료\n');
+    return { success: true, quoteId: docSnap.id, quote: { id: docSnap.id, ...data } };
   } catch (error) {
-    console.error('견적 확정 오류:', error);
+    console.error('❌ [services.js] 견적 확정 오류:', error);
     throw error;
   }
 };
@@ -537,6 +633,22 @@ export const getUserQuoteRequests = async (userId) => {
   } catch (error) {
     console.error('보낸 견적 요청 조회 오류:', error);
     throw error;
+  }
+};
+
+/**
+ * 사용자가 보낸 견적 요청 개수 (카운트)
+ * - quoteRequests 컬렉션 기준
+ */
+export const getUserQuoteRequestsCount = async (userId) => {
+  try {
+    const reqRef = collection(db, 'quoteRequests');
+    const q = query(reqRef, where('userId', '==', userId));
+    const snap = await getDocs(q);
+    return snap.size || 0;
+  } catch (error) {
+    console.error('보낸 견적 요청 개수 조회 오류:', error);
+    return 0;
   }
 };
 
@@ -632,31 +744,38 @@ export const getDesignerReviews = async (designerId) => {
 // ============= MESSAGES SERVICE =============
 
 /**
- * 채팅 메시지 저장
+ * 채팅 메시지 전송 (단순화 버전)
+ * - Firestore에 메시지 저장만 수행
  */
 export const sendMessage = async (chatRoomId, messageData) => {
   try {
-    const now = Timestamp.now();
+    console.log('\n📤 [sendMessage] 호출:', {
+      chatRoomId: chatRoomId.substring(0, 10) + '...',
+      senderType: messageData.senderType,
+      textLen: messageData.text?.length || 0
+    });
+    
     const messagesRef = collection(db, `chatRooms/${chatRoomId}/messages`);
     const docRef = await addDoc(messagesRef, {
       ...messageData,
-      timestamp: now
+      timestamp: Timestamp.now()
     });
-    // 채팅방에 최근 메시지/시간도 함께 반영해서 목록에서 미리보기로 사용
+    console.log('✅ [sendMessage] 저장 완료:', docRef.id);
+
     try {
       const roomRef = doc(db, 'chatRooms', chatRoomId);
       await updateDoc(roomRef, {
         lastMessage: messageData.text || '',
-        lastMessageTime: now,
-        updatedAt: now,
+        lastMessageTime: Timestamp.now(),
+        updatedAt: Timestamp.now(),
       });
     } catch (e) {
-      console.warn('채팅방 최근 메시지 업데이트 실패(무시 가능):', e);
+      console.warn('⚠️  채팅방 업데이트 실패:', e.message);
     }
 
     return { success: true, messageId: docRef.id };
   } catch (error) {
-    console.error('메시지 전송 오류:', error);
+    console.error('❌ [sendMessage] 오류:', error.message);
     throw error;
   }
 };
@@ -727,6 +846,153 @@ export const createOrGetChatRoom = async (userId, designerId, meta = {}) => {
     };
   } catch (error) {
     console.error('채팅방 생성/조회 오류:', error);
+    throw error;
+  }
+};
+
+// ============= NOTIFICATIONS SERVICE =============
+
+/**
+ * 알림 생성
+ */
+export const createNotification = async (userId, notificationData) => {
+  try {
+    const notificationsRef = collection(db, `users/${userId}/notifications`);
+    const now = Timestamp.now();
+    
+    const docRef = await addDoc(notificationsRef, {
+      ...notificationData,
+      createdAt: now,
+      isRead: false,
+    });
+    
+    // 사용자의 unreadNotificationCount 증가
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    const currentCount = userSnap.data()?.unreadNotificationCount || 0;
+    
+    await updateDoc(userRef, {
+      unreadNotificationCount: currentCount + 1,
+    });
+    
+    return { id: docRef.id, ...notificationData };
+  } catch (error) {
+    console.error('알림 생성 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 지난 예약 중 리뷰가 없는 건에 대해
+ * "어떠셨나요? 리뷰를 남겨주세요" 알림 생성
+ */
+export const notifyPendingReviews = async (userId) => {
+  try {
+    const bookingsRef = collection(db, 'bookings');
+    const q = query(bookingsRef, where('userId', '==', userId));
+    const snap = await getDocs(q);
+
+    const now = new Date();
+    const toDate = (tsOrDate) => {
+      if (!tsOrDate) return null;
+      return tsOrDate.toDate ? tsOrDate.toDate() : new Date(tsOrDate);
+    };
+
+    const targets = [];
+
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      const d = toDate(data.bookingDate);
+      if (!d) return;
+
+      const isPast = d < now;
+      const isCancelled = data.status === 'cancelled';
+      const hasReview = data.hasReview === true;
+      const notified = data.reviewNotificationSent === true;
+
+      if (isPast && !isCancelled && !hasReview && !notified) {
+        targets.push({ id: docSnap.id, ...data, bookingDate: d });
+      }
+    });
+
+    for (const booking of targets) {
+      try {
+        await createNotification(userId, {
+          title: '어떠셨나요? 리뷰를 남겨주세요',
+          message: `${booking.designerName || '디자이너'}와의 미용이 완료되었습니다. 후기를 남겨주세요.`,
+          type: 'review',
+          bookingId: booking.bookingId || booking.id,
+          designerId: booking.designerId || '',
+          designerName: booking.designerName || '',
+        });
+
+        const bookingRef = doc(db, 'bookings', booking.id);
+        await updateDoc(bookingRef, {
+          reviewNotificationSent: true,
+        });
+      } catch (innerErr) {
+        console.warn('리뷰 알림 생성/표시 실패(무시 가능):', innerErr);
+      }
+    }
+  } catch (error) {
+    console.error('리뷰 알림 체크 오류:', error);
+  }
+};
+
+/**
+ * 알림 조회 (사용자)
+ */
+export const getUserNotifications = async (userId) => {
+  try {
+    const notificationsRef = collection(db, `users/${userId}/notifications`);
+    const q = query(notificationsRef, orderBy('createdAt', 'desc'), limit(50));
+    const snap = await getDocs(q);
+    
+    const notifications = [];
+    snap.forEach((doc) => {
+      notifications.push({ id: doc.id, ...doc.data() });
+    });
+    
+    return notifications;
+  } catch (error) {
+    console.error('알림 조회 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 알림 읽음 처리
+ */
+export const markNotificationAsRead = async (userId, notificationId) => {
+  try {
+    const notifRef = doc(db, `users/${userId}/notifications`, notificationId);
+    await updateDoc(notifRef, { isRead: true });
+    
+    // 사용자의 unreadNotificationCount 감소
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    const currentCount = userSnap.data()?.unreadNotificationCount || 0;
+    
+    if (currentCount > 0) {
+      await updateDoc(userRef, {
+        unreadNotificationCount: currentCount - 1,
+      });
+    }
+  } catch (error) {
+    console.error('알림 읽음 처리 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 알림 삭제
+ */
+export const deleteNotification = async (userId, notificationId) => {
+  try {
+    const notifRef = doc(db, `users/${userId}/notifications`, notificationId);
+    await deleteDoc(notifRef);
+  } catch (error) {
+    console.error('알림 삭제 오류:', error);
     throw error;
   }
 };
@@ -1013,6 +1279,7 @@ export default {
   // Quotes
   createQuoteRequest,
   getUserQuotes,
+  confirmLatestQuote,
   addRecentSearch,
   getRecentSearches,
   // Reviews
@@ -1022,6 +1289,11 @@ export default {
   sendMessage,
   getChatMessages,
   createOrGetChatRoom,
+  // Notifications
+  createNotification,
+  getUserNotifications,
+  markNotificationAsRead,
+  deleteNotification,
   // Favorites
   addFavorite,
   removeFavorite,

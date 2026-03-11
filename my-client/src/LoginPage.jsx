@@ -1,11 +1,11 @@
 import './LoginPage.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-const img1 = "https://www.figma.com/api/mcp/asset/c740a227-3510-4127-bcff-41457c033fec";
+const img1 = "/vite.svg";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -35,11 +35,15 @@ export default function LoginPage() {
       const userSnap = await getDoc(userDocRef);
       const role = userSnap.exists() ? userSnap.data().role : 'user';
 
+      // 디자이너 계정은 사용자 로그인 페이지에서 로그인 불가
       if (role === 'designer') {
-        navigate('/designer-dashboard');
-      } else {
-        navigate('/dashboard');
+        await signOut(auth);
+        setError('디자이너 계정은 디자이너 로그인 페이지에서 로그인해주세요.');
+        return;
       }
+
+      // 일반 사용자 계정만 대시보드로 이동
+      navigate('/dashboard');
     } catch (err) {
       console.error('❌ 로그인 실패:', err.code, err.message);
       if (err.code === 'auth/user-not-found') {

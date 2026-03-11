@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { sendDesignerQuote } from './services';
+import { sendDesignerQuote, sendMessage, createOrGetChatRoom, createNotification } from './services';
 import './DesignerPageNav.css';
 import './DesignerSendQuotePage.css';
 
@@ -11,6 +11,8 @@ export default function DesignerSendQuotePage() {
   const { quoteId } = useParams();
   const location = useLocation();
   const quote = location.state?.quote || {};
+  // location.state에서 roomId를 받거나, quote 객체에서 찾기 (없으면 나중에 생성)
+  const initialRoomId = location.state?.roomId || quote?.roomId || quote?.chatRoomId || '';
 
   const [user] = useAuthState(auth);
 
@@ -29,10 +31,66 @@ export default function DesignerSendQuotePage() {
 
     try {
       setSubmitting(true);
-      await sendDesignerQuote(user.uid, quoteId, quote, {
+
+      // 1) 채팅방 ID 확보 (없으면 생성 또는 기존 방 재사용)
+      let targetRoomId = initialRoomId;
+      if (!targetRoomId && quote.userId) {
+        try {
+          console.log('🔍 기존 채팅방 조회/생성:', { userId: quote.userId, designerId: user.uid });
+          const room = await createOrGetChatRoom(quote.userId, user.uid, {});
+          targetRoomId = room?.id || '';
+          console.log('✅ 채팅방 확보 완료:', { targetRoomId });
+        } catch (err) {
+          console.warn('⚠️ 채팅방 조회/생성 실패(무시 가능):', err);
+        }
+      }
+
+      console.log('💾 견적 저장 시작:', { user: user.uid, quoteId, roomId: targetRoomId, amount });
+
+      // 2) 견적 문서 저장/수정
+      const quoteResult = await sendDesignerQuote(user.uid, quoteId, quote, {
         amount,
         message,
       });
+      
+      console.log('💾 견적 저장 완료');
+
+      // 3) 채팅방에 시스템 메시지 추가
+      if (targetRoomId) {
+        const systemMessage = {
+          senderId: user.uid,
+          senderType: 'designer',
+          text: '디자이너가 견적을 보냈습니다.',
+          isSystemMessage: true,
+          messageType: 'quoteReceived',
+        };
+
+        try {
+          console.log('💬 채팅 메시지 전송:', { roomId: targetRoomId, message: systemMessage.text });
+          await sendMessage(targetRoomId, systemMessage);
+          console.log('✅ 채팅 메시지 전송 완료');
+        } catch (e) {
+          console.warn('견적 메시지 기록 실패(무시 가능):', e);
+        }
+      } else {
+        console.warn('⚠️  roomId 없음 - 채팅 메시지는 생략됩니다:', { quoteId, quote });
+      }
+
+      // 사용자에게 견적 알림 생성
+      if (quote.userId) {
+        try {
+          await createNotification(quote.userId, {
+            title: '디자이너가 견적을 보냈어요',
+            message: `${user.displayName || '디자이너'}가 견적을 보냈습니다.`,
+            type: 'quote',
+            chatRoomId: targetRoomId || quote.roomId || quote.chatRoomId || '',
+            quoteId: quoteResult?.quoteId || quoteId,
+          });
+        } catch (e) {
+          console.warn('견적 알림 생성 실패(무시 가능):', e);
+        }
+      }
+
       setSent(true);
     } catch (error) {
       console.error('견적 전송/수정 실패:', error);
@@ -57,11 +115,16 @@ export default function DesignerSendQuotePage() {
         )}
 
         <section className="send-quote-summary">
-          <h2>요청 정보</h2>
+          <h2>요청 정보 요약</h2>
           <p><span className="label">반려견:</span> {quote.dogName || quote.title || '반려견'}</p>
-          <p><span className="label">고객명:</span> {quote.ownerName || '고객'}</p>
-          <p><span className="label">서비스:</span> {quote.serviceType || '미정'}</p>
-          <p><span className="label">예정 날짜:</span> {quote.preferredDate || quote.time || '미정'}</p>
+          <p><span className="label">견종 / 체중:</span> {(quote.breed || '-') + (quote.weight ? ` / ${quote.weight}kg` : '')}</p>
+          <p><span className="label">미용 진행 장소:</span> {quote.knowledge || '-'}</p>
+          <p><span className="label">미용 방식:</span> {quote.groomingStyle || '-'}</p>
+          <p><span className="label">희망 일정:</span> {quote.preferredDate || '-'} {quote.preferredTime || ''}</p>
+          <p><span className="label">추가 미용:</span> {(quote.additionalGrooming || []).join(', ') || '-'}</p>
+          <p><span className="label">추가 옵션:</span> {(quote.additionalOptions || []).join(', ') || '-'}</p>
+          <p><span className="label">강아지 태그:</span> {(quote.dogTags || []).join(', ') || '-'}</p>
+          <p><span className="label">요청 메모:</span> {quote.notes || '요청 메모가 없습니다.'}</p>
         </section>
 
         <form className="send-quote-form" onSubmit={handleSubmit}>

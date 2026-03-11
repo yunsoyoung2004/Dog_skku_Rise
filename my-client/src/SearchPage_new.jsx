@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './SearchPage.css';
 
-const imgSearch = "https://www.figma.com/api/mcp/asset/cbaa2531-2cb4-4839-a52f-a4dad1334b9b";
+const imgSearch = "/vite.svg";
 
 const TEMP_DESIGNERS = [
   {

@@ -74,9 +74,19 @@ export default function DesignerPortfolioPage() {
       let photoURL = values.photoURL;
 
       if (profileImageFile) {
-        const result = await uploadDesignerProfileImage(user.uid, profileImageFile);
-        if (result.success) {
-          photoURL = result.url;
+        try {
+          const result = await uploadDesignerProfileImage(user.uid, profileImageFile);
+          if (result && result.success) {
+            photoURL = result.url;
+          } else {
+            throw new Error('프로필 사진 업로드 실패');
+          }
+        } catch (uploadError) {
+          console.error('사진 업로드 오류:', uploadError);
+          setSavedMessage(`사진 업로드 실패: ${uploadError.message}`);
+          setSaving(false);
+          setTimeout(() => setSavedMessage(''), 3000);
+          return;
         }
       }
 
@@ -105,10 +115,10 @@ export default function DesignerPortfolioPage() {
       setSavedMessage('저장되었습니다.');
     } catch (e) {
       console.error('포트폴리오 설정 저장 실패:', e);
-      setSavedMessage('저장 중 오류가 발생했습니다.');
+      setSavedMessage(`저장 중 오류가 발생했습니다: ${e.message}`);
     } finally {
       setSaving(false);
-      setTimeout(() => setSavedMessage(''), 2000);
+      setTimeout(() => setSavedMessage(''), 3000);
     }
   };
 

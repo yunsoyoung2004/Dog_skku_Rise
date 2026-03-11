@@ -24,13 +24,22 @@ export default function DesignerQuoteCheckPage() {
       try {
         setLoading(true);
         setError('');
+
+        // Firestore 인덱스 없이도 동작하도록 orderBy는 제거하고,
+        // 클라이언트에서 createdAt 기준 내림차순 정렬
         const q = query(
           collection(db, 'quoteRequests'),
-          where('designerId', '==', user.uid),
-          orderBy('createdAt', 'desc')
+          where('designerId', '==', user.uid)
         );
         const snap = await getDocs(q);
-        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        let list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        list = list.sort((a, b) => {
+          const aTs = a.createdAt?.toMillis?.() ?? 0;
+          const bTs = b.createdAt?.toMillis?.() ?? 0;
+          return bTs - aTs;
+        });
+
         setQuotes(list);
       } catch (e) {
         console.error('견적 요청 로드 실패:', e);
@@ -100,9 +109,9 @@ export default function DesignerQuoteCheckPage() {
                   <button
                     type="button"
                     className="dq-send-btn"
-                    onClick={() => navigate(`/designer-quote-send/${card.id}`, { state: { quote: card } })}
+                    onClick={() => navigate(`/designer-send-quote/${card.id}`, { state: { quote: card } })}
                   >
-                    견적서 보내기
+                    {card.status === 'responded' ? '견적 수정하기' : '견적서 보내기'}
                   </button>
                 </div>
               </div>

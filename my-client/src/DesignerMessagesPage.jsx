@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import './DesignerPageNav.css';
 import './DesignerMessagesPage.css';
@@ -19,26 +19,33 @@ export default function DesignerMessagesPage() {
       return;
     }
 
-    const loadRooms = async () => {
-      try {
-        setLoading(true);
-        const q = query(
-          collection(db, 'chatRooms'),
-          where('designerId', '==', user.uid)
-        );
-        const snap = await getDocs(q);
-        const rooms = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setMessages(rooms);
-      } catch (err) {
-        console.error('채팅방 로드 실패:', err);
-        setMessages([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    const q = query(
+      collection(db, 'chatRooms'),
+      where('designerId', '==', user.uid)
+    );
+    
+    // 실시간 리스너로 채팅방 상태 변경 감지
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const rooms = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setMessages(rooms);
+      setLoading(false);
+    }, (err) => {
+      console.error('채팅방 로드 실패:', err);
+      setMessages([]);
+      setLoading(false);
+    });
 
-    loadRooms();
+    return () => unsubscribe();
   }, [user, navigate]);
+
+  const filterMessages = () => {
+    if (filter === 'all') return messages;
+    if (filter === 'matching') {
+      return messages.filter((msg) => msg.status === 'pending');
+    }
+    return messages.filter((msg) => msg.status === filter);
+  };
 
   const formatTime = (ts) => {
     if (!ts) return '';
@@ -94,14 +101,14 @@ export default function DesignerMessagesPage() {
             <div className="empty-messages-icon">⌛</div>
             <p className="empty-messages-text">채팅을 불러오는 중입니다...</p>
           </div>
-        ) : messages.length === 0 ? (
+        ) : filterMessages().length === 0 ? (
           <div className="empty-messages">
             <div className="empty-messages-icon">💬</div>
             <p className="empty-messages-text">채팅이 없습니다</p>
           </div>
         ) : (
           <div className="dm-list">
-            {messages.map((msg) => (
+            {filterMessages().map((msg) => (
               <div
                 key={msg.id}
                 className="message-item"

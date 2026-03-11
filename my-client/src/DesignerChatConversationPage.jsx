@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, orderBy, onSnapshot, onSnapshot as onUserSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { getChatMessages, sendMessage, getDesignerQuoteRequests } from './services';
-import './DesignerPageNav.css';
+import { sendMessage, createNotification } from './services';
 import './DesignerChatConversationPage.css';
 
 export default function DesignerChatConversationPage() {
@@ -16,124 +15,142 @@ export default function DesignerChatConversationPage() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [latestQuoteRequest, setLatestQuoteRequest] = useState(null);
-  const [quoteRequestLoading, setQuoteRequestLoading] = useState(true);
-  const [quoteError, setQuoteError] = useState('');
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const messagesEndRef = useRef(null);
 
+  // 견적 관련 시스템 메시지 여부 체크
+  const hasQuoteRequestMessage = messages.some(
+    (msg) => msg.messageType === 'quoteRequest'
+  );
+  const hasDesignerQuoteMessage = messages.some(
+    (msg) => msg.messageType === 'quoteReceived'
+  );
+
+  // 채팅방 정보 로드
   useEffect(() => {
-    const loadQuoteRequests = async (currentUser, userId) => {
-      if (!currentUser || !userId) {
-        setLatestQuoteRequest(null);
-        setQuoteRequestLoading(false);
-        return;
-      }
-
-      try {
-        setQuoteRequestLoading(true);
-        setQuoteError('');
-        const allRequests = await getDesignerQuoteRequests(currentUser.uid);
-        const filtered = allRequests.filter((q) => q.userId === userId);
-        setLatestQuoteRequest(filtered.length > 0 ? filtered[0] : null);
-      } catch (e) {
-        console.error('채팅용 견적 요청 로드 실패:', e);
-        setLatestQuoteRequest(null);
-        setQuoteError('견적 요청 정보를 불러오지 못했습니다.');
-      } finally {
-        setQuoteRequestLoading(false);
-      }
-    };
-
-    const loadConversation = async () => {
+    const loadRoom = async () => {
       if (!roomId) return;
       if (!user) {
         navigate('/designer-login');
         return;
       }
 
-      setLoading(true);
-      setError('');
       try {
+        setLoading(true);
+        setError('');
+
         const roomRef = doc(db, 'chatRooms', roomId);
         const snap = await getDoc(roomRef);
 
         if (!snap.exists()) {
-          setRoom(null);
-          setMessages([]);
           setError('채팅방을 찾을 수 없습니다.');
-          return;
-        }
-
-        const roomData = { id: snap.id, ...snap.data() };
-        // 디자이너 본인 방인지 확인 (보안용)
-        if (roomData.designerId && roomData.designerId !== user.uid) {
           setRoom(null);
-          setMessages([]);
-          setError('해당 채팅방에 접근할 수 없습니다.');
           return;
         }
 
-        setRoom(roomData);
-        const msgs = await getChatMessages(roomId);
-        setMessages(msgs);
+        const data = { id: snap.id, ...snap.data() };
 
-        await loadQuoteRequests(user, roomData.userId);
+        // 디자이너 본인 방인지 확인
+        if (data.designerId && data.designerId !== user.uid) {
+          setError('해당 채팅방에 접근할 수 없습니다.');
+          setRoom(null);
+          return;
+        }
+
+        setRoom(data);
       } catch (e) {
-        console.error('채팅 로드 실패:', e);
-        setRoom(null);
-        setMessages([]);
+        console.error('채팅방 로드 실패:', e);
         setError('채팅을 불러오지 못했습니다.');
-        setLatestQuoteRequest(null);
-        setQuoteRequestLoading(false);
+        setRoom(null);
       } finally {
         setLoading(false);
       }
     };
 
-    loadConversation();
+    loadRoom();
   }, [roomId, user, navigate]);
 
+  // 메시지 실시간 구독
+  useEffect(() => {
+    if (!roomId || !user) return;
+
+    const messagesRef = collection(db, `chatRooms/${roomId}/messages`);
+    const q = query(messagesRef, orderBy('timestamp', 'asc'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const list = [];
+        snapshot.forEach((docSnap) => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        setMessages(list);
+      },
+      (err) => {
+        console.error('메시지 구독 실패:', err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [roomId, user]);
+
+  // 알림 카운트 실시간 감시 (기존 UX 유지)
+  useEffect(() => {
+    if (!user) {
+      setUnreadNotificationCount(0);
+      return;
+    }
+
+    const userRef = doc(db, 'users', user.uid);
+    const unsubscribe = onUserSnapshot(
+      userRef,
+      (docSnap) => {
+        const count = docSnap.data()?.unreadNotificationCount || 0;
+        setUnreadNotificationCount(count);
+      },
+      (err) => {
+        console.warn('알림 수 로드 실패:', err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // 새 메시지 도착 시 스크롤
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!newMessage.trim() || !roomId || !user) return;
 
     const text = newMessage.trim();
     setNewMessage('');
 
-    const messageData = {
-      senderId: user.uid,
-      senderType: 'designer',
-      text,
-    };
+    try {
+      await sendMessage(roomId, {
+        senderId: user.uid,
+        senderType: 'designer',
+        text,
+      });
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `local-${Date.now()}`,
-        ...messageData,
-      },
-    ]);
-
-    sendMessage(roomId, messageData).catch((e) => {
+      // 사용자에게 알림 생성
+      if (room?.userId) {
+        try {
+          await createNotification(room.userId, {
+            title: room.userName || '새 메시지',
+            message: text,
+            type: 'message',
+            chatRoomId: roomId,
+          });
+        } catch (e) {
+          console.warn('채팅 알림 생성 실패(무시 가능):', e);
+        }
+      }
+    } catch (e) {
       console.error('메시지 전송 실패:', e);
-    });
-  };
-
-  const handleSendQuote = () => {
-    if (!room || !room.userId || !latestQuoteRequest) {
-      alert('견적 요청 정보를 찾을 수 없습니다.');
-      return;
+      alert('메시지 전송에 실패했습니다. 잠시 후 다시 시도해주세요.');
     }
-    navigate('/designer-send-quote', {
-      state: {
-        userId: room.userId,
-        userName: room.userName || '고객',
-        quoteRequest: latestQuoteRequest,
-      },
-    });
   };
 
   if (loading) {
@@ -143,8 +160,31 @@ export default function DesignerChatConversationPage() {
           <button onClick={() => navigate(-1)}>←</button>
           <h1>채팅</h1>
         </div>
-        <div className="designer-content dc-content" style={{ padding: '20px', textAlign: 'center' }}>
-          채팅을 불러오는 중입니다...
+        <div className="dc-content">
+          <p style={{ textAlign: 'center', color: '#999', marginTop: '20px' }}>
+            채팅을 불러오는 중입니다...
+          </p>
+        </div>
+        <div className="dc-input-row" style={{ visibility: 'hidden' }}>
+          <input type="text" className="dc-input" disabled />
+          <button className="dc-send-btn" disabled>→</button>
+        </div>
+        <div className="designer-bottom-nav">
+          <button className="designer-nav-btn" onClick={() => navigate('/designer-dashboard')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </button>
+          <button className="designer-nav-btn" onClick={() => navigate('/designer-messages')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </button>
+          <button className="designer-nav-btn" onClick={() => navigate('/designer-profile')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M20 21v-2a 4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </button>
         </div>
       </div>
     );
@@ -157,8 +197,31 @@ export default function DesignerChatConversationPage() {
           <button onClick={() => navigate(-1)}>←</button>
           <h1>채팅</h1>
         </div>
-        <div className="designer-content dc-content" style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
-          <p>🔒 {error || '채팅방 정보가 없습니다.'}</p>
+        <div className="dc-content">
+          <p style={{ textAlign: 'center', color: '#999', marginTop: '20px' }}>
+            🔒 {error || '채팅방 정보가 없습니다.'}
+          </p>
+        </div>
+        <div className="dc-input-row" style={{ visibility: 'hidden' }}>
+          <input type="text" className="dc-input" disabled />
+          <button className="dc-send-btn" disabled>→</button>
+        </div>
+        <div className="designer-bottom-nav">
+          <button className="designer-nav-btn" onClick={() => navigate('/designer-dashboard')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </button>
+          <button className="designer-nav-btn" onClick={() => navigate('/designer-messages')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </button>
+          <button className="designer-nav-btn" onClick={() => navigate('/designer-profile')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M20 21v-2a 4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </button>
         </div>
       </div>
     );
@@ -169,65 +232,78 @@ export default function DesignerChatConversationPage() {
       <div className="designer-page-header">
         <button onClick={() => navigate(-1)}>←</button>
         <h1>{room.userName || room.roomName || room.title || '채팅'}</h1>
-        <button className="dc-menu-btn">⋮</button>
+        <button 
+          className="dc-notification-btn"
+          onClick={() => {
+            console.log('🔔 알림 페이지 열기', new Date().toLocaleString('ko-KR'));
+            navigate('/notification');
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          {unreadNotificationCount > 0 && (
+            <span className="dc-notification-badge">
+              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+            </span>
+          )}
+        </button>
       </div>
 
-      <div className="designer-content dc-content">
-        {/* Quote Request Card (디자이너 입장) */}
-        {quoteRequestLoading ? (
-          <div className="quote-request-card">
-            <p className="quote-request-text">견적 요청 정보를 불러오는 중입니다...</p>
-          </div>
-        ) : (
-          <div className="quote-request-card">
-            {latestQuoteRequest ? (
-              <>
-                <div className="quote-request-main">
-                  <span className="quote-request-label">견적 요청</span>
-                  <span className="quote-request-dog">
-                    {latestQuoteRequest.dogName || '견종 미지정'}
-                  </span>
-                </div>
-                {latestQuoteRequest.notes && (
-                  <p className="quote-request-message">{latestQuoteRequest.notes}</p>
-                )}
-                {latestQuoteRequest.groomingStyle && (
-                  <div className="quote-request-tags">
-                    <span className="tag">{latestQuoteRequest.groomingStyle}</span>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="quote-request-text">
-                사용자가 견적 요청을 하지 않았습니다.
-              </p>
-            )}
-
-            {quoteError && !latestQuoteRequest && (
-              <p className="quote-request-text">{quoteError}</p>
-            )}
-
-            <div className="quote-request-footer">
-              {latestQuoteRequest && (
-                <button
-                  type="button"
-                  className="quote-send-btn"
-                  onClick={handleSendQuote}
-                >
-                  견적 보내기
-                </button>
-              )}
+      <div className="dc-content">
+        {/* 견적 진행 상태 배너 (디자이너 뷰) */}
+        <div
+          className={`quote-banner ${hasDesignerQuoteMessage ? 'quote-banner-sent' : ''}`}
+          onClick={() => {
+            // 배너 전체 클릭 시에는 기존처럼 견적 요청/전송 내역 리스트로 이동
+            navigate('/designer-quotes-check');
+          }}
+        >
+          <div className="quote-banner-left">
+            <div className="quote-banner-icon">💌</div>
+            <div>
+              <div className="quote-banner-title">
+                {!hasQuoteRequestMessage && !hasDesignerQuoteMessage
+                  ? '고객 견적 요청을 기다리는 중이에요'
+                  : hasQuoteRequestMessage && !hasDesignerQuoteMessage
+                  ? '고객이 견적을 보냈어요'
+                  : '견적을 전송했습니다'}
+              </div>
+              <div className="quote-banner-desc">
+                {!hasQuoteRequestMessage && !hasDesignerQuoteMessage
+                  ? '고객이 견적 폼을 보내면 이 채팅에서 내용을 확인할 수 있어요.'
+                  : hasQuoteRequestMessage && !hasDesignerQuoteMessage
+                  ? '요청 내역을 확인하고 금액과 메모를 작성해 견적서를 보내주세요.'
+                  : '고객이 견적을 검토 중입니다. 견적을 수락하기 전까지는 수정할 수 있어요.'}
+              </div>
             </div>
           </div>
-        )}
+          <button
+            type="button"
+            className="quote-banner-cta"
+            onClick={(e) => {
+              e.stopPropagation();
+              // 오른쪽 버튼은 내가 보낸 견적만 보기
+              navigate('/designer-quotes');
+            }}
+          >
+            {!hasQuoteRequestMessage && !hasDesignerQuoteMessage
+              ? '대기 중'
+              : hasQuoteRequestMessage && !hasDesignerQuoteMessage
+              ? '견적서 보내기'
+              : '내가 보낸 견적 보기'}
+          </button>
+        </div>
 
-          <div className="dc-bubbles">
+        <div className="dc-bubbles">
           {messages.length === 0 ? (
             <div className="dc-empty">아직 메시지가 없습니다. 첫 메시지를 보내보세요.</div>
           ) : (
             messages.map((msg) => {
-              const sender = msg.senderType || msg.sender || 'user';
-              const isDesigner = sender === 'designer';
+              const isDesigner = msg.senderId === user.uid;
+              const isQuoteSystem = msg.isSystemMessage && msg.messageType === 'quoteReceived';
+              const isUserQuoteSystem = msg.isSystemMessage && msg.messageType === 'quoteRequest';
 
               let timeLabel = '';
               if (msg.timestamp) {
@@ -238,32 +314,63 @@ export default function DesignerChatConversationPage() {
                 });
               }
 
+              if (isQuoteSystem) {
+                return (
+                  <div key={msg.id} className="dc-system-quote-wrapper">
+                    <div className="dc-system-quote-card">
+                      <div className="dc-system-quote-icon">✓</div>
+                      <div className="dc-system-quote-body">
+                        <div className="dc-system-quote-title">견적을 전송했습니다</div>
+                        <div className="dc-system-quote-text">{msg.text}</div>
+                        {timeLabel && <span className="dc-time dc-time-system">{timeLabel}</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (isUserQuoteSystem) {
+                return (
+                  <div key={msg.id} className="dc-system-quote-wrapper">
+                    <div className="dc-system-user-quote-card">
+                      <div className="dc-system-user-quote-icon">📝</div>
+                      <div className="dc-system-quote-body">
+                        <div className="dc-system-user-quote-title">고객이 견적을 보냈어요</div>
+                        <div className="dc-system-user-quote-text">{msg.text}</div>
+                        {timeLabel && <span className="dc-time dc-time-system">{timeLabel}</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={msg.id}
-                  className={`dc-bubble ${isDesigner ? 'dc-bubble-me' : 'dc-bubble-other'}`}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: isDesigner ? 'flex-end' : 'flex-start', gap: '8px' }}
                 >
-                  <p>{msg.text}</p>
-                  {timeLabel && <span className="dc-time">{timeLabel}</span>}
+                  <div className={`dc-bubble ${isDesigner ? 'dc-bubble-me' : 'dc-bubble-other'}`}>
+                    <p>{msg.text}</p>
+                    {timeLabel && <span className="dc-time">{timeLabel}</span>}
+                  </div>
                 </div>
               );
             })
           )}
           <div ref={messagesEndRef} />
         </div>
+      </div>
 
-        {/* Input */}
-        <div className="dc-input-row">
-          <input
-            type="text"
-            className="dc-input"
-            placeholder="메시지를 입력하세요..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          />
-          <button className="dc-send-btn" onClick={handleSend}>→</button>
-        </div>
+      <div className="dc-input-row">
+        <input
+          type="text"
+          className="dc-input"
+          placeholder="메시지를 입력하세요..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+        />
+        <button className="dc-send-btn" onClick={handleSend}>→</button>
       </div>
 
       <div className="designer-bottom-nav">

@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from './firebase';
-import { getUserQuotes } from './services';
+import { auth, db } from './firebase';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { getUserQuoteRequests } from './services';
 import './PageLayout.css';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/1907ad64-acfb-41cd-bcbf-9299c17f709e";
+const logoImg = "/vite.svg";
 
 export default function PageLayout({ title, children, customHeader }) {
   const navigate = useNavigate();
   const [user] = useAuthState(auth);
   const [quoteCount, setQuoteCount] = useState(0);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
     const loadQuotes = async () => {
@@ -19,15 +21,52 @@ export default function PageLayout({ title, children, customHeader }) {
         return;
       }
       try {
-        const quotes = await getUserQuotes(user.uid);
-        setQuoteCount(quotes.length || 0);
+        console.log('🔍 [PageLayout] 고객이 보낸 견적 요청 로드');
+        const requests = await getUserQuoteRequests(user.uid);
+        setQuoteCount(requests.length || 0);
+        console.log('✅ [PageLayout] quoteCount 업데이트:', requests.length);
       } catch (e) {
-        console.warn('헤더용 받은 견적 수 로드 실패:', e);
+        console.warn('헤더용 고객 요청 로드 실패:', e);
         setQuoteCount(0);
       }
     };
 
     loadQuotes();
+  }, [user]);
+
+  // Custom Event 리스너 - QuoteRequestPage에서 완료 신호 수신
+  useEffect(() => {
+    const handleQuoteRequestCompleted = async (e) => {
+      if (!user) return;
+      console.log('🔔 [PageLayout] quoteRequestCompleted 이벤트 감지:', e.detail);
+      // 생성이 성공했다는 신호이므로, 헤더 배지는 바로 +1 해 준다.
+      setQuoteCount((prev) => {
+        const next = (prev || 0) + 1;
+        console.log('✅ [PageLayout] quoteCount 이벤트 기반 증가:', { prev, next });
+        return next;
+      });
+    };
+
+    window.addEventListener('quoteRequestCompleted', handleQuoteRequestCompleted);
+    return () => window.removeEventListener('quoteRequestCompleted', handleQuoteRequestCompleted);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadNotificationCount(0);
+      return;
+    }
+
+    // 사용자 문서에서 unreadNotificationCount 실시간 감시
+    const userRef = doc(db, 'users', user.uid);
+    const unsubscribe = onSnapshot(userRef, (doc) => {
+      const count = doc.data()?.unreadNotificationCount || 0;
+      setUnreadNotificationCount(count);
+    }, (error) => {
+      console.warn('알림 수 로드 실패:', error);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   return (
@@ -47,7 +86,7 @@ export default function PageLayout({ title, children, customHeader }) {
           <button
             type="button"
             className="page-layout-header-bell"
-            onClick={() => navigate('/quote-detail')}
+            onClick={() => navigate('/quote-alerts')}
             aria-label="받은 견적 알림"
           >
             <svg
@@ -66,6 +105,32 @@ export default function PageLayout({ title, children, customHeader }) {
             {quoteCount > 0 && (
               <span className="page-layout-bell-badge">
                 {quoteCount > 9 ? '9+' : quoteCount}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            className="page-layout-header-notification"
+            onClick={() => navigate('/notification')}
+            aria-label="알림"
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="19" cy="4" r="1" />
+              <circle cx="5" cy="20" r="1" />
+            </svg>
+            {unreadNotificationCount > 0 && (
+              <span className="page-layout-notification-badge">
+                {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
               </span>
             )}
           </button>

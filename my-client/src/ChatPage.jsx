@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import PageLayout from './PageLayout';
 import './ChatPage.css';
@@ -19,25 +19,27 @@ export default function ChatPage() {
       return;
     }
 
-    const loadRooms = async () => {
-      try {
-        setLoading(true);
-        const q = query(
-          collection(db, 'chatRooms'),
-          where('userId', '==', user.uid)
-        );
-        const snap = await getDocs(q);
+    setLoading(true);
+    const q = query(
+      collection(db, 'chatRooms'),
+      where('userId', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snap) => {
         const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setRooms(list);
-      } catch (err) {
+        setLoading(false);
+      },
+      (err) => {
         console.error('채팅방 로드 실패:', err);
         setRooms([]);
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    loadRooms();
+    return () => unsubscribe();
   }, [user, navigate]);
 
   const filterRooms = () => {
@@ -71,19 +73,22 @@ export default function ChatPage() {
     <PageLayout title="채팅">
       {/* Filter Tabs */}
       <div className="chat-filter-tabs">
-        <button 
+        <button
+          type="button"
           className={`filter-btn ${selectedFilter === 'all' ? 'active' : ''}`}
           onClick={() => setSelectedFilter('all')}
         >
           전체
         </button>
-        <button 
+        <button
+          type="button"
           className={`filter-btn ${selectedFilter === 'pending' ? 'active' : ''}`}
           onClick={() => setSelectedFilter('pending')}
         >
           매칭 중
         </button>
-        <button 
+        <button
+          type="button"
           className={`filter-btn ${selectedFilter === 'completed' ? 'active' : ''}`}
           onClick={() => setSelectedFilter('completed')}
         >
@@ -104,15 +109,27 @@ export default function ChatPage() {
           </div>
         ) : (
           filterRooms().map((room) => (
-            <div 
+            <div
               key={room.id}
               className="chat-room-item"
               onClick={() => handleRoomClick(room.id)}
             >
-              <div className="room-avatar">{room.designerAvatar || '🐶'}</div>
+              <div className="room-avatar">
+                {room.designerAvatar ? (
+                  <img
+                    src={room.designerAvatar}
+                    alt={room.designerName || '디자이너'}
+                    className="room-avatar-img"
+                  />
+                ) : (
+                  '🐶'
+                )}
+              </div>
               <div className="room-info">
                 <div className="room-header">
-                  <h3 className="room-name">{room.designerName || room.title || room.roomName || '채팅방'}</h3>
+                  <h3 className="room-name">
+                    {room.designerName || room.title || room.roomName || '채팅방'}
+                  </h3>
                   <span className="room-time">{formatTime(room.lastMessageTime)}</span>
                 </div>
                 <p className="room-message">{room.lastMessage || '최근 메시지가 없습니다'}</p>

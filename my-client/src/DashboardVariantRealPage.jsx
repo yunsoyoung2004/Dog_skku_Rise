@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DashboardVariantRealPage.css';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/d3aedc85-e031-473e-aa91-014601f437ff";
+const logoImg = "/vite.svg";
 
 export default function DashboardVariantRealPage() {
   const navigate = useNavigate();

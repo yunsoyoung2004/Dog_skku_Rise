@@ -1,20 +1,25 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { createReview } from './services';
+import { createReview, createNotification } from './services';
 import './ReviewPage.css';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/d3aedc85-e031-473e-aa91-014601f437ff";
+const logoImg = "/vite.svg";
 
 export default function ReviewPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user] = useAuthState(auth);
   const [rating, setRating] = useState(0);
   const [text, setText] = useState('');
   const [selectedServices, setSelectedServices] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const designerId = location.state?.designerId || 'designer_1';
+  const designerName = location.state?.designerName || '미용사';
+  const bookingId = location.state?.bookingId || '';
 
   const handleServiceToggle = (service) => {
     setSelectedServices(prev =>
@@ -46,7 +51,8 @@ export default function ReviewPage() {
     setLoading(true);
     try {
       const result = await createReview(user.uid, {
-        designerId: 'designer_1',
+        designerId: designerId,
+        bookingId: bookingId,
         rating,
         text: text.trim(),
         services: selectedServices,
@@ -55,6 +61,20 @@ export default function ReviewPage() {
 
       if (result.success) {
         console.log('✅ 리뷰 작성 완료:', result.reviewId);
+        
+        // 디자이너에게 리뷰 작성 알림 발송
+        try {
+          await createNotification(designerId, {
+            title: '새 리뷰가 작성되었습니다',
+            message: `고객이 ${rating}점의 리뷰를 남겼습니다.`,
+            type: 'review',
+            reviewId: result.reviewId,
+            userId: user.uid,
+          });
+        } catch (notifError) {
+          console.warn('리뷰 알림 발송 실패(무시 가능):', notifError);
+        }
+        
         navigate('/dashboard', { state: { reviewSubmitted: true } });
       }
     } catch (err) {
@@ -82,8 +102,8 @@ export default function ReviewPage() {
         <div className="review-designer-card">
           <img src={logoImg} alt="Designer" className="review-designer-img" />
           <div className="review-designer-info">
-            <h3>미용사 이름</h3>
-            <p>2024년 1월 15일</p>
+            <h3>{designerName}</h3>
+            <p>{new Date().toLocaleDateString('ko-KR')}</p>
           </div>
         </div>
 

@@ -1,6 +1,22 @@
 // Firestore 보안 규칙 예시
 // Firebase Console > Firestore Database > Rules 탭에서 다음 규칙을 설정하세요
 
+// ==================== 필수 인덱스 설정 ====================
+// Firebase Console > Firestore Database > Indexes 탭에서 다음 인덱스를 생성하세요:
+//
+// 1. quoteRequests 컬렉션
+//    - designerId (Ascending)
+//    - status (Ascending)
+//
+// 2. quotes 컬렉션
+//    - userId (Ascending)
+//    - designerId (Ascending)
+//
+// 3. chatRooms/{roomId}/messages 서브컬렉션
+//    - timestamp (Ascending)
+//
+// ====================================================
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,6 +39,13 @@ service cloud.firestore {
       match /searchHistory/{searchId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // 알림 (users/{userId}/notifications)
+      match /notifications/{notificationId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null; // 시스템이 생성
+        allow update, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // ==================== DESIGNER RULES ====================
@@ -42,7 +65,7 @@ service cloud.firestore {
     }
 
     // ==================== QUOTE RULES ====================
-    // 견적 요청 (사용자 → 디자이너)
+    // 최종 견적 요청 (사용자 → 디자이너)
     match /quoteRequests/{requestId} {
       // 요청자와 디자이너만 읽기 가능
       allow read: if request.auth != null &&
@@ -51,11 +74,14 @@ service cloud.firestore {
 
       // 생성: 로그인한 사용자가 자신의 userId 로 요청할 때만
       allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.userId;
+        request.auth.uid == request.resource.data.userId &&
+        request.resource.data.status == 'pending';
 
-      // 수정: 해당 디자이너만 (예: 상태 변경 등)
+      // 수정: 해당 디자이너만 (상태 전환만 허용: pending → responded → confirmed)
       allow update: if request.auth != null &&
-        request.auth.uid == resource.data.designerId;
+        request.auth.uid == resource.data.designerId &&
+        ((resource.data.status == 'pending' && request.resource.data.status == 'responded') ||
+         (resource.data.status == 'responded' && request.resource.data.status == 'confirmed'));
 
       // 삭제: 요청자만
       allow delete: if request.auth != null &&
@@ -71,10 +97,13 @@ service cloud.firestore {
 
       // 생성/수정: 해당 디자이너만 가능
       allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.designerId;
+        request.auth.uid == request.resource.data.designerId &&
+        request.resource.data.status == 'sent';
 
       allow update: if request.auth != null &&
-        request.auth.uid == resource.data.designerId;
+        request.auth.uid == resource.data.designerId &&
+        (request.resource.data.status == 'sent' || 
+         request.resource.data.status == 'confirmed');
 
       // 삭제: 사용자만 (원하면 수정 가능)
       allow delete: if request.auth != null &&
@@ -100,33 +129,42 @@ service cloud.firestore {
       // 방 생성: userId 또는 designerId 중 본인일 때
       allow create: if request.auth != null &&
         (request.auth.uid == request.resource.data.userId ||
-         request.auth.uid == request.resource.data.designerId);
+         request.auth.uid == request.resource.data.designerId) &&
+        request.resource.data.status == 'active';
 
-      // 방 업데이트: 참여자만
+      // 방 업데이트: 참여자만 (unreadCount 리셋, 상태 업데이트 등)
       allow update: if request.auth != null &&
         (request.auth.uid == resource.data.userId ||
          request.auth.uid == resource.data.designerId);
 
       match /messages/{messageId} {
-        // 메시지 읽기: 임시로 로그인 사용자면 허용 (필요시 참여자 체크로 강화 가능)
-        allow read: if request.auth != null;
+        // 메시지 읽기: 채팅방 참여자만
+        allow read: if request.auth != null &&
+          (request.auth.uid == get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data.userId ||
+           request.auth.uid == get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data.designerId);
 
-        // 메시지 생성: 현재 로그인한 사용자가 senderId 인 경우만
+        // 메시지 생성: 채팅방 참여자이며 필수 필드(senderType, text)가 유효할 때
+        // (senderId 필드는 클라이언트에서 넣지만, 권한 체크는 채팅방 참여자 기준으로 수행)
         allow create: if request.auth != null &&
-          request.auth.uid == request.resource.data.senderId;
+          (
+            request.auth.uid == get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data.userId ||
+            request.auth.uid == get(/databases/$(database)/documents/chatRooms/$(chatRoomId)).data.designerId
+          ) &&
+          request.resource.data.senderType in ['user', 'designer'] &&
+          request.resource.data.text != null;
 
-        // 메시지 수정/삭제는 금지 (필요시 별도 정책 추가)
+        // 메시지 수정/삭제는 금지
         allow update, delete: if false;
       }
     }
 
-    // ==================== NOTIFICATIONS RULES ====================
-    // 알림은 해당 사용자만 접근 가능
-    match /notifications/{notificationId} {
-      allow read: if request.auth.uid == resource.data.userId;
-      allow create: if true; // 시스템이 생성
-      allow update: if request.auth.uid == resource.data.userId;
-      allow delete: if request.auth.uid == resource.data.userId;
+    // ==================== GROOMING STATS RULES ====================
+    // 디자이너 미용 통계 데이터 (모든 사용자 읽기 가능, 디자이너 쓰기 가능)
+    match /groomingStats/{designerId} {
+      allow read: if true;
+      allow create, update: if request.auth != null &&
+        request.auth.uid == designerId;
+      allow delete: if false;
     }
 
     // ==================== DEFAULT DENY ====================

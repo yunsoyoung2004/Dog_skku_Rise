@@ -5,9 +5,10 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     // ==================== USER IMAGES ====================
-    // 사용자 강아지 이미지: 본인만 읽기/쓰기
+    // 사용자 강아지 이미지: 누구나 읽기 가능, 본인만 쓰기
+    // (디자이너/다른 화면에서도 강아지 사진이 보여야 해서 read는 공개)
     match /users/{userId}/dogs/{allPaths=**} {
-      allow read: if request.auth.uid == userId;
+      allow read: if true;
       allow write: if request.auth.uid == userId && 
                       request.resource.size < 5 * 1024 * 1024 && // 5MB 제한
                       request.resource.contentType.matches('image/.*');
@@ -17,6 +18,14 @@ service firebase.storage {
     match /users/{userId}/reviews/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth.uid == userId && 
+                      request.resource.size < 5 * 1024 * 1024 && // 5MB 제한
+                      request.resource.contentType.matches('image/.*');
+    }
+
+    // 디자이너 프로필 사진: 본인만 쓰기, 모두 읽기
+    match /designers/{designerId}/profile/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth.uid == designerId && 
                       request.resource.size < 5 * 1024 * 1024 && // 5MB 제한
                       request.resource.contentType.matches('image/.*');
     }

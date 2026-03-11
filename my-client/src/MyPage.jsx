@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { getUserProfile, getUserDogs, getUserBookings, getUserFavorites } from './services';
+import { getUserProfile, getUserDogs, getUserBookings, getUserFavorites, notifyPendingReviews } from './services';
 import PageLayout from './PageLayout';
 import './MyPage.css';
 
@@ -38,6 +38,9 @@ export default function MyPage() {
 
       const userBookings = await getUserBookings(user.uid);
       setBookings(userBookings || []);
+
+      // 지난 예약 중 리뷰가 없는 건에 대해 리뷰 알림 생성
+      await notifyPendingReviews(user.uid);
 
       const userFavorites = await getUserFavorites(user.uid);
       setFavorites(userFavorites || []);
@@ -132,7 +135,27 @@ export default function MyPage() {
                   onClick={() => navigate('/dog-edit', { state: { dogId: primaryDog.id } })}
                 >
                   <div className="dog-photo-circle">
-                    <div className="dog-photo-inner">🐶</div>
+                    <div className="dog-photo-inner">
+                      {primaryDog.imageUrl ? (
+                        <img
+                          src={primaryDog.imageUrl}
+                          alt={primaryDog.name || '강아지 프로필 사진'}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            borderRadius: '50%',
+                            objectPosition: `50% ${
+                              typeof primaryDog.imageOffsetY === 'number'
+                                ? primaryDog.imageOffsetY
+                                : 50
+                            }%`
+                          }}
+                        />
+                      ) : (
+                        '🐶'
+                      )}
+                    </div>
                   </div>
                   <div className="dog-info-text">
                     <p className="dog-name">{primaryDog.name || '이름 미등록'}</p>
@@ -156,6 +179,75 @@ export default function MyPage() {
                 </div>
               )}
             </section>
+
+            {/* 예약 알림 */}
+            {upcomingBooking && (
+              <section className="mypage-section booking-alert">
+                {(() => {
+                  const daysUntil = Math.ceil((toDate(upcomingBooking.bookingDate) - now) / (1000 * 60 * 60 * 24));
+                  let alertClass = 'alert-info';
+                  // 남은 일 수에 따라 색상만 조정하고, 텍스트는
+                  // "예약 확정" / "다가오는 예약 일정" 형태로 고정
+                  if (daysUntil <= 1) {
+                    alertClass = 'alert-critical';
+                  } else if (daysUntil <= 3) {
+                    alertClass = 'alert-warning';
+                  } else if (daysUntil <= 7) {
+                    alertClass = 'alert-info';
+                  }
+
+                  const bookingDate = toDate(upcomingBooking.bookingDate);
+                  const whenLabel = bookingDate
+                    ? `${bookingDate.toLocaleDateString('ko-KR')} ${upcomingBooking.timeSlot || ''}`.trim()
+                    : '';
+
+                  return (
+                    <div className={`booking-alert-content ${alertClass}`}>
+                      <p className="alert-message">✅ 예약이 확정되었습니다.</p>
+                      <p className="alert-detail">
+                        다가오는 예약 일정 · {upcomingBooking.designerName || '디자이너'}
+                        {whenLabel ? ` · ${whenLabel}` : ''}
+                      </p>
+                      <button
+                        type="button"
+                        className="alert-btn"
+                        onClick={() => navigate(`/chat/${upcomingBooking.chatRoomId || ''}`)}
+                      >
+                        채팅으로 이동
+                      </button>
+                    </div>
+                  );
+                })()}
+              </section>
+            )}
+
+            {/* 리뷰 작성 알림 */}
+            {pastBookings.length > 0 && (() => {
+              const noReviewBooking = pastBookings.find(b => !b.hasReview);
+              return noReviewBooking ? (
+                <section className="mypage-section review-alert">
+                  <div className="review-alert-content">
+                    <p className="alert-message">⭐ 미용이 완료되었습니다!</p>
+                    <p className="alert-detail">
+                      <strong>{noReviewBooking.designerName || '디자이너'}</strong>에게 리뷰를 남겨주세요.
+                    </p>
+                    <button
+                      type="button"
+                      className="review-alert-btn"
+                      onClick={() => navigate('/write-review', {
+                        state: {
+                          designerId: noReviewBooking.designerId,
+                          designerName: noReviewBooking.designerName,
+                          bookingId: noReviewBooking.id,
+                        },
+                      })}
+                    >
+                      리뷰 작성하기
+                    </button>
+                  </div>
+                </section>
+              ) : null;
+            })()}
 
             {/* 우리집 강아지 미용 상태 (프로필 기준) */}
             {primaryDog && (

@@ -6,7 +6,7 @@ import { signOut } from 'firebase/auth';
 import { saveUserProfile, getUserProfile } from './services';
 import './MyPageAccountPage.css';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/d3aedc85-e031-473e-aa91-014601f437ff";
+const logoImg = "/vite.svg";
 
 export default function MyPageAccountPage() {
   const navigate = useNavigate();
