@@ -138,19 +138,22 @@
 .reviews-container {
   margin-top: 4px;
   margin-bottom: 80px; /* bottom nav 여백 */
+  padding: 8px 12px 0;
 }
 
 .review-card {
-  background-color: white;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
+  background-color: #ffffff;
+  padding: 14px 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 10px;
 }
 
 .review-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  margin-bottom: 10px;
 }
 
 .reviewer-info {
@@ -160,7 +163,34 @@
 }
 
 .reviewer-avatar {
-  font-size: 24px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f2f2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.reviewer-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.reviewer-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.reviewer-name-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
 }
 
 .reviewer-name {
@@ -169,14 +199,15 @@
   color: #222;
 }
 
-.review-date {
+.review-date,
+.review-date-inline {
   font-size: 11px;
   color: #999;
 }
 
 .review-rating {
   font-size: 13px;
-  margin-bottom: 8px;
+  white-space: nowrap;
 }
 
 .review-text {
@@ -184,4 +215,20 @@
   color: #666;
   margin: 0;
   line-height: 1.5;
+}
+
+.review-tags {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.review-tag {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background-color: #f3f3f3;
+  font-size: 11px;
+  color: #666;
 }

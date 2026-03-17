@@ -173,7 +173,17 @@ export default function DesignerListPage() {
                     onClick={() => navigate(`/designer?id=${designer.id}`)}
                     style={{ flex: 1, cursor: 'pointer' }}
                   >
-                    <div className="designer-list-avatar">{designer.image || '💼'}</div>
+                    <div className="designer-list-avatar">
+                      {designer.image ? (
+                        <img
+                          src={designer.image}
+                          alt={designer.name || '디자이너 프로필'}
+                          className="designer-list-avatar-img"
+                        />
+                      ) : (
+                        <span className="designer-list-avatar-placeholder">💼</span>
+                      )}
+                    </div>
                     <div className="designer-list-info">
                       <h3>{designer.name}</h3>
                       <div className="designer-list-rating">

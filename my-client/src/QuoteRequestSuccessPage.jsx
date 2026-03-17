@@ -39,7 +39,9 @@ export default function QuoteRequestSuccessPage() {
         <button title="홈">🏠</button>
         <button title="디자이너">💼</button>
         <button title="메시지">💬</button>
-        <button title="마이페이지">👤</button>
+        <button title="마이페이지">
+          <span className="nav-user-icon">👤</span>
+        </button>
       </div>
     </div>
   );

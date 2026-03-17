@@ -65,18 +65,23 @@ export default function DesignerDetailVariantPage() {
           </div>
         </div>
 
-        {/* Contact Button */}
-        <button className="designer-contact-btn" onClick={() => navigate('/chat')}>
+        {/* Contact Button (디자이너 메시지로 이동) */}
+        <button
+          className="designer-contact-btn"
+          onClick={() => navigate('/designer-messages')}
+        >
           디자이너와 연락하기
         </button>
       </div>
 
       {/* Bottom Navigation */}
       <div className="designer-variant-nav">
-        <button onClick={() => navigate('/dashboard')}>🏠</button>
-        <button onClick={() => navigate('/designer')}>💼</button>
-        <button onClick={() => navigate('/chat')}>💬</button>
-        <button onClick={() => navigate('/mypage')}>👤</button>
+          <button onClick={() => navigate('/designer-dashboard')}>🏠</button>
+          <button onClick={() => navigate('/designer-gallery')}>💼</button>
+          <button onClick={() => navigate('/designer-messages')}>💬</button>
+          <button onClick={() => navigate('/designer-profile')}>
+           <span className="nav-user-icon">👤</span>
+          </button>
       </div>
     </div>
   );

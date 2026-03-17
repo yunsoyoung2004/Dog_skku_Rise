@@ -86,7 +86,9 @@ export default function FavoritesPage() {
             {favorites.map((designer) => (
               <div key={designer.designerId} className="favorites-card">
                 <div className="favorites-designer-info">
-                  <div className="favorites-avatar">{designer.image || '👤'}</div>
+                  <div className="favorites-avatar">
+                    <span className="favorites-avatar-icon">👤</span>
+                  </div>
                   <div className="favorites-details">
                     <h3>{designer.name}</h3>
                     <p className="favorites-rating">⭐ {(designer.rating || 0).toFixed(1)} ({designer.reviews || 0})</p>

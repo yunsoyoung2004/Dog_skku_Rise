@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { createQuoteRequest, getUserDogs, sendMessage, createNotification } from './services';
+import { createQuoteRequest, getUserDogs, sendMessage, createNotification, createOrGetChatRoom, getAllDesigners } from './services';
 import './QuoteRequestPage.css';
 
 const logoImg = "/vite.svg";
@@ -13,6 +13,7 @@ export default function QuoteRequestPage() {
   const [user] = useAuthState(auth);
   const [step, setStep] = useState(0);
   const [dogs, setDogs] = useState([]);
+  const [dogsLoading, setDogsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [selectedDogId, setSelectedDogId] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
@@ -32,7 +33,11 @@ export default function QuoteRequestPage() {
   });
 
   useEffect(() => {
-    if (user) loadUserDogs();
+    if (user) {
+      loadUserDogs();
+    } else {
+      setDogsLoading(false);
+    }
   }, [user]);
 
   // 수정하기로 들어온 경우, 기존 견적 데이터를 초기값으로 세팅
@@ -58,10 +63,13 @@ export default function QuoteRequestPage() {
   const loadUserDogs = async () => {
     if (!user) return;
     try {
+      setDogsLoading(true);
       const userDogs = await getUserDogs(user.uid);
       setDogs(userDogs);
     } catch (err) {
       console.error('강아지 로드 실패:', err);
+    } finally {
+      setDogsLoading(false);
     }
   };
 
@@ -77,32 +85,43 @@ export default function QuoteRequestPage() {
 
   // Step 2: 추가 미용
   const additionalGroomingOptions = [
-    '스피',
-    '밤나더/왕문미용',
-    '귀청소',
-    '암지/지석 관리',
-    '밤을 끼기'
+    '발톱 손질',
+    '발바닥 털 정리',
+    '귀 청소',
+    '항문낭 관리',
+    '눈 주변 털 정리',
   ];
 
-  // Step 3: 추가 사항
+  // Step 3: 추가 옵션
   const additionalOptionsChoices = [
-    '입찰되 사용 가능',
-    '주차 가능',
-    '짧기 분여를 사용 가능',
-    '미용시 보호조가 되번되지 않아요',
-    '미용시 보호조가 되번해요'
+    '입질이 있어요',
+    '주차가 가능해요',
+    '짧게 깎는 스타일을 선호해요',
+    '미용할 때 보호자가 함께 있어도 괜찮아요',
+    '미용할 때 보호자가 함께 있는 것을 원하지 않아요',
   ];
 
   // Step 5: 강아지 태그
   const dogTagOptions = [
-    '알러지', '우울증', '불안감', '예민함',
-    '공격성', '낯선이', '높음', '낮음'
+    '알레르기 있음',
+    '겁이 많음',
+    '분리불안 있음',
+    '예민함',
+    '사람을 무서워함',
+    '다른 강아지를 무서워함',
+    '에너지 많음',
+    '차분함',
   ];
 
   // Step 6: 선호 시간
   const timeSlots = [
-    '9시', '10시', '11시', '12시',
-    '12시', '1시', '2시', '3시'
+    '9시',
+    '10시',
+    '11시',
+    '12시',
+    '1시',
+    '2시',
+    '3시',
   ];
 
   const handleKnowledgeSelect = (knowledge) => {
@@ -147,43 +166,86 @@ export default function QuoteRequestPage() {
   };
 
   const handleNext = () => {
+    // 단계별 필수 값 검증
+    if (step === 0) {
+      if (!selectedDogId) {
+        alert('어떤 강아지에 대한 미용인지 선택해 주세요.');
+        return;
+      }
+    }
+
+    if (step === 1) {
+      if (!quoteData.knowledge) {
+        alert('미용 진행 장소를 선택해 주세요.');
+        return;
+      }
+    }
+
+    if (step === 2) {
+      if (!quoteData.groomingStyle) {
+        alert('원하시는 미용 방식을 선택해 주세요.');
+        return;
+      }
+    }
+
+    // Step 3, 4, 5, 6은 선택 사항이라 필수 검증 없이 넘어갑니다.
+
     setStep(step + 1);
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
     if (!selectedDogId) {
       alert('강아지를 선택해주세요');
       return;
     }
 
-    if (!designerId) {
-      alert('견적서를 보낼 디자이너를 선택해 주세요.');
-      navigate('/designers');
+    // 희망 일정 필수 입력 및 오늘 이후 날짜만 허용
+    if (!quoteData.preferredDate) {
+      alert('희망 일자를 선택해 주세요.');
       return;
     }
 
+    if (!quoteData.preferredTime) {
+      alert('희망 시간을 선택해 주세요.');
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(quoteData.preferredDate);
+    if (selectedDate < today) {
+      alert('오늘 이후 날짜만 선택할 수 있어요.');
+      return;
+    }
+
+    const selectedDog = dogs.find((d) => d.id === selectedDogId) || {};
+
     setLoading(true);
     try {
-      console.log('\\n========== [상세 견적 요청 제출 - QuoteRequestPage] ==========');
-      console.log('📝 [1] 제출 시작:', { 
+      console.log('\n========== [상세 견적 요청 제출 - QuoteRequestPage] ==========');
+      console.log('📝 [1] 제출 시작:', {
         userId: user.uid,
-        roomId, 
-        designerId, 
+        roomId,
+        designerId,
         selectedDogId,
-        stepInfo: quoteData
+        stepInfo: quoteData,
       });
-      
-      const selectedDog = dogs.find((d) => d.id === selectedDogId) || {};
-      console.log('🐕 [2] 강아지 정보:', { 
+
+      console.log('🐕 [2] 강아지 정보:', {
         dogId: selectedDogId,
         name: selectedDog.name,
         breed: selectedDog.breed,
-        weight: selectedDog.weight
+        weight: selectedDog.weight,
       });
 
-      console.log('📤 [3] createQuoteRequest 호출 중...');
-      const result = await createQuoteRequest(user.uid, designerId, {
-        designerName: designerName || '',
+      // 공통 payload 구성
+      const basePayload = {
         dogId: selectedDogId,
         dogName: selectedDog.name || '',
         breed: selectedDog.breed || '',
@@ -191,92 +253,185 @@ export default function QuoteRequestPage() {
         // 채팅에서 온 경우, 해당 채팅방 ID를 함께 저장해 이후 견적/예약과 연결
         roomId: roomId || '',
         quoteData: quoteData,
-      });
-      
-      console.log('✅ [4] createQuoteRequest 완료:', { 
-        success: result?.success,
-        quoteRequestId: result?.quoteId,
-        message: result?.message,
-        timestamp: new Date().toISOString()
-      });
+      };
 
-      // 디자이너에게 견적 요청 알림 생성
-      try {
-        await createNotification(designerId, {
-          title: '새 견적 요청이 도착했어요',
-          message: `${selectedDog.name || '반려견'} 견적 요청이 도착했습니다.`,
-          type: 'quote',
-          chatRoomId: roomId || '',
-          quoteRequestId: result?.quoteId || '',
+      if (designerId) {
+        // 1:1 디자이너에게 보내는 기존 플로우
+        console.log('📤 [3] createQuoteRequest 호출 중... (단일 디자이너 모드)');
+        const result = await createQuoteRequest(user.uid, designerId, {
+          ...basePayload,
+          designerName: designerName || '',
         });
-      } catch (e) {
-        console.warn('견적 요청 알림 생성 실패(무시 가능):', e);
-      }
-      
-      // 견적 요청이 성공하면, 전역 이벤트를 쏴서 헤더 배지(견적 카운트) 즉시 갱신
-      try {
-        console.log('📣 [QuoteRequestPage] quoteRequestCompleted 이벤트 디스패치:', {
-          userId: user?.uid,
-          designerId,
-          quoteRequestId: result?.quoteId
-        });
-        window.dispatchEvent(
-          new CustomEvent('quoteRequestCompleted', {
-            detail: {
-              userId: user?.uid,
-              designerId,
-              quoteRequestId: result?.quoteId,
-            },
-          })
-        );
-      } catch (e) {
-        console.warn('⚠️  quoteRequestCompleted 이벤트 디스패치 실패(무시 가능):', e);
-      }
 
-      // 채팅방에서 온 견적 요청이라면, 채팅방에도 시스템 메시지로 확실히 남겨줌
-      // (quoteId 유무와 상관없이 메시지는 항상 기록)
-      if (roomId && result?.success && user) {
-        console.log('\n💬 [5] 채팅방 메시지 전송 시작...');
-        const systemMessage = {
-          senderId: user.uid,
-          senderType: 'user',
-          text: '견적을 보냈습니다.',
-          isSystemMessage: true,
-          messageType: 'quoteRequest',
-          quoteRequestId: result?.quoteId || null,
+        console.log('✅ [4] createQuoteRequest 완료:', {
+          success: result?.success,
+          quoteRequestId: result?.quoteId,
+          message: result?.message,
           timestamp: new Date().toISOString(),
-        };
-
-        try {
-          console.log('📤 [6] sendMessage 호출:', { 
-            roomId, 
-            messageType: systemMessage.messageType,
-            quoteRequestId: result.quoteId
-          });
-          await sendMessage(roomId, systemMessage);
-          console.log('✅ [7] 채팅 메시지 Firestore 저장 완료');
-          console.log('========== [✅ 상세 견적 요청 완료] ==========' );
-        } catch (e) {
-          console.warn('⚠️  견적 요청 채팅 메시지 기록 실패(무시 가능):', e);
-        }
-      } else {
-        console.warn('⚠️  [8] 채팅 메시지 스킵:', { 
-          hasRoomId: !!roomId,
-          success: result?.success, 
-          hasQuoteId: !!result?.quoteId,
-          hasUser: !!user,
-          skipReason: !roomId ? '채팅방 없음' : !result?.success ? '생성 실패' : !result?.quoteId ? '견적ID 없음' : '알려지지 않음'
         });
-        console.log('========== [⚠️  견적 생성은 성공했으나 채팅 메시지는 스킵] ==========\n');
-      }
-      // 채팅에서 온 견적 요청이라면, 완료 후 바로 채팅방으로 돌아가서
-      // "견적을 보냈습니다." 메시지와 변경된 배너를 바로 볼 수 있게 한다.
-      if (fromChat && roomId) {
-        navigate(`/chat/${roomId}`);
-        return;
-      }
 
-      setStep(7); // 그 외의 경우에는 완료 단계로 이동
+        // 디자이너에게 견적 요청 알림 생성
+        try {
+          await createNotification(designerId, {
+            title: '새 견적 요청이 도착했어요',
+            message: `${selectedDog.name || '반려견'} 견적 요청이 도착했습니다.`,
+            type: 'quote',
+            chatRoomId: roomId || '',
+            quoteRequestId: result?.quoteId || '',
+          });
+        } catch (e) {
+          console.warn('견적 요청 알림 생성 실패(무시 가능):', e);
+        }
+
+        // 견적 요청이 성공하면, 전역 이벤트를 쏴서 헤더 배지(견적 카운트) 즉시 갱신
+        try {
+          console.log('📣 [QuoteRequestPage] quoteRequestCompleted 이벤트 디스패치:', {
+            userId: user?.uid,
+            designerId,
+            quoteRequestId: result?.quoteId,
+          });
+          window.dispatchEvent(
+            new CustomEvent('quoteRequestCompleted', {
+              detail: {
+                userId: user?.uid,
+                designerId,
+                quoteRequestId: result?.quoteId,
+              },
+            }),
+          );
+        } catch (e) {
+          console.warn('⚠️  quoteRequestCompleted 이벤트 디스패치 실패(무시 가능):', e);
+        }
+
+        // 채팅방에 시스템 메시지 기록 (채팅에서 온 경우든, 상세 페이지에서 온 경우든 동일하게 처리)
+        let targetRoomId = roomId || '';
+
+        // 채팅방이 아직 없다면 생성 또는 기존 방 재사용
+        if (!targetRoomId && result?.success && user && designerId) {
+          try {
+            console.log('🔍 기존 채팅방 조회/생성:', { userId: user.uid, designerId });
+            const room = await createOrGetChatRoom(user.uid, designerId, {
+              designerName: designerName || '',
+            });
+            targetRoomId = room?.id || '';
+            console.log('✅ 채팅방 확보 완료:', { targetRoomId });
+          } catch (e) {
+            console.warn('⚠️ 채팅방 조회/생성 실패(무시 가능):', e);
+          }
+        }
+
+        // 채팅방이 확보되면 시스템 메시지(📝 견적 요청)를 남긴다
+        if (targetRoomId && result?.success && user) {
+          console.log('\n💬 [5] 채팅방 메시지 전송 시작...');
+          const systemMessage = {
+            senderId: user.uid,
+            senderType: 'user',
+            text: '견적을 보냈습니다.',
+            isSystemMessage: true,
+            messageType: 'quoteRequest',
+            quoteRequestId: result?.quoteId || null,
+            timestamp: new Date().toISOString(),
+          };
+
+          try {
+            console.log('📤 [6] sendMessage 호출:', {
+              roomId: targetRoomId,
+              messageType: systemMessage.messageType,
+              quoteRequestId: result?.quoteId,
+            });
+            await sendMessage(targetRoomId, systemMessage);
+            console.log('✅ [7] 채팅 메시지 Firestore 저장 완료');
+            console.log('========== [✅ 상세 견적 요청 완료] ==========' );
+          } catch (e) {
+            console.warn('⚠️  견적 요청 채팅 메시지 기록 실패(무시 가능):', e);
+          }
+        } else {
+          console.warn('⚠️  [8] 채팅 메시지 스킵:', {
+            hasRoomId: !!targetRoomId,
+            success: result?.success,
+            hasQuoteId: !!result?.quoteId,
+            hasUser: !!user,
+            skipReason: !targetRoomId
+              ? '채팅방 없음'
+              : !result?.success
+              ? '생성 실패'
+              : !result?.quoteId
+              ? '견적ID 없음'
+              : '알려지지 않음',
+          });
+          console.log('========== [⚠️  견적 생성은 성공했으나 채팅 메시지는 스킵] ==========' );
+        }
+
+        // 채팅방이 확보된 경우에는 바로 채팅 화면으로 이동해서
+        // "📝 견적 요청을 보냈습니다" 시스템 카드와 시간을 바로 볼 수 있게 한다.
+        if (targetRoomId) {
+          navigate(`/chat/${targetRoomId}`);
+          return;
+        }
+
+        // 채팅방이 없으면 기존처럼 완료 단계로 이동
+        setStep(7);
+      } else {
+        // 빠른 견적 요청: 모든 디자이너에게 브로드캐스트
+        console.log('📤 [3] 빠른 견적 브로드캐스트 모드 - 모든 디자이너에게 전송');
+        const designers = await getAllDesigners();
+
+        if (!Array.isArray(designers) || designers.length === 0) {
+          console.warn('⚠️ 견적을 보낼 디자이너가 없습니다.');
+          alert('현재 견적을 받을 수 있는 디자이너가 없습니다.');
+        } else {
+          const nowIso = new Date().toISOString();
+          const tasks = designers.map(async (d) => {
+            const targetDesignerId = d.id;
+            const targetDesignerName = d.name || '';
+
+            const result = await createQuoteRequest(user.uid, targetDesignerId, {
+              ...basePayload,
+              designerName: targetDesignerName,
+            });
+
+            console.log('✅ [브로드캐스트] createQuoteRequest 완료:', {
+              designerId: targetDesignerId,
+              quoteRequestId: result?.quoteId,
+              success: result?.success,
+              at: nowIso,
+            });
+
+            try {
+              await createNotification(targetDesignerId, {
+                title: '새 견적 요청이 도착했어요',
+                message: `${selectedDog.name || '반려견'} 견적 요청이 도착했습니다.`,
+                type: 'quote',
+                chatRoomId: '',
+                quoteRequestId: result?.quoteId || '',
+              });
+            } catch (e) {
+              console.warn('브로드캐스트 알림 생성 실패(무시 가능):', e);
+            }
+          });
+
+          await Promise.allSettled(tasks);
+
+          // 사용자 헤더 배지 갱신 이벤트 (요청 1건 기준으로 +1)
+          try {
+            console.log('📣 [QuoteRequestPage] quoteRequestCompleted 이벤트 디스패치 (브로드캐스트 모드):', {
+              userId: user?.uid,
+            });
+            window.dispatchEvent(
+              new CustomEvent('quoteRequestCompleted', {
+                detail: {
+                  userId: user?.uid,
+                },
+              }),
+            );
+          } catch (e) {
+            console.warn('⚠️  quoteRequestCompleted 이벤트 디스패치 실패(무시 가능):', e);
+          }
+
+          // 빠른 견적은 채팅방 없이 완료 화면으로 이동
+          setStep(7);
+        }
+      }
     } catch (err) {
       console.error('👹 견적 요청 실패:', err);
       alert('견적 요청에 실패했습니다');
@@ -312,8 +467,46 @@ export default function QuoteRequestPage() {
 
       {/* Main Content */}
       <div className="quote-request-content">
-        {/* Step 0: 미용 진행 장소 */}
+        {/* Step 0: 강아지 선택 */}
         {step === 0 && (
+          <div className="quote-step">
+            <div className="quote-step-header">
+              <button className="back-btn" onClick={handleBack}>←</button>
+              <h2 className="quote-step-title">견적서 요청하기</h2>
+            </div>
+            <div className="quote-step-question">
+              어떤 강아지에 대한 미용인가요?
+            </div>
+            {dogsLoading ? (
+              <p className="quote-helper-text" style={{ marginTop: '8px' }}>
+                강아지 정보를 불러오는 중이에요...
+              </p>
+            ) : dogs && dogs.length > 0 ? (
+              <div className="quote-options">
+                {dogs.map((dog) => (
+                  <button
+                    key={dog.id}
+                    className={`quote-option-btn ${selectedDogId === dog.id ? 'active' : ''}`}
+                    onClick={() => setSelectedDogId(dog.id)}
+                  >
+                    {dog.name || '이름 없음'}
+                    {dog.breed ? ` · ${dog.breed}` : ''}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="quote-helper-text" style={{ marginTop: '8px' }}>
+                등록된 강아지가 없어요. 마이페이지에서 강아지를 먼저 등록해 주세요.
+              </p>
+            )}
+            <button className="quote-next-btn" onClick={handleNext}>
+              다음
+            </button>
+          </div>
+        )}
+
+        {/* Step 1: 미용 진행 장소 */}
+        {step === 1 && (
           <div className="quote-step">
             <div className="quote-step-header">
               <button className="back-btn" onClick={handleBack}>←</button>
@@ -331,37 +524,14 @@ export default function QuoteRequestPage() {
                 </button>
               ))}
             </div>
-            <div className="quote-step-subsection">
-              <div className="quote-step-question" style={{ marginTop: '24px' }}>
-                어떤 강아지에 대한 미용인가요?
-              </div>
-              {dogs && dogs.length > 0 ? (
-                <div className="quote-options">
-                  {dogs.map((dog) => (
-                    <button
-                      key={dog.id}
-                      className={`quote-option-btn ${selectedDogId === dog.id ? 'active' : ''}`}
-                      onClick={() => setSelectedDogId(dog.id)}
-                    >
-                      {dog.name || '이름 없음'}
-                      {dog.breed ? ` · ${dog.breed}` : ''}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="quote-helper-text" style={{ marginTop: '8px' }}>
-                  등록된 강아지가 없어요. 마이페이지에서 강아지를 먼저 등록해 주세요.
-                </p>
-              )}
-            </div>
             <button className="quote-next-btn" onClick={handleNext}>
               다음
             </button>
           </div>
         )}
 
-        {/* Step 1: 미용 방식 */}
-        {step === 1 && (
+        {/* Step 2: 미용 방식 */}
+        {step === 2 && (
           <div className="quote-step">
             <div className="quote-step-header">
               <button className="back-btn" onClick={handleBack}>←</button>
@@ -385,15 +555,15 @@ export default function QuoteRequestPage() {
           </div>
         )}
 
-        {/* Step 2: 추가 미용 */}
-        {step === 2 && (
+        {/* Step 3: 추가 미용 */}
+        {step === 3 && (
           <div className="quote-step">
             <div className="quote-step-header">
               <button className="back-btn" onClick={handleBack}>←</button>
               <h2 className="quote-step-title">견적서 요청하기</h2>
             </div>
             <div className="quote-step-question">
-              추기로 원하는 미용이 있으세요?
+              추가로 원하는 미용이 있으세요?
               <span className="quote-subtitle">(복수 선택 가능)</span>
             </div>
             <div className="quote-options-list">
@@ -414,15 +584,15 @@ export default function QuoteRequestPage() {
           </div>
         )}
 
-        {/* Step 3: 추가 사항 */}
-        {step === 3 && (
+        {/* Step 4: 추가 옵션 */}
+        {step === 4 && (
           <div className="quote-step">
             <div className="quote-step-header">
               <button className="back-btn" onClick={handleBack}>←</button>
               <h2 className="quote-step-title">견적서 요청하기</h2>
             </div>
             <div className="quote-step-question">
-              좋찬 미용 확정됐 읍갖주세요.
+              추가로 알려주고 싶은 옵션이 있나요?
               <span className="quote-subtitle">(복수 선택 가능)</span>
             </div>
             <div className="quote-options-list">
@@ -443,8 +613,8 @@ export default function QuoteRequestPage() {
           </div>
         )}
 
-        {/* Step 4: 사진 등록 */}
-        {step === 4 && (
+        {/* Step 5: 사진 등록 */}
+        {step === 5 && (
           <div className="quote-step">
             <div className="quote-step-header">
               <button className="back-btn" onClick={handleBack}>←</button>
@@ -454,8 +624,8 @@ export default function QuoteRequestPage() {
             <div className="quote-photo-upload">
               <div className="photo-upload-area">
                 <div className="photo-upload-icon">+</div>
-                <p className="photo-upload-text">사진을 스크롤해 인증 수정</p>
-                <p className="photo-upload-subtext">사진을 불렀하나요.</p>
+                <p className="photo-upload-text">사진을 업로드해 강아지의 상태를 보여주세요.</p>
+                <p className="photo-upload-subtext">※ 참고용 사진을 여러 장 등록하셔도 좋아요.</p>
               </div>
               <input
                 type="file"
@@ -471,7 +641,7 @@ export default function QuoteRequestPage() {
             </div>
             <textarea
               className="quote-notes-textarea"
-              placeholder="ex) 넓정 사람 경제, 소이메 민감함"
+              placeholder="예) 낯선 사람을 무서워해요. 소리에 예민해요."
               value={quoteData.notes}
               onChange={(e) => setQuoteData({ ...quoteData, notes: e.target.value })}
             />
@@ -481,14 +651,15 @@ export default function QuoteRequestPage() {
           </div>
         )}
 
-        {/* Step 5: 강아지 태그 */}
-        {step === 5 && (
+        {/* Step 6: 강아지 태그 */}
+        {step === 6 && (
           <div className="quote-step">
             <div className="quote-step-header">
               <button className="back-btn" onClick={handleBack}>←</button>
               <h2 className="quote-step-title">견적서 요청하기</h2>
             </div>
-            <div className="quote-step-question">우리럴 강아지 태그를 설정해주세요.</div>
+            <div className="quote-step-question">우리 집 강아지 특징을 선택해 주세요.</div>
+            
             <div className="quote-tags-grid">
               {dogTagOptions.map((tag, idx) => (
                 <button
@@ -506,8 +677,8 @@ export default function QuoteRequestPage() {
           </div>
         )}
 
-        {/* Step 6: 희망 일정 */}
-        {step === 6 && (
+        {/* Step 7: 희망 일정 */}
+        {step === 7 && (
           <div className="quote-step">
             <div className="quote-step-header">
               <button className="back-btn" onClick={handleBack}>←</button>
@@ -517,6 +688,7 @@ export default function QuoteRequestPage() {
               <input
                 type="date"
                 value={quoteData.preferredDate}
+                min={new Date().toISOString().split('T')[0]}
                 onChange={(e) => {
                   const updated = { ...quoteData, preferredDate: e.target.value };
                   setQuoteData(updated);
@@ -548,8 +720,8 @@ export default function QuoteRequestPage() {
           </div>
         )}
 
-        {/* Step 7: 완료 */}
-        {step === 7 && (
+        {/* Step 8: 완료 */}
+        {step === 8 && (
           <div className="quote-step completion">
             <div className="quote-step-header">
               <button className="back-btn" onClick={() => {
@@ -562,7 +734,7 @@ export default function QuoteRequestPage() {
             </div>
             <div className="quote-completion-content">
               <div className="completion-dog-icon">🐕</div>
-              <h2 className="completion-message">견적사가 무사히 전송 되였습니다 :)</h2>
+              <h2 className="completion-message">견적서가 무사히 전송되었어요 :)</h2>
               <button className="completion-btn" onClick={() => {
                 console.log('🎯 [QuoteRequestPage] Step 7 돌아가기 - quoteRequestCompleted 이벤트 발생');
                 window.dispatchEvent(new CustomEvent('quoteRequestCompleted', { 

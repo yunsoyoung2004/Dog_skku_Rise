@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, doc, getDoc, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { sendMessage, createNotification } from './services';
 import PageLayout from './PageLayout';
@@ -18,6 +18,7 @@ export default function ChatConversationPage() {
   const [error, setError] = useState('');
   const lastQuoteReceivedIdRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const [booking, setBooking] = useState(null);
 
   // 채팅방 정보 로드 (고객용: userId 확인)
   useEffect(() => {
@@ -48,6 +49,17 @@ export default function ChatConversationPage() {
           setError('해당 채팅방에 접근할 수 없습니다.');
           setRoom(null);
           return;
+        }
+
+        // 이 채팅방을 연 시점에, 고객 입장에서 미읽은 메시지를 모두 읽은 것으로 처리
+        // (ChatPage에서 사용하는 unreadCount를 0으로 리셋)
+        if (typeof data.unreadCount === 'number' && data.unreadCount > 0) {
+          try {
+            await updateDoc(roomRef, { unreadCount: 0 });
+            data.unreadCount = 0;
+          } catch (e) {
+            console.warn('⚠️  채팅방 unreadCount 리셋 실패(무시 가능):', e.message || e);
+          }
         }
 
         setRoom(data);
@@ -92,20 +104,30 @@ export default function ChatConversationPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 디자이너가 견적을 보내면 실시간 팝업으로 알림
+  // 이 채팅방과 연결된 예약 정보 로드 (예약일/시간 배너 표시용)
   useEffect(() => {
-    if (!user || !messages.length) return;
+    const fetchBookingForRoom = async () => {
+      if (!roomId || !user) return;
 
-    const latestQuote = [...messages]
-      .filter((m) => m.messageType === 'quoteReceived')
-      .pop();
+      try {
+        const bookingsRef = collection(db, 'bookings');
+        const q = query(bookingsRef, where('chatRoomId', '==', roomId));
+        const snap = await getDocs(q);
 
-    if (!latestQuote) return;
-    if (lastQuoteReceivedIdRef.current === latestQuote.id) return;
+        let best = null;
+        snap.forEach((docSnap) => {
+          const data = docSnap.data();
+          best = { id: docSnap.id, ...data };
+        });
 
-    lastQuoteReceivedIdRef.current = latestQuote.id;
-    alert('견적서가 응답되었습니다!');
-  }, [messages, user]);
+        setBooking(best);
+      } catch (e) {
+        console.warn('채팅 예약 정보 로드 실패(무시 가능):', e);
+      }
+    };
+
+    fetchBookingForRoom();
+  }, [roomId, user]);
 
   const handleSend = async () => {
     if (!newMessage.trim() || !roomId || !user) return;
@@ -149,6 +171,7 @@ export default function ChatConversationPage() {
 
       const isQuoteSystem = msg.isSystemMessage && msg.messageType === 'quoteReceived';
       const isUserQuoteSystem = msg.isSystemMessage && msg.messageType === 'quoteRequest';
+      const isBookingSystem = msg.isSystemMessage && msg.messageType === 'bookingConfirmed';
 
       let timeLabel = '';
       if (msg.timestamp) {
@@ -182,6 +205,21 @@ export default function ChatConversationPage() {
               <div className="dc-system-quote-body">
                 <div className="dc-system-user-quote-title">견적 요청을 보냈습니다</div>
                 <div className="dc-system-user-quote-text">{msg.text}</div>
+                {timeLabel && <span className="dc-time dc-time-system">{timeLabel}</span>}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (isBookingSystem) {
+        return (
+          <div key={msg.id} className="dc-system-quote-wrapper">
+            <div className="dc-system-quote-card">
+              <div className="dc-system-quote-icon">📅</div>
+              <div className="dc-system-quote-body">
+                <div className="dc-system-quote-title">견적이 완료되었어요</div>
+                <div className="dc-system-quote-text">{msg.text}</div>
                 {timeLabel && <span className="dc-time dc-time-system">{timeLabel}</span>}
               </div>
             </div>
@@ -225,10 +263,26 @@ export default function ChatConversationPage() {
     (msg) => msg.messageType === 'bookingConfirmed'
   );
 
+  const hasBooking = hasBookingConfirmedMessage || !!booking;
+
+  const formatDate = (tsOrDate) => {
+    if (!tsOrDate) return '';
+    const d = tsOrDate.toDate ? tsOrDate.toDate() : new Date(tsOrDate);
+    return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  };
+
+  const bookingDateLabel = booking ? formatDate(booking.bookingDate) : '';
+
+  const designerNameForBanner = room?.designerName || booking?.designerName || '디자이너';
+
   const handleOpenQuoteRequest = () => {
-    // 견적/예약이 이미 확정된 상태라면, 받은 견적/예약 내역으로 이동
-    if (hasBookingConfirmedMessage || hasDesignerQuoteMessage) {
-      navigate('/quote-detail');
+    // 예약이 확정되었거나 견적이 도착했으면 받은 견적 페이지로 이동
+    if (hasBooking || hasBookingConfirmedMessage || hasDesignerQuoteMessage) {
+      navigate('/quote-detail', {
+        state: {
+          roomId: room?.id || roomId,
+        },
+      });
       return;
     }
 
@@ -289,7 +343,77 @@ export default function ChatConversationPage() {
   }
 
   return (
-    <PageLayout title={title}>
+    <PageLayout 
+      title={title}
+      customHeader={
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          padding: '16px',
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e0e0e0',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10
+        }}>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            style={{
+              border: 'none',
+              background: 'none',
+              padding: '4px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#666',
+              fontSize: '20px'
+            }}
+          >
+            ←
+          </button>
+          <h1 style={{
+            margin: 0,
+            fontSize: '18px',
+            fontWeight: 600,
+            color: '#222',
+            flex: 1,
+            textAlign: 'center'
+          }}>{title}</h1>
+          <button
+            type="button"
+            style={{
+              position: 'relative',
+              border: 'none',
+              background: 'none',
+              padding: '4px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#666'
+            }}
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </button>
+        </div>
+      }
+    >
       <div className="dc-content">
         <div
           className="quote-banner"
@@ -299,8 +423,10 @@ export default function ChatConversationPage() {
             <div className="quote-banner-icon">💌</div>
             <div>
               <div className="quote-banner-title">
-                {hasBookingConfirmedMessage
-                  ? '예약이 확정되었어요'
+                {hasBooking && bookingDateLabel
+                  ? '견적이 완료되었어요'
+                  : hasBookingConfirmedMessage
+                  ? '견적이 완료되었어요'
                   : hasDesignerQuoteMessage
                   ? '견적이 도착했어요'
                   : hasQuoteRequestMessage
@@ -308,27 +434,23 @@ export default function ChatConversationPage() {
                   : '견적 요청하기'}
               </div>
               <div className="quote-banner-desc">
-                {hasBookingConfirmedMessage
-                  ? '예약 일정이 등록되었어요. 예약 내역에서 상세 정보를 확인할 수 있어요.'
+                {hasBooking
+                  ? `${designerNameForBanner}와의 예약이 확정되었어요.\n마이페이지에서 다가오는 예약을 확인해 주세요.`
+                  : hasBookingConfirmedMessage
+                  ? `${designerNameForBanner}와의 예약이 확정되었어요.\n예약 내역에서 상세 정보를 확인할 수 있어요.`
                   : hasDesignerQuoteMessage
-                  ? '보낸 견적 내역을 조정해서 확정해주세요.'
+                  ? '디자이너가 보낸 견적을 확인하세요.\n내용을 검토하고 금액과 조건을 확인해 주세요.'
                   : hasQuoteRequestMessage
-                  ? '디자이너가 견적을 검토 중입니다. 답변을 기다려 주세요.'
-                  : '강아지 정보와 희망 조건을 보내 견적을 받아보세요.'}
+                  ? '견적 요청이 전송되었어요.\n디자이너가 검토 중입니다. 답변을 기다려 주세요.'
+                  : '강아지 정보와 희망 조건을 보내보세요.\n맞춤 견적을 받아볼 수 있어요.'}
               </div>
             </div>
           </div>
           <div className="quote-banner-cta">
-            {hasBookingConfirmedMessage
-              ? '예약 내역 보기'
-              : hasDesignerQuoteMessage
-              ? '자세히 보기'
-              : hasQuoteRequestMessage
-              ? '다시 보내기'
-              : '폼 열기 →'}
+            보기
           </div>
         </div>
-        {hasDesignerQuoteMessage && (
+        {hasDesignerQuoteMessage && !hasBooking && (
           <div className="quote-footer-buttons">
             <button
               className="quote-accept-btn"
@@ -348,7 +470,13 @@ export default function ChatConversationPage() {
             </button>
             <button
               className="quote-confirm-btn"
-              onClick={() => navigate('/payment')}
+              onClick={() =>
+                navigate('/quote-detail', {
+                  state: {
+                    roomId: room?.id || roomId,
+                  },
+                })
+              }
             >
               견적 수락하기
             </button>
@@ -370,8 +498,7 @@ export default function ChatConversationPage() {
           onKeyPress={(e) => e.key === 'Enter' && handleSend()}
         />
         <button className="dc-send-btn" onClick={handleSend}>
-          
-          
+          →
         </button>
       </div>
     </PageLayout>

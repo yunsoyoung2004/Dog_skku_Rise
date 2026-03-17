@@ -49,6 +49,28 @@ export default function NotificationPage() {
     }
   }, [user]);
 
+  // 페이지를 열면 안 읽은 알림을 자동으로 모두 읽음 처리해서
+  // 헤더/벨 아이콘의 빨간 숫자가 바로 사라지도록 함
+  useEffect(() => {
+    if (!user) return;
+    if (!notifications || notifications.length === 0) return;
+
+    const unread = notifications.filter((n) => !n.isRead);
+    if (unread.length === 0) return;
+
+    const markAllAsRead = async () => {
+      try {
+        await Promise.all(
+          unread.map((n) => markNotificationAsRead(user.uid, n.id))
+        );
+      } catch (err) {
+        console.error('알림 전체 읽음 처리 실패(무시 가능):', err);
+      }
+    };
+
+    markAllAsRead();
+  }, [user, notifications]);
+
   const formatTime = (timestamp) => {
     if (!timestamp) return '방금';
     const now = new Date();
@@ -142,11 +164,16 @@ export default function NotificationPage() {
                       state: {
                         designerId: notif.designerId,
                         designerName: notif.designerName || '',
+                        // 리뷰 작성 페이지에는 사람이 보는 예약번호와 Firestore 문서 id를 모두 전달
                         bookingId: notif.bookingId,
+                        bookingDocId: notif.bookingDocId || '',
                       },
                     });
-                  } else if (notif.type === 'quote' || notif.type === 'booking') {
-                    // 견적/예약 관련 알림 클릭 시, 견적 알림 전용 페이지로 이동
+                  } else if (notif.type === 'booking' && notif.chatRoomId) {
+                    // 예약 확정 알림은 연결된 채팅방으로 이동
+                    navigate(`/chat/${notif.chatRoomId}`);
+                  } else if (notif.type === 'quote') {
+                    // 견적 알림은 견적 알림 전용 페이지로 이동
                     navigate('/quote-alerts');
                   } else if (notif.chatRoomId) {
                     // 그 외 채팅방이 연결된 알림은 해당 채팅방으로 이동

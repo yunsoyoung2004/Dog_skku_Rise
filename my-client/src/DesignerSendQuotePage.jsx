@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from './firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { auth, db } from './firebase';
 import { sendDesignerQuote, sendMessage, createOrGetChatRoom, createNotification } from './services';
 import './DesignerPageNav.css';
 import './DesignerSendQuotePage.css';
@@ -20,6 +21,52 @@ export default function DesignerSendQuotePage() {
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [chatRoomId, setChatRoomId] = useState(initialRoomId);
+  const [isEdit, setIsEdit] = useState(false);
+
+  // 이미 전송된 견적이 있는 경우, 수정 모드로 열기 (금액/메모 미리 채우기)
+  useEffect(() => {
+    const loadExistingQuote = async () => {
+      if (!user || !quoteId) return;
+      try {
+        const quotesRef = collection(db, 'quotes');
+        const q = query(
+          quotesRef,
+          where('designerId', '==', user.uid),
+          where('requestId', '==', quoteId),
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          const data = snap.docs[0].data();
+          if (data.price != null) {
+            setAmount(String(data.price));
+          }
+          if (data.message) {
+            setMessage(data.message);
+          }
+          setIsEdit(true);
+        }
+      } catch (e) {
+        console.warn('기존 견적 로드 실패(무시 가능):', e);
+      }
+    };
+
+    loadExistingQuote();
+  }, [user, quoteId]);
+
+  // 견적 전송 성공 후 자동으로 채팅으로 이동
+  useEffect(() => {
+    if (sent) {
+      const timer = setTimeout(() => {
+        if (chatRoomId) {
+          navigate(`/designer-chat/${chatRoomId}`);
+        } else {
+          navigate('/designer-messages');
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [sent, chatRoomId, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,16 +80,22 @@ export default function DesignerSendQuotePage() {
       setSubmitting(true);
 
       // 1) 채팅방 ID 확보 (없으면 생성 또는 기존 방 재사용)
-      let targetRoomId = initialRoomId;
+      let targetRoomId = chatRoomId || initialRoomId;
       if (!targetRoomId && quote.userId) {
         try {
           console.log('🔍 기존 채팅방 조회/생성:', { userId: quote.userId, designerId: user.uid });
           const room = await createOrGetChatRoom(quote.userId, user.uid, {});
           targetRoomId = room?.id || '';
+          setChatRoomId(targetRoomId);
           console.log('✅ 채팅방 확보 완료:', { targetRoomId });
         } catch (err) {
           console.warn('⚠️ 채팅방 조회/생성 실패(무시 가능):', err);
         }
+      }
+
+      // 채팅방 ID를 최종적으로 state에 반영 (초기값이 이미 있는 경우 포함)
+      if (targetRoomId && targetRoomId !== chatRoomId) {
+        setChatRoomId(targetRoomId);
       }
 
       console.log('💾 견적 저장 시작:', { user: user.uid, quoteId, roomId: targetRoomId, amount });
@@ -104,62 +157,67 @@ export default function DesignerSendQuotePage() {
     <div className="designer-page">
       <div className="designer-page-header">
         <button onClick={() => navigate(-1)}>←</button>
-        <h1>견적서 보내기</h1>
+        <h1>{isEdit ? '견적 수정하기' : '견적서 보내기'}</h1>
       </div>
 
       <div className="designer-content send-quote-content">
-        {sent && (
-          <div className="send-quote-toast">
-            제안서가 전송되었습니다.
+        {sent ? (
+          <div className="send-quote-success-screen">
+            <div className="success-icon">✓</div>
+            <div className="success-title">견적서가 전송되었습니다</div>
+            <div className="success-desc">고객에게 알림이 전송됩니다.</div>
+            <div className="success-timer">잠시 후 채팅으로 이동합니다...</div>
           </div>
+        ) : (
+          <>
+            <section className="send-quote-summary">
+              <h2>요청 정보 요약</h2>
+              <p><span className="label">반려견:</span> {quote.dogName || quote.title || '반려견'}</p>
+              <p><span className="label">견종 / 체중:</span> {(quote.breed || '-') + (quote.weight ? ` / ${quote.weight}kg` : '')}</p>
+              <p><span className="label">미용 진행 장소:</span> {quote.knowledge || '-'}</p>
+              <p><span className="label">미용 방식:</span> {quote.groomingStyle || '-'}</p>
+              <p><span className="label">희망 일정:</span> {quote.preferredDate || '-'} {quote.preferredTime || ''}</p>
+              <p><span className="label">추가 미용:</span> {(quote.additionalGrooming || []).join(', ') || '-'}</p>
+              <p><span className="label">추가 옵션:</span> {(quote.additionalOptions || []).join(', ') || '-'}</p>
+              <p><span className="label">강아지 태그:</span> {(quote.dogTags || []).join(', ') || '-'}</p>
+              <p><span className="label">요청 메모:</span> {quote.notes || '요청 메모가 없습니다.'}</p>
+            </section>
+
+            <form className="send-quote-form" onSubmit={handleSubmit}>
+              <label className="field">
+                <span className="field-label">제안 금액</span>
+                <div className="field-inline">
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="예: 70,000"
+                    required
+                  />
+                  <span className="unit">원</span>
+                </div>
+              </label>
+
+              <label className="field">
+                <span className="field-label">추가 메모</span>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="반려견 상태나 미용 방식에 대한 안내를 작성해 주세요."
+                  rows={4}
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="send-quote-submit"
+                disabled={submitting}
+              >
+                {submitting ? '전송 중...' : isEdit ? '견적 수정하기' : '견적서 보내기'}
+              </button>
+            </form>
+          </>
         )}
-
-        <section className="send-quote-summary">
-          <h2>요청 정보 요약</h2>
-          <p><span className="label">반려견:</span> {quote.dogName || quote.title || '반려견'}</p>
-          <p><span className="label">견종 / 체중:</span> {(quote.breed || '-') + (quote.weight ? ` / ${quote.weight}kg` : '')}</p>
-          <p><span className="label">미용 진행 장소:</span> {quote.knowledge || '-'}</p>
-          <p><span className="label">미용 방식:</span> {quote.groomingStyle || '-'}</p>
-          <p><span className="label">희망 일정:</span> {quote.preferredDate || '-'} {quote.preferredTime || ''}</p>
-          <p><span className="label">추가 미용:</span> {(quote.additionalGrooming || []).join(', ') || '-'}</p>
-          <p><span className="label">추가 옵션:</span> {(quote.additionalOptions || []).join(', ') || '-'}</p>
-          <p><span className="label">강아지 태그:</span> {(quote.dogTags || []).join(', ') || '-'}</p>
-          <p><span className="label">요청 메모:</span> {quote.notes || '요청 메모가 없습니다.'}</p>
-        </section>
-
-        <form className="send-quote-form" onSubmit={handleSubmit}>
-          <label className="field">
-            <span className="field-label">제안 금액</span>
-            <div className="field-inline">
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="예: 70,000"
-                required
-              />
-              <span className="unit">원</span>
-            </div>
-          </label>
-
-          <label className="field">
-            <span className="field-label">추가 메모</span>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="반려견 상태나 미용 방식에 대한 안내를 작성해 주세요."
-              rows={4}
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="send-quote-submit"
-            disabled={sent || submitting}
-          >
-            {sent ? '전송 완료' : submitting ? '전송 중...' : '견적서 보내기'}
-          </button>
-        </form>
       </div>
 
       <div className="designer-bottom-nav">

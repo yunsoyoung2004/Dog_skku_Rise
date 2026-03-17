@@ -212,6 +212,21 @@
   opacity: 0.6;
 }
 
+.dashboard-category-btn-locked {
+  opacity: 1;
+  cursor: default !important;
+  pointer-events: none;
+  color: #ddd !important;
+}
+
+.dashboard-category-btn-locked svg {
+  color: #ddd !important;
+}
+
+.dashboard-category-btn-locked span {
+  color: #ddd !important;
+}
+
 .dashboard-category-btn svg {
   width: 24px;
   height: 24px;
@@ -394,6 +409,14 @@
   border-radius: 0;
   border: none;
   text-align: center;
+}
+
+.dashboard-stat-item-clickable {
+  cursor: pointer;
+}
+
+.dashboard-stat-item-clickable:active {
+  opacity: 0.7;
 }
 
 .stat-label {

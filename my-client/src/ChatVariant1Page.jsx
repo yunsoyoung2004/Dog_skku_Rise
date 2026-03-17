@@ -70,10 +70,12 @@ export default function ChatVariant1Page() {
 
       {/* Bottom Navigation */}
       <div className="chat-var-nav">
-        <button onClick={() => navigate('/dashboard')}>🏠</button>
-        <button onClick={() => navigate('/search')}>💼</button>
-        <button onClick={() => navigate('/chat')}>💬</button>
-        <button onClick={() => navigate('/mypage')}>👤</button>
+          <button onClick={() => navigate('/dashboard')}>🏠</button>
+          <button onClick={() => navigate('/search')}>💼</button>
+          <button onClick={() => navigate('/chat')}>💬</button>
+          <button onClick={() => navigate('/mypage')}>
+           <span className="nav-user-icon">👤</span>
+          </button>
       </div>
     </div>
   );

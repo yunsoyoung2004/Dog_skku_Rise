@@ -232,13 +232,31 @@ export const deleteGroomingHistory = async (userId, historyId) => {
 };
 
 /**
- * 미용 통계: 총 미용 횟수(=내역 개수)
+ * 미용 통계: 총 미용 횟수
+ * - 기준: 해당 사용자의 "지난 미용 예약" 개수
+ *   (마이페이지의 pastBookings 와 동일한 기준)
  */
 export const getGroomingStats = async (userId) => {
   try {
-    const colRef = collection(db, `users/${userId}/groomingHistory`);
-    const snap = await getDocs(colRef);
-    const count = snap.size;
+    const bookingsRef = collection(db, 'bookings');
+    const q = query(bookingsRef, where('userId', '==', userId));
+    const snap = await getDocs(q);
+    const now = new Date();
+    let count = 0;
+
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.status === 'cancelled') return;
+
+      const rawDate = data.bookingDate || data.preferredDate;
+      if (!rawDate) return;
+
+      const d = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
+      if (d && !Number.isNaN(d.getTime()) && d < now) {
+        count += 1;
+      }
+    });
+
     return {
       totalGroomings: count,
     };
@@ -284,7 +302,7 @@ export const getUserBookings = async (userId) => {
     const bookingsSnap = await getDocs(q);
     const bookings = [];
     bookingsSnap.forEach((doc) => {
-      bookings.push({ ...doc.data(), docId: doc.id });
+      bookings.push({ ...doc.data(), docId: doc.id, id: doc.id });
     });
     return bookings.sort((a, b) => b.createdAt - a.createdAt);
   } catch (error) {
@@ -467,7 +485,10 @@ export const sendDesignerQuote = async (designerId, requestId, quoteRequest, pay
       });
       console.log('  ✅ [UPDATE] quoteRequest 갱신 완료');
     } catch (e) {
-      console.warn('quoteRequest 상태 업데이트 실패 (무시 가능):', e);
+      // 권한 에러 무시 (디자이너는 자신의 견적만 업데이트 가능)
+      if (!e.code.includes('permission')) {
+        console.warn('quoteRequest 상태 업데이트 실패 (무시 가능):', e);
+      }
     }
 
     console.log('✅ [services.js] sendDesignerQuote 완료\n');
@@ -491,18 +512,26 @@ export const getUserQuotes = async (userId) => {
     const quotes = [];
     quotesSnap.forEach((doc) => {
       const data = doc.data();
-      console.log('  📄 Document found:', { 
+      console.log('  📄 Document found:', {
         docId: doc.id,
         userId: data.userId,
         designerId: data.designerId,
         dogName: data.dogName,
-        price: data.price
+        price: data.price,
+        status: data.status,
+        bookingDate: data.bookingDate,
+        preferredDate: data.preferredDate,
+        preferredTime: data.preferredTime,
+        chatRoomId: data.chatRoomId,
       });
       quotes.push({ ...data, id: doc.id });
     });
     // 최신순 정렬 (timestamp 숫자 기반)
     const sorted = quotes.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    console.log('✅ [getUserQuotes] 조회 완료:', { totalCount: sorted.length });
+    console.log('✅ [getUserQuotes] 조회 완료:', {
+      totalCount: sorted.length,
+      statuses: sorted.map((q) => ({ id: q.id, status: q.status, bookingDate: q.bookingDate, preferredDate: q.preferredDate }))
+    });
     return sorted;
   } catch (error) {
     console.error('견적 조회 오류:', error);
@@ -702,6 +731,49 @@ export const getRecentSearches = async (userId, limitCount = 5) => {
   }
 };
 
+/**
+ * 최근 검색어 개별 삭제 (keyword 기준으로 여러 개면 모두 삭제)
+ */
+export const deleteRecentSearch = async (userId, keyword) => {
+  try {
+    const historyRef = collection(db, `users/${userId}/searchHistory`);
+    const q = query(historyRef, where('keyword', '==', keyword), limit(20));
+    const snap = await getDocs(q);
+    if (snap.empty) return { success: true };
+
+    const batch = writeBatch(db);
+    snap.forEach((docSnap) => {
+      batch.delete(docSnap.ref);
+    });
+    await batch.commit();
+    return { success: true };
+  } catch (error) {
+    console.error('최근 검색어 삭제 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 최근 검색어 전체 삭제
+ */
+export const clearRecentSearches = async (userId) => {
+  try {
+    const historyRef = collection(db, `users/${userId}/searchHistory`);
+    const snap = await getDocs(historyRef);
+    if (snap.empty) return { success: true };
+
+    const batch = writeBatch(db);
+    snap.forEach((docSnap) => {
+      batch.delete(docSnap.ref);
+    });
+    await batch.commit();
+    return { success: true };
+  } catch (error) {
+    console.error('최근 검색어 전체 삭제 오류:', error);
+    throw error;
+  }
+};
+
 // ============= REVIEWS SERVICE =============
 
 /**
@@ -741,6 +813,47 @@ export const getDesignerReviews = async (designerId) => {
   }
 };
 
+/**
+ * 사용자가 작성한 리뷰 조회
+ */
+export const getUserReviews = async (userId) => {
+  try {
+    const reviewsRef = collection(db, 'reviews');
+    const q = query(reviewsRef, where('userId', '==', userId));
+    const reviewsSnap = await getDocs(q);
+    const reviews = [];
+    reviewsSnap.forEach((doc) => {
+      reviews.push({ ...doc.data(), id: doc.id });
+    });
+    // 최신순 정렬
+    return reviews.sort((a, b) => {
+      const aTime = a.createdAt?.toMillis?.() ?? 0;
+      const bTime = b.createdAt?.toMillis?.() ?? 0;
+      return bTime - aTime;
+    });
+  } catch (error) {
+    console.error('사용자 리뷰 조회 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * Booking에 hasReview 플래그 업데이트
+ */
+export const updateBookingHasReview = async (bookingId) => {
+  try {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      hasReview: true,
+      reviewedAt: Timestamp.now(),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Booking 리뷰 플래그 업데이트 오류:', error);
+    throw error;
+  }
+};
+
 // ============= MESSAGES SERVICE =============
 
 /**
@@ -769,6 +882,20 @@ export const sendMessage = async (chatRoomId, messageData) => {
         lastMessageTime: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
+
+      // 디자이너가 보낸 메시지는 사용자의 미읽은 메시지 수(unreadCount)를 증가시킨다.
+      // (고객용 채팅 리스트 ChatPage에서 사용하는 필드)
+      if (messageData.senderType === 'designer') {
+        try {
+          const roomSnap = await getDoc(roomRef);
+          const currentUnread = roomSnap.data()?.unreadCount || 0;
+          await updateDoc(roomRef, {
+            unreadCount: currentUnread + 1,
+          });
+        } catch (unreadError) {
+          console.warn('⚠️  unreadCount 업데이트 실패(무시 가능):', unreadError.message || unreadError);
+        }
+      }
     } catch (e) {
       console.warn('⚠️  채팅방 업데이트 실패:', e.message);
     }
@@ -932,7 +1059,9 @@ export const notifyPendingReviews = async (userId) => {
           title: '어떠셨나요? 리뷰를 남겨주세요',
           message: `${booking.designerName || '디자이너'}와의 미용이 완료되었습니다. 후기를 남겨주세요.`,
           type: 'review',
+          // 사람이 보는 예약번호와 Firestore 문서 id를 함께 전달
           bookingId: booking.bookingId || booking.id,
+          bookingDocId: booking.id,
           designerId: booking.designerId || '',
           designerName: booking.designerName || '',
         });
@@ -1296,6 +1425,8 @@ export default {
   // Reviews
   createReview,
   getDesignerReviews,
+  getUserReviews,
+  updateBookingHasReview,
   // Messages
   sendMessage,
   getChatMessages,

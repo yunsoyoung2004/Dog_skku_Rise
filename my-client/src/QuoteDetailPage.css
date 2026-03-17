@@ -59,7 +59,19 @@
 }
 
 .quote-dog-avatar {
-  font-size: 48px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quote-dog-avatar-icon {
+  width: 60%;
+  height: 60%;
+  color: #b5b5b5;
 }
 
 .quote-dog-details h2 {
@@ -88,6 +100,11 @@
   border: 1px solid #e0e0e0;
 }
 
+.quote-card.confirmed {
+  background-color: #f0f8f5;
+  border: 1px solid #c8e6c9;
+}
+
 .quote-header {
   display: flex;
   justify-content: space-between;
@@ -102,7 +119,20 @@
 }
 
 .quote-designer-avatar {
-  font-size: 36px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quote-avatar-icon {
+  width: 24px;
+  height: 24px;
+  color: #999999;
+  stroke-width: 2;
 }
 
 .quote-designer-info h3 {

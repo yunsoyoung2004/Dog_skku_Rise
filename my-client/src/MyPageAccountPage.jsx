@@ -87,10 +87,53 @@ export default function MyPageAccountPage() {
     <div className="mypage-account" data-node-id="511:2572">
       {/* Header */}
       <div className="mypage-account-header">
-        <div className="mypage-acc-logo">
-          <img src={logoImg} alt="멍빗어" />
-        </div>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          style={{
+            border: 'none',
+            background: 'none',
+            padding: '4px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#666',
+            fontSize: '20px'
+          }}
+        >
+          ←
+        </button>
         <h1>마이 페이지</h1>
+        <button
+          type="button"
+          style={{
+            position: 'relative',
+            border: 'none',
+            background: 'none',
+            padding: '4px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#666'
+          }}
+          onClick={() => navigate('/notification')}
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </button>
       </div>
 
       {/* Content */}
@@ -98,22 +141,6 @@ export default function MyPageAccountPage() {
         <div className="account-section">
           <div className="section-header">
             <h2>계정 정보</h2>
-            {isEditing ? (
-              <button
-                className="edit-btn"
-                onClick={handleSaveProfile}
-                disabled={loading}
-              >
-                {loading ? '저장중...' : '저장'}
-              </button>
-            ) : (
-              <button
-                className="edit-btn"
-                onClick={() => setIsEditing(true)}
-              >
-                수정
-              </button>
-            )}
           </div>
 
           <div className="account-info-list">
@@ -174,6 +201,24 @@ export default function MyPageAccountPage() {
           <div style={{ padding: '10px', backgroundColor: error.includes('저장') ? '#eeffee' : '#ffeeee', color: error.includes('저장') ? '#00aa00' : '#cc0000', textAlign: 'center', marginBottom: '10px' }}>
             {error}
           </div>
+        )}
+
+        {/* Edit / Save Button */}
+        {isEditing ? (
+          <button
+            className="logout-btn"
+            onClick={handleSaveProfile}
+            disabled={loading}
+          >
+            {loading ? '저장중...' : '저장'}
+          </button>
+        ) : (
+          <button
+            className="logout-btn"
+            onClick={() => setIsEditing(true)}
+          >
+            수정
+          </button>
         )}
 
         {/* Logout / Delete Buttons */}

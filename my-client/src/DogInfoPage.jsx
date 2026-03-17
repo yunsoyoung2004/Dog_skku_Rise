@@ -119,7 +119,9 @@ export default function DogInfoPage() {
         <button title="홈" onClick={() => navigate('/dashboard')}>🏠</button>
         <button title="디자이너" onClick={() => navigate('/designer')}>💼</button>
         <button title="메시지" onClick={() => navigate('/chat')}>💬</button>
-        <button title="마이페이지" onClick={() => navigate('/mypage')}>👤</button>
+          <button title="마이페이지" onClick={() => navigate('/mypage')}>
+            <span className="nav-user-icon">👤</span>
+          </button>
       </div>
     </div>
   );

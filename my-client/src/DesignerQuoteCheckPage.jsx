@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -8,11 +8,17 @@ import './DesignerQuoteCheckPage.css';
 
 export default function DesignerQuoteCheckPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user] = useAuthState(auth);
   const [filter, setFilter] = useState('all');
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // 특정 고객의 견적만 보이는 모드
+  const customerUserId = location.state?.customerUserId;
+  // 채팅방에서 넘어온 경우, 해당 채팅방(roomId)에 연결된 견적만 보기
+  const fromRoomId = location.state?.roomId || '';
 
   useEffect(() => {
     if (!user) {
@@ -32,13 +38,34 @@ export default function DesignerQuoteCheckPage() {
           where('designerId', '==', user.uid)
         );
         const snap = await getDocs(q);
-        let list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        let list = all;
+
+        // 1순위: 같은 채팅방(roomId)에 연결된 견적 요청
+        if (fromRoomId) {
+          const byRoom = all.filter((item) => item.roomId === fromRoomId);
+          if (byRoom.length > 0) {
+            list = byRoom;
+          } else if (customerUserId) {
+            // 같은 roomId가 없으면, 같은 고객(userId) 기준으로 fallback
+            list = all.filter((item) => item.userId === customerUserId);
+          }
+        } else if (customerUserId) {
+          // 채팅방 정보가 없을 때는 고객 기준 필터링
+          list = all.filter((item) => item.userId === customerUserId);
+        }
 
         list = list.sort((a, b) => {
           const aTs = a.createdAt?.toMillis?.() ?? 0;
           const bTs = b.createdAt?.toMillis?.() ?? 0;
           return bTs - aTs;
         });
+
+        // 특정 고객/채팅방에서 진입한 경우에는 최신 1개만 노출
+        if ((fromRoomId || customerUserId) && list.length > 0) {
+          list = [list[0]];
+        }
 
         setQuotes(list);
       } catch (e) {
@@ -51,7 +78,22 @@ export default function DesignerQuoteCheckPage() {
     };
 
     loadQuotes();
-  }, [user, navigate]);
+  }, [user, customerUserId, fromRoomId, navigate]);
+
+  // 채팅 배너에서 진입한 경우: 목록 대신 바로 해당 견적 작성/수정 페이지로 이동
+  useEffect(() => {
+    if (!fromRoomId) return;
+    if (loading || error) return;
+    if (!quotes || quotes.length === 0) return;
+
+    const target = quotes[0];
+    // 채팅 → 견적 수정으로 올 때는 중간 페이지를 history에서 교체해서
+    // 뒤로가기가 다시 채팅으로 바로 돌아가도록 처리
+    navigate(`/designer-send-quote/${target.id}`, {
+      replace: true,
+      state: { quote: target, roomId: fromRoomId },
+    });
+  }, [fromRoomId, loading, error, quotes, navigate]);
 
   const filteredCards = quotes; // 필터 로직은 추후 확장
 
@@ -59,18 +101,20 @@ export default function DesignerQuoteCheckPage() {
     <div className="designer-page">
       <div className="designer-page-header">
         <button onClick={() => navigate(-1)}>←</button>
-        <h1>견적서 확인하기</h1>
+        <h1>{customerUserId ? '고객 견적 요청' : '견적서 확인하기'}</h1>
       </div>
 
       <div className="designer-content">
         <div className="dq-filter-row">
-          <button
-            type="button"
-            className={`dq-filter-pill ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            전체
-          </button>
+          {!customerUserId && (
+            <button
+              type="button"
+              className={`dq-filter-pill ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
+            >
+              전체
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -83,7 +127,7 @@ export default function DesignerQuoteCheckPage() {
           </div>
         ) : filteredCards.length === 0 ? (
           <div className="dq-empty">
-            <p>아직 도착한 견적 요청이 없습니다.</p>
+            <p>{customerUserId ? '이 고객의 견적 요청이 없습니다.' : '아직 도착한 견적 요청이 없습니다.'}</p>
           </div>
         ) : (
           <div className="dq-card-list">

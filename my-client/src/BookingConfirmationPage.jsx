@@ -104,6 +104,12 @@ export default function BookingConfirmationPage() {
         <div className="confirmation-actions">
           <button
             className="action-btn primary"
+            onClick={() => navigate('/quote-detail')}
+          >
+            예약 일정 확인
+          </button>
+          <button
+            className="action-btn secondary"
             onClick={() => navigate('/dashboard')}
           >
             홈으로 돌아가기

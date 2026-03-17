@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, getDocs } from 'firebase/firestore';
+import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from './firebase';
 import { getGroomingStats, getAllDesigners, getUserQuotes } from './services';
 import PageLayout from './PageLayout';
@@ -104,6 +105,7 @@ function getRadarPolygonPoints(values, maxRadius, cx, cy) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const [user, authLoading] = useAuthState(auth);
   const [hasDogData, setHasDogData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [groomingCount, setGroomingCount] = useState(0);
@@ -129,12 +131,12 @@ export default function DashboardPage() {
 
   // Firebase에서 강아지 데이터 및 미용 통계 확인
   useEffect(() => {
+    if (authLoading) return;
+
     const checkDogData = async () => {
       try {
         setLoading(true);
-        const currentUser = auth.currentUser;
-
-        if (!currentUser) {
+        if (!user) {
           setHasDogData(false);
           setGroomingCount(0);
           setNearbyDesignerCount(0);
@@ -143,7 +145,7 @@ export default function DashboardPage() {
         }
 
         // Firestore에서 사용자의 강아지 정보 확인
-        const dogsRef = collection(db, 'users', currentUser.uid, 'dogs');
+        const dogsRef = collection(db, 'users', user.uid, 'dogs');
         const q = query(dogsRef);
         const snapshot = await getDocs(q);
 
@@ -156,7 +158,7 @@ export default function DashboardPage() {
           setPrimaryDog({ id: firstDoc.id, ...data });
 
           try {
-            const stats = await getGroomingStats(currentUser.uid);
+            const stats = await getGroomingStats(user.uid);
             setGroomingCount(stats?.totalGroomings || 0);
           } catch (e) {
             console.error('미용 통계 조회 실패:', e);
@@ -177,7 +179,7 @@ export default function DashboardPage() {
 
         // 사용자가 디자이너에게 받은 견적 수
         try {
-          const receivedQuotes = await getUserQuotes(currentUser.uid);
+          const receivedQuotes = await getUserQuotes(user.uid);
           setReceivedQuoteCount(receivedQuotes.length || 0);
         } catch (e) {
           console.warn('받은 견적 수를 불러오지 못했습니다:', e);
@@ -196,7 +198,7 @@ export default function DashboardPage() {
     };
 
     checkDogData();
-  }, []);
+  }, [user, authLoading]);
 
   const handleRegionChange = (region) => {
     setCurrentRegion(region);
@@ -380,7 +382,7 @@ export default function DashboardPage() {
           </svg>
           <span>맞춤별</span>
         </button>
-        <button className="dashboard-category-btn">
+        <button className="dashboard-category-btn dashboard-category-btn-locked" disabled>
           <svg
             width="20"
             height="20"
@@ -508,7 +510,10 @@ export default function DashboardPage() {
 
           {/* Statistics */}
           <div className="dashboard-stats-section">
-            <div className="dashboard-stat-item">
+            <div
+              className="dashboard-stat-item dashboard-stat-item-clickable"
+              onClick={() => navigate('/mypage')}
+            >
               <p className="stat-label">미용 횟수</p>
               <p className="stat-value">{groomingCount}회</p>
             </div>
@@ -552,6 +557,15 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+      )}
+      {!loading && (
+        <button
+          type="button"
+          className="dashboard-cta-button"
+          onClick={() => navigate('/quote-alerts')}
+        >
+          도착한 견적 확인하기
+        </button>
       )}
     </PageLayout>
   );

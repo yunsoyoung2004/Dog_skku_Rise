@@ -63,8 +63,20 @@
 }
 
 .dog-edit-avatar {
-  font-size: 80px;
-  margin-bottom: 16px;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 16px auto;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dog-edit-avatar-icon {
+  width: 60%;
+  height: 60%;
+  color: #b5b5b5;
 }
 
 .dog-edit-photo-btn {
@@ -159,18 +171,21 @@
 }
 
 .dog-delete-btn {
-  width: 100%;
-  padding: 12px;
+  width: auto;
+  padding: 8px 14px;
   background-color: white;
   color: #d32f2f;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.2s;
-  margin-bottom: 20px;
+  margin: 8px 0 20px auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dog-delete-btn:hover {

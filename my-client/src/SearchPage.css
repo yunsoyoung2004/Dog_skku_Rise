@@ -34,20 +34,14 @@
   background-color: white;
 }
 
-.search-icon-container {
+.search-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 10px;
+  margin-right: 8px;
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-}
-
-.search-icon {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 .search-input {
@@ -94,6 +88,24 @@
   min-width: 176px;
 }
 
+.search-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-clear-btn {
+  border: none;
+  background: none;
+  font-size: 11px;
+  color: #888;
+  cursor: pointer;
+}
+
+.search-clear-btn:active {
+  opacity: 0.7;
+}
+
 .search-tags {
   display: flex;
   gap: 12px;
@@ -115,6 +127,11 @@
   background-color: #d9d9d9;
   min-width: 70px;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
 }
 
 .search-tag.popular {
@@ -123,4 +140,16 @@
 
 .search-tag:active {
   opacity: 0.8;
+}
+
+.search-tag-label {
+  white-space: nowrap;
+}
+
+.search-tag-delete {
+  font-size: 10px;
+  cursor: pointer;
+  position: absolute;
+  top: 2px;
+  right: 6px;
 }

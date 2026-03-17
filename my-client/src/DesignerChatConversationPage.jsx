@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { doc, getDoc, collection, query, orderBy, onSnapshot, onSnapshot as onUserSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, query, orderBy, onSnapshot, onSnapshot as onUserSnapshot, getDocs, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { sendMessage, createNotification } from './services';
 import './DesignerChatConversationPage.css';
+
+const logoImg = "/vite.svg";
 
 export default function DesignerChatConversationPage() {
   const navigate = useNavigate();
@@ -17,14 +19,24 @@ export default function DesignerChatConversationPage() {
   const [error, setError] = useState('');
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const messagesEndRef = useRef(null);
+  // const [booking, setBooking] = useState(null);
+  
+  // 최근 예약 모달
+  const [showReservationModal, setShowReservationModal] = useState(false);
+  const [latestReservation, setLatestReservation] = useState(null);
 
   // 견적 관련 시스템 메시지 여부 체크
-  const hasQuoteRequestMessage = messages.some(
-    (msg) => msg.messageType === 'quoteRequest'
-  );
   const hasDesignerQuoteMessage = messages.some(
     (msg) => msg.messageType === 'quoteReceived'
   );
+  const hasQuoteRequestMessage = messages.some(
+    (msg) => msg.messageType === 'quoteRequest'
+  ) && !hasDesignerQuoteMessage;  // 이미 응답했으면 새 요청으로 표시하지 않음
+  const hasBookingConfirmedMessage = messages.some(
+    (msg) => msg.messageType === 'bookingConfirmed'
+  );
+
+  const hasBooking = hasBookingConfirmedMessage;
 
   // 채팅방 정보 로드
   useEffect(() => {
@@ -121,6 +133,40 @@ export default function DesignerChatConversationPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // 이 채팅방과 연결된 예약 정보 로드 (예약일/시간 배너 표시용)
+  // ✋ 권한 에러로 비활성화 - hasBookingConfirmedMessage로도 충분함
+  // useEffect(() => {
+  //   const fetchBookingForRoom = async () => {
+  //     if (!roomId || !user) return;
+
+  //     try {
+  //       const bookingsRef = collection(db, 'bookings');
+  //       const q = query(bookingsRef, where('chatRoomId', '==', roomId));
+  //       const snap = await getDocs(q);
+
+  //       let best = null;
+  //       snap.forEach((docSnap) => {
+  //         const data = docSnap.data();
+  //         best = { id: docSnap.id, ...data };
+  //       });
+
+  //       setBooking(best);
+  //     } catch (e) {
+  //       console.warn('디자이너 채팅 예약 정보 로드 실패(무시 가능):', e);
+  //     }
+  //   };
+
+  //   fetchBookingForRoom();
+  // }, [roomId, user]);
+
+  const formatDate = (tsOrDate) => {
+    if (!tsOrDate) return '';
+    const d = tsOrDate.toDate ? tsOrDate.toDate() : new Date(tsOrDate);
+    return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  };
+
+  const bookingDateLabel = '';
+
   const handleSend = async () => {
     if (!newMessage.trim() || !roomId || !user) return;
 
@@ -166,7 +212,7 @@ export default function DesignerChatConversationPage() {
           </p>
         </div>
         <div className="dc-input-row" style={{ visibility: 'hidden' }}>
-          <input type="text" className="dc-input" disabled />
+          <input type="text" className="dc-input" value={newMessage || ''} disabled />
           <button className="dc-send-btn" disabled>→</button>
         </div>
         <div className="designer-bottom-nav">
@@ -203,7 +249,7 @@ export default function DesignerChatConversationPage() {
           </p>
         </div>
         <div className="dc-input-row" style={{ visibility: 'hidden' }}>
-          <input type="text" className="dc-input" disabled />
+          <input type="text" className="dc-input" value={newMessage || ''} disabled />
           <button className="dc-send-btn" disabled>→</button>
         </div>
         <div className="designer-bottom-nav">
@@ -231,7 +277,14 @@ export default function DesignerChatConversationPage() {
     <div className="designer-page">
       <div className="designer-page-header">
         <button onClick={() => navigate(-1)}>←</button>
-        <h1>{room.userName || room.roomName || room.title || '채팅'}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+          <img 
+            src={logoImg} 
+            alt="멍빗어" 
+            style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} 
+          />
+          <h1>{room.userName || room.roomName || room.title || '채팅'}</h1>
+        </div>
         <button 
           className="dc-notification-btn"
           onClick={() => {
@@ -256,22 +309,28 @@ export default function DesignerChatConversationPage() {
         <div
           className={`quote-banner ${hasDesignerQuoteMessage ? 'quote-banner-sent' : ''}`}
           onClick={() => {
-            // 배너 전체 클릭 시에는 기존처럼 견적 요청/전송 내역 리스트로 이동
-            navigate('/designer-quotes-check');
+            // 배너 전체 클릭 시에도 현재 채팅방과 연결된 견적만 보이도록 roomId 전달
+            navigate('/designer-quotes-check', {
+              state: { customerUserId: room?.userId, roomId },
+            });
           }}
         >
           <div className="quote-banner-left">
             <div className="quote-banner-icon">💌</div>
             <div>
               <div className="quote-banner-title">
-                {!hasQuoteRequestMessage && !hasDesignerQuoteMessage
+                {hasBooking && bookingDateLabel
+                  ? `${bookingDateLabel} 예약된 사용자입니다.`
+                  : !hasQuoteRequestMessage && !hasDesignerQuoteMessage
                   ? '고객 견적 요청을 기다리는 중이에요'
                   : hasQuoteRequestMessage && !hasDesignerQuoteMessage
                   ? '고객이 견적을 보냈어요'
                   : '견적을 전송했습니다'}
               </div>
               <div className="quote-banner-desc">
-                {!hasQuoteRequestMessage && !hasDesignerQuoteMessage
+                {hasBooking
+                  ? '예약이 확정되었습니다. 예약 내역은 마이페이지에서 확인할 수 있어요.'
+                  : !hasQuoteRequestMessage && !hasDesignerQuoteMessage
                   ? '고객이 견적 폼을 보내면 이 채팅에서 내용을 확인할 수 있어요.'
                   : hasQuoteRequestMessage && !hasDesignerQuoteMessage
                   ? '요청 내역을 확인하고 금액과 메모를 작성해 견적서를 보내주세요.'
@@ -284,15 +343,13 @@ export default function DesignerChatConversationPage() {
             className="quote-banner-cta"
             onClick={(e) => {
               e.stopPropagation();
-              // 오른쪽 버튼은 내가 보낸 견적만 보기
-              navigate('/designer-quotes');
+              // CTA 버튼 클릭 시에도 현재 채팅방 기준으로 필터링되도록 roomId 전달
+              navigate('/designer-quotes-check', {
+                state: { customerUserId: room?.userId, roomId },
+              });
             }}
           >
-            {!hasQuoteRequestMessage && !hasDesignerQuoteMessage
-              ? '대기 중'
-              : hasQuoteRequestMessage && !hasDesignerQuoteMessage
-              ? '견적서 보내기'
-              : '내가 보낸 견적 보기'}
+            보기
           </button>
         </div>
 
@@ -304,6 +361,7 @@ export default function DesignerChatConversationPage() {
               const isDesigner = msg.senderId === user.uid;
               const isQuoteSystem = msg.isSystemMessage && msg.messageType === 'quoteReceived';
               const isUserQuoteSystem = msg.isSystemMessage && msg.messageType === 'quoteRequest';
+              const isBookingSystem = msg.isSystemMessage && msg.messageType === 'bookingConfirmed';
 
               let timeLabel = '';
               if (msg.timestamp) {
@@ -344,6 +402,21 @@ export default function DesignerChatConversationPage() {
                 );
               }
 
+              if (isBookingSystem) {
+                return (
+                  <div key={msg.id} className="dc-system-quote-wrapper">
+                    <div className="dc-system-quote-card">
+                      <div className="dc-system-quote-icon">📅</div>
+                      <div className="dc-system-quote-body">
+                        <div className="dc-system-quote-title">견적이 완료되었어요</div>
+                        <div className="dc-system-quote-text">{msg.text}</div>
+                        {timeLabel && <span className="dc-time dc-time-system">{timeLabel}</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={msg.id}
@@ -366,7 +439,7 @@ export default function DesignerChatConversationPage() {
           type="text"
           className="dc-input"
           placeholder="메시지를 입력하세요..."
-          value={newMessage}
+          value={newMessage || ''}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleSend()}
         />

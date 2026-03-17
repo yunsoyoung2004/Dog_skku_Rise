@@ -9,18 +9,33 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #ffffff;
-  padding: 16px 20px 10px;
+  background-color: white;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  font-family: 'Paperlogy', 'Gmarket Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .dd-header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.dd-back-btn {
+  border: none;
+  background: none;
+  padding: 4px;
+  cursor: pointer;
+  font-size: 24px;
+  color: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dd-logo-btn {
@@ -28,18 +43,23 @@
   background: none;
   padding: 0;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dd-logo-img {
-  width: 30px;
-  height: 27px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   object-fit: cover;
 }
 
 .dd-logo-text {
-  font-size: 14px;
-  letter-spacing: 1.8px;
+  font-size: 18px;
+  font-weight: 600;
   color: #222;
+  margin: 0;
 }
 
 .dd-header-right {
@@ -155,6 +175,18 @@
 
 .dd-briefing-list {
   padding-bottom: 4px;
+}
+
+.dd-next-reservation {
+  padding: 12px 0;
+}
+
+.dd-next-date-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 10px;
+  padding: 0 4px;
 }
 
 .dd-briefing-card {
@@ -477,4 +509,149 @@
   font-size: 14px;
   color: #333333;
   cursor: pointer;
+}
+
+/* 달력 스타일 */
+.dd-calendar-container {
+  width: 100%;
+  padding: 16px;
+}
+
+.dd-calendar {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.dd-calendar-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.dd-calendar-month {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+}
+
+.dd-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.dd-calendar-weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  padding: 6px 0;
+}
+
+.dd-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.dd-calendar-day {
+  background: #ffffff;
+  border-radius: 6px;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  position: relative;
+  border: 1px solid #e5e7eb;
+  cursor: default;
+}
+
+.dd-calendar-day.has-reservation {
+  cursor: pointer;
+}
+
+.dd-calendar-day.has-reservation:hover {
+  background-color: #f3f4f6;
+}
+
+.dd-calendar-day.empty {
+  background: transparent;
+  border: none;
+}
+
+.dd-calendar-day.today {
+  background-color: #fee2e2;
+  border-color: #dc2626;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.dd-calendar-day-num {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.dd-calendar-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  background-color: #dc2626;
+  border-radius: 50%;
+}
+
+/* 예약 상세 정보 */
+.dd-reservation-details {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.dd-reservation-date {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+}
+
+.dd-reservation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dd-reservation-item {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.dd-res-dog {
+  font-weight: 600;
+  color: #222;
+  min-width: 60px;
+}
+
+.dd-res-time {
+  color: #666;
+  min-width: 50px;
+  text-align: center;
+}
+
+.dd-res-customer {
+  color: #999;
+  text-align: right;
+  flex-grow: 1;
 }

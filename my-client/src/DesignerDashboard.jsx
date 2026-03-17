@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -8,8 +8,73 @@ import './DesignerDashboard.css';
 
 const logoImg = "/vite.svg";
 
+// 달력 컴포넌트
+function DesignerCalendar({ reservationsByDate, onDateSelect }) {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay();
+
+  const days = [];
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    days.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i);
+  }
+
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+  return (
+    <div className="dd-calendar">
+      <div className="dd-calendar-header">
+        <h3 className="dd-calendar-month">{currentYear}년 {currentMonth + 1}월</h3>
+      </div>
+      <div className="dd-calendar-weekdays">
+        {dayNames.map((day) => (
+          <div key={day} className="dd-calendar-weekday">{day}</div>
+        ))}
+      </div>
+      <div className="dd-calendar-grid">
+        {days.map((day, idx) => {
+          const dateKey = day
+            ? `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+            : null;
+          const hasReservation = dateKey && reservationsByDate[dateKey] && reservationsByDate[dateKey].length > 0;
+          const isToday = day === today.getDate() && currentMonth === today.getMonth();
+
+          return (
+            <div
+              key={idx}
+              className={`dd-calendar-day ${isToday ? 'today' : ''} ${day ? '' : 'empty'} ${hasReservation ? 'has-reservation' : ''}`}
+              onClick={() => {
+                if (day && hasReservation) {
+                  onDateSelect(dateKey, reservationsByDate[dateKey]);
+                }
+              }}
+            >
+              {day && (
+                <>
+                  <span className="dd-calendar-day-num">{day}</span>
+                  {hasReservation && (
+                    <span className="dd-calendar-dot" />
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function DesignerDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user] = useAuthState(auth);
   const [designer, setDesigner] = useState(null);
   const [stats, setStats] = useState({
@@ -18,6 +83,12 @@ export default function DesignerDashboard() {
     reviews: 0,
     messages: 0
   });
+  const [reservationsByDate, setReservationsByDate] = useState({});
+  
+  // 특정 고객의 예약만 보이는 모드
+  const customerUserId = location.state?.customerUserId;
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedReservations, setSelectedReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showProfileReminder, setShowProfileReminder] = useState(false);
   const [showQuoteAlert, setShowQuoteAlert] = useState(false);
@@ -71,10 +142,43 @@ export default function DesignerDashboard() {
         where('designerId', '==', user.uid)
       ));
 
-      const reservationsSnap = await getDocs(query(
-        collection(db, 'bookings'),
-        where('designerId', '==', user.uid)
-      ));
+      // 예약 쿼리 조건부 구성
+      let reservationsQuery;
+      if (customerUserId) {
+        reservationsQuery = query(
+          collection(db, 'bookings'),
+          where('designerId', '==', user.uid),
+          where('userId', '==', customerUserId)
+        );
+      } else {
+        reservationsQuery = query(
+          collection(db, 'bookings'),
+          where('designerId', '==', user.uid)
+        );
+      }
+      
+      const reservationsSnap = await getDocs(reservationsQuery);
+
+      // 예약을 날짜별로 정렬
+      const dateMap = {};
+      reservationsSnap.forEach(doc => {
+        const booking = { id: doc.id, ...doc.data() };
+        
+        // customerUserId 모드: 진행 중인 예약만 표시 (상태: pending, confirmed)
+        if (customerUserId && booking.status && !['pending', 'confirmed'].includes(booking.status)) {
+          return;
+        }
+        
+        const dateStr = booking.reservationDate || booking.date;
+        if (dateStr) {
+          const date = typeof dateStr === 'string' ? dateStr.split('T')[0] : dateStr;
+          if (!dateMap[date]) {
+            dateMap[date] = [];
+          }
+          dateMap[date].push(booking);
+        }
+      });
+      setReservationsByDate(dateMap);
 
       const reviewsSnap = await getDocs(query(
         collection(db, 'reviews'),
@@ -86,16 +190,20 @@ export default function DesignerDashboard() {
         where('designerId', '==', user.uid)
       ));
 
-      const quotesCount = quotesSnap.size;
+      // 아직 응답하지 않은 견적 요청만 카운트 (status: 'pending')
+      const pendingQuotesCount = quotesSnap.docs.filter(doc => {
+        const data = doc.data();
+        return data.status === 'pending' || !data.status;
+      }).length;
 
       setStats({
-        quotes: quotesCount,
+        quotes: quotesSnap.size,
         reservations: reservationsSnap.size,
         reviews: reviewsSnap.size,
         messages: chatRoomsSnap.size
       });
 
-      setShowQuoteAlert(quotesCount > 0);
+      setShowQuoteAlert(pendingQuotesCount > 0);
     } catch (err) {
       console.error('데이터 로드 실패:', err);
     } finally {
@@ -113,17 +221,23 @@ export default function DesignerDashboard() {
 
   return (
     <div className="designer-page">
-      {/* Header (디자이너 전용 로고 영역) */}
+      {/* Header (사용자 헤더와 동일 구조) */}
       <header className="dd-header">
-        <div className="dd-header-left">
+        {customerUserId && (
           <button
             type="button"
-            className="dd-logo-btn"
-            onClick={() => navigate('/designer-dashboard')}
+            className="dd-back-btn"
+            onClick={() => navigate(-1)}
           >
-            <img src={logoImg} alt="멍빗어" className="dd-logo-img" />
+            ←
           </button>
-          <span className="dd-logo-text">멍빗어</span>
+        )}
+        <div 
+          className="dd-header-left"
+          onClick={() => navigate('/designer-dashboard')}
+        >
+          <img src={logoImg} alt="멍빗어" className="dd-logo-img" />
+          <h1 className="dd-logo-text">{customerUserId ? '예약 일정' : '멍빗어'}</h1>
         </div>
       </header>
 
@@ -219,30 +333,54 @@ export default function DesignerDashboard() {
         <section className="dd-briefing-section">
           <div className="dd-briefing-header">
             <span>오늘의 미용 브리핑</span>
-            <span className="dd-briefing-count">총 {stats.reservations}건</span>
           </div>
           <div className="dd-briefing-line" />
           <div className="dd-briefing-list">
-            {stats.reservations > 0 ? (
-              <div className="dd-locked-panel">
-                <div className="dd-locked-icon">📌</div>
-                <p className="dd-locked-text">
-                  오늘 예약이 {stats.reservations}건 있습니다.
-                  <br />
-                  상세 일정은 일정 메뉴에서 확인해 주세요.
-                </p>
-              </div>
-            ) : (
-              <div className="dd-locked-panel">
-                <div className="dd-locked-icon">🔒</div>
-                <p className="dd-locked-text">
-                  예약이 들어오면 오늘의 미용 브리핑을 확인할 수 있어요.
-                </p>
-                <button className="dd-locked-button" disabled>
-                  예약 대기 중
-                </button>
-              </div>
-            )}
+            {(() => {
+              // 다가오는 예약 찾기 (오늘 이후)
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              
+              const upcomingDates = Object.keys(reservationsByDate)
+                .filter(dateStr => {
+                  const [year, month, day] = dateStr.split('-').map(Number);
+                  const reservationDate = new Date(year, month - 1, day);
+                  return reservationDate >= today;
+                })
+                .sort();
+              
+              if (upcomingDates.length === 0) {
+                return (
+                  <div className="dd-locked-panel">
+                    <div className="dd-locked-icon">📅</div>
+                    <p className="dd-locked-text">
+                      다가오는 미용이 없습니다.
+                    </p>
+                  </div>
+                );
+              }
+              
+              // 가장 가까운 예약 표시
+              const nextDate = upcomingDates[0];
+              const nextReservations = reservationsByDate[nextDate];
+              
+              return (
+                <div>
+                  <div className="dd-next-reservation">
+                    <div className="dd-next-date-label">{nextDate}</div>
+                    <div className="dd-reservation-list">
+                      {nextReservations.map((res) => (
+                        <div key={res.id} className="dd-reservation-item">
+                          <div className="dd-res-dog">{res.dogName || '강아지'}</div>
+                          <div className="dd-res-time">{res.reservationTime || res.time || '시간 미정'}</div>
+                          <div className="dd-res-customer">{res.customerName || '고객'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </section>
 

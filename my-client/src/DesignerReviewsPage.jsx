@@ -61,31 +61,6 @@ export default function DesignerReviewsPage() {
       </div>
 
       <div className="designer-content designer-reviews-page">
-        <div className="rating-summary">
-          <div className="rating-score">
-            <span className="score">{avgRating}</span>
-            <span className="stars">⭐</span>
-          </div>
-          <div className="rating-details">
-            <p>{reviews.length}개의 리뷰</p>
-            <div className="rating-bars">
-              {[5, 4, 3, 2, 1].map((star) => {
-                const count = reviews.filter(r => Math.floor(r.rating || 0) === star).length;
-                const percentage = reviews.length ? (count / reviews.length) * 100 : 0;
-                return (
-                  <div key={star} className="rating-bar">
-                    <span className="bar-label">{star}★</span>
-                    <div className="bar-container">
-                      <div className="bar-fill" style={{ width: `${percentage}%` }}></div>
-                    </div>
-                    <span className="bar-count">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
         <div className="reviews-sort">
           <button
             className={`sort-btn ${sortBy === 'recent' ? 'active' : ''}`}
@@ -111,23 +86,68 @@ export default function DesignerReviewsPage() {
           </div>
         ) : (
           <div className="reviews-container">
-            {sortedReviews.map((review) => (
-              <div key={review.id} className="review-card">
-                <div className="review-header">
-                  <div className="reviewer-info">
-                    <span className="reviewer-avatar">🐾</span>
-                    <span className="reviewer-name">{review.author || review.userName || '고객'}</span>
+            {sortedReviews.map((review) => {
+              const displayName = review.author || review.userName || '고객';
+              let dateText = '';
+
+              if (review.createdAt && typeof review.createdAt.toDate === 'function') {
+                try {
+                  dateText = review.createdAt.toDate().toLocaleDateString('ko-KR');
+                } catch (e) {
+                  dateText = '';
+                }
+              } else if (review.date) {
+                try {
+                  dateText = new Date(review.date).toLocaleDateString('ko-KR');
+                } catch (e) {
+                  dateText = '';
+                }
+              }
+
+              const ratingValue = Math.round(review.rating || 0);
+              const photoUrl = review.userPhoto || review.photoURL || review.image || '';
+
+              return (
+                <div key={review.id} className="review-card">
+                  <div className="review-header">
+                    <div className="reviewer-info">
+                      <div className="reviewer-avatar">
+                        {photoUrl ? (
+                          <img src={photoUrl} alt={displayName} />
+                        ) : (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="reviewer-meta">
+                        <span className="reviewer-name-line">
+                          <span className="reviewer-name">{displayName}</span>
+                          {dateText && (
+                            <span className="review-date-inline">· {dateText}</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="review-rating">
+                      {'⭐'.repeat(ratingValue)}
+                    </div>
                   </div>
-                  <span className="review-date">
-                    {review.createdAt?.toDate?.().toLocaleDateString?.('ko-KR') || review.date || ''}
-                  </span>
+                  <p className="review-text">{review.text || review.comment || ''}</p>
+
+                  {Array.isArray(review.services) && review.services.length > 0 && (
+                    <div className="review-tags">
+                      {review.services.map((service, idx) => (
+                        <span key={idx} className="review-tag">
+                          {service}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="review-rating">
-                  {'⭐'.repeat(Math.round(review.rating || 0))}
-                </div>
-                <p className="review-text">{review.text || review.comment || ''}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

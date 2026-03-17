@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { createReview, createNotification } from './services';
+import { createReview, createNotification, updateBookingHasReview } from './services';
 import './ReviewPage.css';
 
 const logoImg = "/vite.svg";
@@ -19,7 +19,9 @@ export default function ReviewPage() {
   
   const designerId = location.state?.designerId || 'designer_1';
   const designerName = location.state?.designerName || '미용사';
+  // 사람이 보는 예약 번호(예: BK...)와 Firestore 문서 id를 분리해서 받는다.
   const bookingId = location.state?.bookingId || '';
+  const bookingDocId = location.state?.bookingDocId || '';
 
   const handleServiceToggle = (service) => {
     setSelectedServices(prev =>
@@ -52,6 +54,7 @@ export default function ReviewPage() {
     try {
       const result = await createReview(user.uid, {
         designerId: designerId,
+        // 리뷰에는 사람이 보는 bookingId를 저장
         bookingId: bookingId,
         rating,
         text: text.trim(),
@@ -61,6 +64,17 @@ export default function ReviewPage() {
 
       if (result.success) {
         console.log('✅ 리뷰 작성 완료:', result.reviewId);
+        
+        // Booking 문서에 hasReview 플래그 업데이트
+        if (bookingDocId) {
+          try {
+            // Booking 문서의 hasReview 플래그는 Firestore 문서 id 기준으로 갱신
+            await updateBookingHasReview(bookingDocId);
+            console.log('✅ Booking hasReview 플래그 업데이트 완료');
+          } catch (updateError) {
+            console.warn('Booking 업데이트 실패(무시 가능):', updateError);
+          }
+        }
         
         // 디자이너에게 리뷰 작성 알림 발송
         try {
@@ -75,7 +89,8 @@ export default function ReviewPage() {
           console.warn('리뷰 알림 발송 실패(무시 가능):', notifError);
         }
         
-        navigate('/dashboard', { state: { reviewSubmitted: true } });
+        // 디자이너 포트폴리오 페이지로 이동 (새로 작성된 리뷰 즉시 표시)
+        navigate(`/designer-detail?id=${designerId}`, { state: { reviewSubmitted: true } });
       }
     } catch (err) {
       console.error('❌ 리뷰 작성 실패:', err);
@@ -139,16 +154,16 @@ export default function ReviewPage() {
         {/* Service Checklist */}
         <div className="review-service-section">
           <label>서비스 평가</label>
-          <div className="service-checklist">
+          <div className="service-tag-group">
             {['친절함', '미용 실력', '청결함', '시간 엄수'].map((service) => (
-              <label key={service} className="checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={selectedServices.includes(service)}
-                  onChange={() => handleServiceToggle(service)}
-                />
-                <span>{service}</span>
-              </label>
+              <button
+                key={service}
+                className={`service-tag ${selectedServices.includes(service) ? 'active' : ''}`}
+                onClick={() => handleServiceToggle(service)}
+                type="button"
+              >
+                {service}
+              </button>
             ))}
           </div>
         </div>
@@ -170,10 +185,26 @@ export default function ReviewPage() {
 
       {/* Bottom Navigation */}
       <div className="review-bottom-nav">
-        <button onClick={() => navigate('/dashboard')}>🏠</button>
-        <button onClick={() => navigate('/search')}>💼</button>
-        <button onClick={() => navigate('/chat')}>💬</button>
-        <button onClick={() => navigate('/mypage')}>👤</button>
+        <button className="nav-btn" onClick={() => navigate('/dashboard')} title="대시보드">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </button>
+        <button className="nav-btn" onClick={() => navigate('/search')} title="검색">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </button>
+        <button className="nav-btn" onClick={() => navigate('/chat')} title="채팅">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+        <button className="nav-btn" onClick={() => navigate('/mypage')} title="마이페이지">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
       </div>
     </div>
   );

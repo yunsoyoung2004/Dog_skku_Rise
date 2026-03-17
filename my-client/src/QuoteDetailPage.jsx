@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { getUserQuotes, createBooking, sendMessage, createNotification } from './services';
+import { getUserQuotes, getUserBookings, createBooking, sendMessage, createNotification } from './services';
 import './QuoteDetailPage.css';
 
 export default function QuoteDetailPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromChatRoomId = location.state?.roomId || '';
   const [user] = useAuthState(auth);
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,9 +29,32 @@ export default function QuoteDetailPage() {
     setLoading(true);
     try {
       const receivedQuotes = await getUserQuotes(user.uid);
-      setQuotes(receivedQuotes);
-      if (receivedQuotes.length > 0) {
-        setSelectedDog(receivedQuotes[0].dogName);
+
+      // 이미 생성된 예약(booking)과 매칭되는 견적은
+      // status가 sent로 남아 있어도 화면에서는 confirmed로 취급
+      let enhancedQuotes = receivedQuotes;
+      try {
+        const userBookings = await getUserBookings(user.uid);
+        const activeBookings = (userBookings || []).filter(
+          (b) => b.status !== 'cancelled'
+        );
+
+        enhancedQuotes = receivedQuotes.map((q) => {
+          const hasBooking = activeBookings.some(
+            (b) => b.quoteId === q.id
+          );
+          if (hasBooking && q.status !== 'confirmed') {
+            return { ...q, status: 'confirmed' };
+          }
+          return q;
+        });
+      } catch (bookingErr) {
+        console.warn('사용자 예약 데이터 로드 실패(무시 가능):', bookingErr);
+      }
+
+      setQuotes(enhancedQuotes);
+      if (enhancedQuotes.length > 0) {
+        setSelectedDog(enhancedQuotes[0].dogName);
       } else {
         setError('아직 받은 견적이 없습니다');
       }
@@ -42,9 +67,9 @@ export default function QuoteDetailPage() {
   };
 
   const getStatusLabel = (quote) => {
-    if (quote.status === 'confirmed') return '확정됨';
-    if (quote.status === 'sent' || quote.status === 'responded') return '응답 완료';
-    return '대기 중';
+    // confirmed 상태에서만 "응답 완료" 표시
+    if (quote.status === 'confirmed') return '응답 완료';
+    return '';
   };
 
   const handleConfirmQuote = async (quote) => {
@@ -75,6 +100,8 @@ export default function QuoteDetailPage() {
         }
       }
 
+      const effectiveChatRoomId = quote.chatRoomId || fromChatRoomId || '';
+
       const bookingPayload = {
         designerId: quote.designerId,
         designerName: quote.designerName || '',
@@ -82,6 +109,8 @@ export default function QuoteDetailPage() {
         dogName: quote.dogName || '',
         quoteId: quote.id,
         price: quote.price || 0,
+        // 채팅방과 예약을 연결해서 마이페이지/채팅 이동에 함께 활용
+        chatRoomId: effectiveChatRoomId,
         preferredDate: quote.preferredDate || '',
         preferredTime: quote.preferredTime || '',
         // MyPage의 "다가오는 예약" 카드에서 사용되는 필드
@@ -101,7 +130,7 @@ export default function QuoteDetailPage() {
             title: '예약이 확정되었어요',
             message: `${quote.dogName || '반려견'} 예약이 확정되었습니다.`,
             type: 'booking',
-            chatRoomId: quote.chatRoomId || '',
+            chatRoomId: effectiveChatRoomId || quote.chatRoomId || '',
             bookingId: bookingResult?.bookingId || '',
           });
         }
@@ -110,7 +139,7 @@ export default function QuoteDetailPage() {
           title: '예약이 확정되었어요',
           message: `${quote.designerName || '디자이너'}와의 예약이 확정되었습니다.`,
           type: 'booking',
-          chatRoomId: quote.chatRoomId || '',
+          chatRoomId: effectiveChatRoomId || quote.chatRoomId || '',
           bookingId: bookingResult?.bookingId || '',
         });
       } catch (e) {
@@ -118,8 +147,8 @@ export default function QuoteDetailPage() {
       }
 
       // 2) 채팅방에 시스템 메시지 남기기 (있다면)
-      if (quote.chatRoomId) {
-        await sendMessage(quote.chatRoomId, {
+      if (effectiveChatRoomId) {
+        await sendMessage(effectiveChatRoomId, {
           senderId: user.uid,
           senderType: 'user',
           text: '견적을 확정하고 예약을 완료했어요.',
@@ -130,7 +159,7 @@ export default function QuoteDetailPage() {
 
         // 채팅방 상태를 "매칭 완료"로 업데이트해서 채팅 리스트 필터와 맞춰줌
         try {
-          const roomRef = doc(db, 'chatRooms', quote.chatRoomId);
+          const roomRef = doc(db, 'chatRooms', effectiveChatRoomId);
           await updateDoc(roomRef, {
             status: 'completed',
             updatedAt: Timestamp.now(),
@@ -140,7 +169,7 @@ export default function QuoteDetailPage() {
         }
 
         // 확정 후 바로 해당 채팅방으로 이동해 변경된 배너/메시지를 보여줌
-        navigate(`/chat/${quote.chatRoomId}`);
+        navigate(`/chat/${effectiveChatRoomId}`);
       } else {
         alert('예약이 생성되었습니다. 예약 내역은 마이페이지에서 확인할 수 있습니다.');
       }
@@ -193,7 +222,41 @@ export default function QuoteDetailPage() {
             {/* Dog Info */}
             {selectedDog && (
               <div className="quote-dog-info">
-                <div className="quote-dog-avatar">🐕</div>
+                <div className="quote-dog-avatar">
+                  <svg
+                    className="quote-dog-avatar-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <rect
+                      x="3"
+                      y="5"
+                      width="18"
+                      height="14"
+                      rx="2"
+                      ry="2"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    />
+                    <circle
+                      cx="10"
+                      cy="11"
+                      r="2.3"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    />
+                    <path
+                      d="M21 16.2 16.2 11.5 11 17"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
                 <div className="quote-dog-details">
                   <h2>{selectedDog}</h2>
                   <p>견종 · 나이 · 성별</p>
@@ -205,10 +268,23 @@ export default function QuoteDetailPage() {
             <div className="quotes-list">
               {quotes.length > 0 ? (
                 quotes.map((quote) => (
-                  <div key={quote.id} className="quote-card">
+                  <div key={quote.id} className={`quote-card ${quote.status === 'confirmed' ? 'confirmed' : ''}`}>
                     <div className="quote-header">
                       <div className="quote-designer">
-                        <span className="quote-designer-avatar">👤</span>
+                        <span className="quote-designer-avatar">
+                          <svg
+                            className="quote-avatar-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        </span>
                         <div className="quote-designer-info">
                           <h3>{quote.designerName || '디자이너'}</h3>
                           <p className="quote-date">
@@ -275,28 +351,30 @@ export default function QuoteDetailPage() {
                     )}
 
                     <div className="quote-actions">
-                      <button
-                        className="quote-accept-btn"
-                        disabled={quote.status === 'confirmed'}
-                        onClick={() =>
-                          navigate('/quote-request', {
-                            state: {
-                              designerId: quote.designerId,
-                              designerName: quote.designerName,
-                              originalRequest: quote,
-                            },
-                          })
-                        }
-                      >
-                        {quote.status === 'confirmed' ? '이미 확정된 견적' : '수정 제안하기'}
-                      </button>
-                      <button
-                        className="quote-contact-btn"
-                        disabled={quote.status === 'confirmed'}
-                        onClick={() => handleConfirmQuote(quote)}
-                      >
-                        {quote.status === 'confirmed' ? '확정 완료' : '견적 확정하기'}
-                      </button>
+                      {quote.status !== 'confirmed' && (
+                        <>
+                          <button
+                            className="quote-accept-btn"
+                            onClick={() =>
+                              navigate('/quote-request', {
+                                state: {
+                                  designerId: quote.designerId,
+                                  designerName: quote.designerName,
+                                  originalRequest: quote,
+                                },
+                              })
+                            }
+                          >
+                            수정 제안하기
+                          </button>
+                          <button
+                            className="quote-contact-btn"
+                            onClick={() => handleConfirmQuote(quote)}
+                          >
+                            견적 확정하기
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))

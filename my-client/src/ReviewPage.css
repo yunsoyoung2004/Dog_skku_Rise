@@ -93,7 +93,7 @@
 .star-rating {
   display: flex;
   gap: 8px;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .star {
@@ -134,38 +134,39 @@
   margin: 8px 0 0 0;
 }
 
-.service-checklist {
+.service-tag-group {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 
-.checkbox-item {
+.service-tag {
+  padding: 6px 10px;
+  background-color: #f0f0f0;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: #666;
+  transition: all 0.2s;
+  text-align: center;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px;
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s;
+  justify-content: center;
+  min-height: 32px;
 }
 
-.checkbox-item:hover {
+.service-tag:hover {
+  border-color: #999;
+  background-color: #e8e8e8;
+}
+
+.service-tag.active {
+  background-color: #222;
+  color: white;
   border-color: #222;
-}
-
-.checkbox-item input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #222;
-}
-
-.checkbox-item span {
-  flex: 1;
 }
 
 .review-footer {
@@ -182,6 +183,9 @@
   padding: 14px;
   border-radius: 8px;
   font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -212,7 +216,7 @@
   cursor: not-allowed;
 }
 
-.review-nav {
+.review-bottom-nav {
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -222,16 +226,28 @@
   margin-top: auto;
 }
 
-.review-nav button {
+.review-bottom-nav .nav-btn {
   flex: 1;
-  padding: 12px;
+  padding: 8px;
   border: none;
   background-color: transparent;
-  font-size: 24px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  transition: color 0.2s;
 }
 
-.review-nav button:hover {
-  opacity: 0.6;
+.review-bottom-nav .nav-btn:hover {
+  color: #222;
+}
+
+.review-bottom-nav .nav-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }

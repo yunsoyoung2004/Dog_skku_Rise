@@ -141,7 +141,41 @@ export default function DogEditPage() {
         
         {/* Profile Picture */}
         <div className="dog-edit-profile">
-          <div className="dog-edit-avatar">🐕</div>
+          <div className="dog-edit-avatar">
+            <svg
+              className="dog-edit-avatar-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <rect
+                x="3"
+                y="5"
+                width="18"
+                height="14"
+                rx="2"
+                ry="2"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <circle
+                cx="10"
+                cy="11"
+                r="2.3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M21 16.2 16.2 11.5 11 17"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
           {isEditing && (
             <button className="dog-edit-photo-btn">
               📷 사진 변경
@@ -383,10 +417,12 @@ export default function DogEditPage() {
 
       {/* Bottom Navigation */}
       <div className="dog-edit-nav">
-        <button onClick={() => navigate('/dashboard')}>🏠</button>
-        <button onClick={() => navigate('/search')}>💼</button>
-        <button onClick={() => navigate('/chat')}>💬</button>
-        <button onClick={() => navigate('/mypage')}>👤</button>
+         <button onClick={() => navigate('/dashboard')}>🏠</button>
+         <button onClick={() => navigate('/search')}>💼</button>
+         <button onClick={() => navigate('/chat')}>💬</button>
+         <button onClick={() => navigate('/mypage')}>
+          <span className="nav-user-icon">👤</span>
+         </button>
       </div>
     </div>
   );

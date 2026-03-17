@@ -190,7 +190,6 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
                     />
                   ) : (
                     <div className="designer-image placeholder">
-                      <span className="designer-avatar-icon">👤</span>
                     </div>
                   )}
                 </div>
@@ -198,7 +197,6 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
                 <div className="designer-intro">
                   <h1 className="designer-name">{designer.name || '이름 없음'}</h1>
                   <div className="designer-location">
-                    <span className="location-icon">📍</span>
                     <span className="location-text">{designer.location || '위치 없음'}</span>
                   </div>
                   <p className="designer-motto">
@@ -313,21 +311,6 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
               {activeTab === 'reviews' && (
                 <section className="designer-section">
                   <h2 className="section-title">리뷰</h2>
-
-                  <div className="review-header">
-                    <div className="review-rating">
-                      <span className="rating-stars">⭐</span>
-                      <div>
-                        <div className="rating-score">{avgRating}</div>
-                        <p className="section-text" style={{ marginTop: 4 }}>
-                          {totalReviewCount > 0
-                            ? `${totalReviewCount}개의 리뷰`
-                            : '아직 등록된 리뷰가 없습니다.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
                   {reviewsLoading ? (
                     <div style={{ padding: '16px', fontSize: '10px', color: '#999' }}>
                       리뷰를 불러오는 중입니다...
@@ -343,9 +326,7 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
 
                       if (review.createdAt && typeof review.createdAt.toDate === 'function') {
                         try {
-                          dateText = review.createdAt
-                            .toDate()
-                            .toLocaleDateString('ko-KR');
+                          dateText = review.createdAt.toDate().toLocaleDateString('ko-KR');
                         } catch (e) {
                           dateText = '';
                         }
@@ -364,22 +345,41 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
                       }
 
                       const ratingValue = Math.round(review.rating || 0);
+                      const photoUrl = review.userPhoto || review.photoURL || review.image || '';
 
                       return (
                         <div key={review.id} className="review-item">
                           <div className="review-header-content">
                             <div className="reviewer-avatar">
-                              <span className="designer-avatar-icon">👤</span>
+                              {photoUrl ? (
+                                <img src={photoUrl} alt={displayName} />
+                              ) : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                  <circle cx="12" cy="7" r="4" />
+                                </svg>
+                              )}
                             </div>
                             <div className="reviewer-info">
-                              <p className="reviewer-name">{displayName}</p>
-                              <p className="review-date">{dateText}</p>
+                              <span className="reviewer-name-line">
+                                <span className="reviewer-name">{displayName}</span>
+                                {dateText && (
+                                  <span className="review-date-inline">· {dateText}</span>
+                                )}
+                              </span>
                             </div>
                             <div className="review-stars">
                               {'⭐'.repeat(ratingValue || 0)}
                             </div>
                           </div>
                           <p className="review-text">{review.text || review.comment || ''}</p>
+                          {review.services && review.services.length > 0 && (
+                            <div className="review-services">
+                              {review.services.map((service, idx) => (
+                                <span key={idx} className="review-service-tag">{service}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })
@@ -390,7 +390,7 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
           )}
         </div>
 
-        {/* 하단 고정 버튼: 채팅 / 견적 요청 */}
+        {/* 하단 고정 버튼: 채팅 / 견적 요청 (아이콘 제거) */}
         {!loading && !error && designer && (
           <div className="designer-detail-footer">
             <button
@@ -398,14 +398,14 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
               className="designer-footer-btn chat"
               onClick={handleStartChat}
             >
-              💬 채팅하기
+              채팅하기
             </button>
             <button
               type="button"
               className="designer-footer-btn quote"
               onClick={handleRequestQuote}
             >
-              📄 견적서 요청하기
+              견적서 요청하기
             </button>
           </div>
         )}

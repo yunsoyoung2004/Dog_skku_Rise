@@ -17,6 +17,10 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // 오늘(당일)과 그 이전 날짜는 예약 불가 처리
+  const today = new Date();
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
   const timeSlots = [
     '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
   ];
@@ -58,6 +62,13 @@ export default function CalendarPage() {
     const bookingDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDate);
     const [hours, minutes] = selectedTime.split(':').map(Number);
     bookingDate.setHours(hours, minutes);
+
+    // 당일 및 과거 날짜는 예약 불가 (UI 방어와 별개로 한 번 더 체크)
+    const bookingMidnight = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), bookingDate.getDate());
+    if (bookingMidnight <= todayMidnight) {
+      setError('당일 예약은 불가능합니다. 내일부터 선택해주세요.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -127,16 +138,36 @@ export default function CalendarPage() {
             <div className="weekday">금</div>
             <div className="weekday">토</div>
 
-            {calendarDays.map((day, idx) => (
-              <button
-                key={idx}
-                className={`calendar-day ${day === selectedDate ? 'selected' : ''} ${!day ? 'empty' : ''}`}
-                onClick={() => day && setSelectedDate(day)}
-                disabled={!day}
-              >
-                {day}
-              </button>
-            ))}
+            {calendarDays.map((day, idx) => {
+              if (!day) {
+                return (
+                  <button
+                    key={idx}
+                    className="calendar-day empty"
+                    disabled
+                  />
+                );
+              }
+
+              const cellDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+              const cellMidnight = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+              const isPastOrToday = cellMidnight <= todayMidnight;
+
+              return (
+                <button
+                  key={idx}
+                  className={`calendar-day ${day === selectedDate ? 'selected' : ''} ${isPastOrToday ? 'disabled' : ''}`}
+                  onClick={() => {
+                    if (isPastOrToday) return;
+                    setSelectedDate(day);
+                    setSelectedTime(null);
+                  }}
+                  disabled={isPastOrToday}
+                >
+                  {day}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -174,10 +205,12 @@ export default function CalendarPage() {
 
       {/* Bottom Navigation */}
       <div className="calendar-bottom-nav">
-        <button onClick={() => navigate('/dashboard')}>🏠</button>
-        <button onClick={() => navigate('/designer')}>💼</button>
-        <button onClick={() => navigate('/chat')}>💬</button>
-        <button onClick={() => navigate('/mypage')}>👤</button>
+          <button onClick={() => navigate('/dashboard')}>🏠</button>
+          <button onClick={() => navigate('/designer')}>💼</button>
+          <button onClick={() => navigate('/chat')}>💬</button>
+          <button onClick={() => navigate('/mypage')}>
+           <span className="nav-user-icon">👤</span>
+          </button>
       </div>
     </div>
   );

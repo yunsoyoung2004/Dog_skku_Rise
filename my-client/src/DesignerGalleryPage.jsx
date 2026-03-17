@@ -55,7 +55,10 @@ export default function DesignerGalleryPage() {
             <div className="modal-image-box">{selectedImage.image}</div>
             <h3>{selectedImage.title}</h3>
             <p>{selectedImage.type}</p>
-            <button className="modal-contact-btn" onClick={() => navigate('/chat')}>
+            <button
+              className="modal-contact-btn"
+              onClick={() => navigate('/designer-messages')}
+            >
               미용사에게 문의
             </button>
           </div>
@@ -64,10 +67,12 @@ export default function DesignerGalleryPage() {
 
       {/* Bottom Navigation */}
       <div className="gallery-nav">
-        <button onClick={() => navigate('/dashboard')}>🏠</button>
-        <button onClick={() => navigate('/designer-list')}>💼</button>
-        <button onClick={() => navigate('/chat')}>💬</button>
-        <button onClick={() => navigate('/mypage')}>👤</button>
+          <button onClick={() => navigate('/designer-dashboard')}>🏠</button>
+          <button onClick={() => navigate('/designer-list')}>💼</button>
+          <button onClick={() => navigate('/designer-messages')}>💬</button>
+          <button onClick={() => navigate('/designer-profile')}>
+           <span className="nav-user-icon">👤</span>
+          </button>
       </div>
     </div>
   );
