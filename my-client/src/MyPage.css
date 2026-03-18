@@ -540,8 +540,8 @@
 }
 
 .booking-alert-content.alert-info {
-  background: #f0f7ff;
-  border-left-color: #2196f3;
+  background: #f9fafb;
+  border-left-color: #d1d5db;
 }
 
 .alert-message {
@@ -561,8 +561,8 @@
   padding: 8px 12px;
   border: none;
   border-radius: 6px;
-  background: linear-gradient(135deg, #ff7f50 0%, #ff4b8b 100%);
-  color: white;
+  background-color: #111827;
+  color: #f9fafb;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;

@@ -104,6 +104,17 @@ export default function ChatConversationPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // 견적 재요청 이벤트 리스닝 - 배너 상태 업데이트
+  useEffect(() => {
+    const handleQuoteRequestCompleted = (e) => {
+      console.log('🎯 [ChatConversationPage] quoteRequestCompleted 이벤트 감지 - 배너가 업데이트됩니다:', e.detail);
+      // onSnapshot 구독이 자동으로 새로운 메시지를 받아와서 배너 상태를 업데이트함
+    };
+
+    window.addEventListener('quoteRequestCompleted', handleQuoteRequestCompleted);
+    return () => window.removeEventListener('quoteRequestCompleted', handleQuoteRequestCompleted);
+  }, []);
+
   // 이 채팅방과 연결된 예약 정보 로드 (예약일/시간 배너 표시용)
   useEffect(() => {
     const fetchBookingForRoom = async () => {
@@ -275,9 +286,28 @@ export default function ChatConversationPage() {
 
   const designerNameForBanner = room?.designerName || booking?.designerName || '디자이너';
 
+  // 가장 최근 시스템 상태(견적 요청 / 견적 도착 / 예약 완료)를 계산
+  let latestStatus = null; // 'bookingConfirmed' | 'quoteReceived' | 'quoteRequest' | null
+
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const t = messages[i].messageType;
+    if (
+      t === 'bookingConfirmed' ||
+      t === 'quoteReceived' ||
+      t === 'quoteRequest'
+    ) {
+      latestStatus = t;
+      break;
+    }
+  }
+
+  const latestIsBooking = latestStatus === 'bookingConfirmed';
+  const latestIsDesignerQuote = latestStatus === 'quoteReceived';
+  const latestIsQuoteRequest = latestStatus === 'quoteRequest';
+
   const handleOpenQuoteRequest = () => {
-    // 예약이 확정되었거나 견적이 도착했으면 받은 견적 페이지로 이동
-    if (hasBooking || hasBookingConfirmedMessage || hasDesignerQuoteMessage) {
+    // 마지막 상태가 예약 완료 / 디자이너 견적 / 내가 보낸 견적 요청이면, 견적 상세로 이동
+    if (latestIsBooking || latestIsDesignerQuote || latestIsQuoteRequest) {
       navigate('/quote-detail', {
         state: {
           roomId: room?.id || roomId,
@@ -286,6 +316,7 @@ export default function ChatConversationPage() {
       return;
     }
 
+    // 그 외에는 아직 아무 견적 흐름이 없으므로 견적 요청 화면으로 이동
     if (!user) {
       navigate('/login');
       return;
@@ -423,25 +454,35 @@ export default function ChatConversationPage() {
             <div className="quote-banner-icon">💌</div>
             <div>
               <div className="quote-banner-title">
-                {hasBooking && bookingDateLabel
+                {latestIsBooking && bookingDateLabel
                   ? '견적이 완료되었어요'
-                  : hasBookingConfirmedMessage
+                  : latestIsBooking
                   ? '견적이 완료되었어요'
-                  : hasDesignerQuoteMessage
+                  : latestIsDesignerQuote
                   ? '견적이 도착했어요'
+                  : latestIsQuoteRequest
+                  ? '견적 요청을 보냈습니다'
                   : hasQuoteRequestMessage
                   ? '견적 요청이 전송되었습니다'
+                  : hasDesignerQuoteMessage
+                  ? '견적이 도착했어요'
+                  : hasBooking && bookingDateLabel
+                  ? '견적이 완료되었어요'
                   : '견적 요청하기'}
               </div>
               <div className="quote-banner-desc">
-                {hasBooking
+                {latestIsBooking
                   ? `${designerNameForBanner}와의 예약이 확정되었어요.\n마이페이지에서 다가오는 예약을 확인해 주세요.`
-                  : hasBookingConfirmedMessage
-                  ? `${designerNameForBanner}와의 예약이 확정되었어요.\n예약 내역에서 상세 정보를 확인할 수 있어요.`
-                  : hasDesignerQuoteMessage
+                  : latestIsDesignerQuote
                   ? '디자이너가 보낸 견적을 확인하세요.\n내용을 검토하고 금액과 조건을 확인해 주세요.'
+                  : latestIsQuoteRequest
+                  ? '견적 요청을 전송했어요.\n디자이너가 검토 중입니다. 답변을 기다려 주세요.'
                   : hasQuoteRequestMessage
                   ? '견적 요청이 전송되었어요.\n디자이너가 검토 중입니다. 답변을 기다려 주세요.'
+                  : hasDesignerQuoteMessage
+                  ? '디자이너가 보낸 견적을 확인하세요.\n내용을 검토하고 금액과 조건을 확인해 주세요.'
+                  : hasBooking
+                  ? `${designerNameForBanner}와의 예약이 확정되었어요.\n마이페이지에서 다가오는 예약을 확인해 주세요.`
                   : '강아지 정보와 희망 조건을 보내보세요.\n맞춤 견적을 받아볼 수 있어요.'}
               </div>
             </div>
@@ -450,38 +491,7 @@ export default function ChatConversationPage() {
             보기
           </div>
         </div>
-        {hasDesignerQuoteMessage && !hasBooking && (
-          <div className="quote-footer-buttons">
-            <button
-              className="quote-accept-btn"
-              onClick={() =>
-                navigate('/quote-request', {
-                  state: {
-                    designerId: room.designerId || '',
-                    designerName:
-                      room.designerName || room.title || room.roomName || '',
-                    roomId: room.id,
-                    fromChat: true,
-                  },
-                })
-              }
-            >
-              견적 재요청하기
-            </button>
-            <button
-              className="quote-confirm-btn"
-              onClick={() =>
-                navigate('/quote-detail', {
-                  state: {
-                    roomId: room?.id || roomId,
-                  },
-                })
-              }
-            >
-              견적 수락하기
-            </button>
-          </div>
-        )}
+        {/* 디자이너 견적 배너 하단 버튼 제거 (견적 재요청/수락은 견적 상세 화면에서 처리) */}
         <div className="dc-bubbles">
           {renderMessages()}
           <div ref={messagesEndRef} />

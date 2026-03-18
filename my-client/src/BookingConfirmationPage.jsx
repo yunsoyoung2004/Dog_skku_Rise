@@ -12,9 +12,26 @@ export default function BookingConfirmationPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 예약 정보는 location.state에서 전달됨
+    // 예약 정보는 location.state에서 전달됨 (booking 객체 우선)
+    if (location.state?.booking) {
+      const b = location.state.booking;
+      setBookingInfo({
+        bookingId: b.id || location.state.bookingId || '예약번호 미지정',
+        designerName: b.designerName || '디자이너',
+        dogName: b.dogName || b.dog || '반려견',
+        date: (b.bookingDate || b.preferredDate)
+          ? (b.bookingDate?.toDate ? b.bookingDate.toDate() : new Date(b.bookingDate || b.preferredDate)).toLocaleDateString('ko-KR')
+          : new Date().toLocaleDateString('ko-KR'),
+        time: b.timeSlot || b.preferredTime || '시간 미정',
+        location: b.location || b.knowledge || '장소 미정',
+        amount: b.price || b.amount || 0,
+      });
+      setLoading(false);
+      return;
+    }
+
     if (location.state?.bookingId) {
-      // 실제로는 Firebase에서 예약 정보를 조회해야 함
+      // TODO: bookingId로 Firestore에서 예약 상세를 조회하는 로직 추가 가능
       setBookingInfo({
         bookingId: location.state.bookingId,
         designerName: '미용사 홍길동',
@@ -22,7 +39,7 @@ export default function BookingConfirmationPage() {
         date: new Date().toLocaleDateString('ko-KR'),
         time: '10:00 ~ 11:30',
         location: '서울시 강남구 테헤란로 123',
-        amount: 65000
+        amount: 65000,
       });
     }
     setLoading(false);
@@ -107,6 +124,24 @@ export default function BookingConfirmationPage() {
             onClick={() => navigate('/quote-detail')}
           >
             예약 일정 확인
+          </button>
+          <button
+            className="action-btn secondary"
+            onClick={() => {
+              // TODO: 실제 미용 완료 처리/리뷰 유도 페이지로 연결
+              navigate('/mypage');
+            }}
+          >
+            미용 완료 처리하기
+          </button>
+          <button
+            className="action-btn secondary"
+            onClick={() => {
+              // TODO: 실제 예약 취소/결렬 처리 로직과 연동
+              navigate('/mypage');
+            }}
+          >
+            예약 결렬하기
           </button>
           <button
             className="action-btn secondary"

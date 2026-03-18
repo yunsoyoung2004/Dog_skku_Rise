@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, Timestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { getUserQuotes, getUserBookings, createBooking, sendMessage, createNotification } from './services';
 import './QuoteDetailPage.css';
@@ -52,9 +52,84 @@ export default function QuoteDetailPage() {
         console.warn('사용자 예약 데이터 로드 실패(무시 가능):', bookingErr);
       }
 
-      setQuotes(enhancedQuotes);
-      if (enhancedQuotes.length > 0) {
-        setSelectedDog(enhancedQuotes[0].dogName);
+      let finalQuotes = enhancedQuotes;
+
+      // 아직 디자이너가 응답하지 않은 사용자 견적 요청(quoteRequests)도 함께 노출
+      try {
+        const requestsRef = collection(db, 'quoteRequests');
+        const rq = query(
+          requestsRef,
+          where('userId', '==', user.uid)
+        );
+        const rqSnap = await getDocs(rq);
+
+        if (!rqSnap.empty) {
+          // 이 사용자의 quoteRequests 중, 아직 디자이너 견적(quotes)이 없는 것들만 골라 카드로 추가
+          const pendingRequests = [];
+
+          rqSnap.forEach((docSnap) => {
+            const reqData = docSnap.data();
+            const reqId = docSnap.id;
+
+            const alreadyHasQuote = enhancedQuotes.some(
+              (q) => q.requestId === reqId
+            );
+
+            if (!alreadyHasQuote) {
+              pendingRequests.push({ id: reqId, data: reqData });
+            }
+          });
+
+          if (pendingRequests.length > 0) {
+            // 최신 생성일(createdAt) 순으로 정렬해 위에 쌓이도록
+            pendingRequests.sort((a, b) => {
+              const ta = a.data.createdAt?.toDate
+                ? a.data.createdAt.toDate().getTime()
+                : 0;
+              const tb = b.data.createdAt?.toDate
+                ? b.data.createdAt.toDate().getTime()
+                : 0;
+              return tb - ta;
+            });
+
+            const pendingQuotes = pendingRequests.map(({ id, data }) => ({
+              id,
+              userId: user.uid,
+              designerId: data.designerId,
+              designerName: data.designerName || '',
+              dogId: data.dogId || '',
+              dogName: data.dogName || '',
+              knowledge: data.knowledge || '',
+              groomingStyle: data.groomingStyle || '',
+              additionalGrooming: Array.isArray(data.additionalGrooming)
+                ? data.additionalGrooming
+                : [],
+              additionalOptions: Array.isArray(data.additionalOptions)
+                ? data.additionalOptions
+                : [],
+              dogTags: Array.isArray(data.dogTags)
+                ? data.dogTags
+                : [],
+              preferredDate: data.preferredDate || '',
+              preferredTime: data.preferredTime || '',
+              requestNotes: data.notes || '',
+              createdAt: data.createdAt,
+              status: data.status || 'pending',
+            }));
+
+            finalQuotes = [...pendingQuotes, ...enhancedQuotes];
+          }
+        }
+      } catch (e) {
+        console.warn('사용자 견적 요청(quoteRequests) 로드 실패(무시 가능):', e);
+      }
+
+      setQuotes(finalQuotes);
+
+      // 최종 노출 목록 기준으로 상단 강아지 정보/에러 메시지 설정
+      if (finalQuotes.length > 0) {
+        setSelectedDog(finalQuotes[0].dogName || '');
+        setError('');
       } else {
         setError('아직 받은 견적이 없습니다');
       }
@@ -67,8 +142,9 @@ export default function QuoteDetailPage() {
   };
 
   const getStatusLabel = (quote) => {
-    // confirmed 상태에서만 "응답 완료" 표시
+    // confirmed 상태에서만 "응답 완료" 표시, pending 은 요청 전송 상태로 표기
     if (quote.status === 'confirmed') return '응답 완료';
+    if (quote.status === 'pending') return '요청 전송됨';
     return '';
   };
 
@@ -201,7 +277,11 @@ export default function QuoteDetailPage() {
       {/* Header */}
       <div className="quote-detail-header">
         <button className="quote-detail-back-btn" onClick={() => navigate(-1)}>←</button>
-        <h1>받은 견적</h1>
+        <h1>
+          {fromChatRoomId && quotes.length > 0 && quotes[0].status === 'pending'
+            ? '보낸 견적 요약'
+            : '받은 견적'}
+        </h1>
         <div style={{ width: '24px' }}></div>
       </div>
 
@@ -267,8 +347,18 @@ export default function QuoteDetailPage() {
             {/* Sent Quote Requests List */}
             <div className="quotes-list">
               {quotes.length > 0 ? (
-                quotes.map((quote) => (
-                  <div key={quote.id} className={`quote-card ${quote.status === 'confirmed' ? 'confirmed' : ''}`}>
+                quotes.map((quote) => {
+                  const hasDesignerReply = !!quote.message;
+                  const cardClassNames = [
+                    'quote-card',
+                    quote.status === 'confirmed' ? 'confirmed' : '',
+                    hasDesignerReply ? 'has-designer-reply' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ');
+
+                  return (
+                  <div key={quote.id} className={cardClassNames}>
                     <div className="quote-header">
                       <div className="quote-designer">
                         <span className="quote-designer-avatar">
@@ -342,42 +432,67 @@ export default function QuoteDetailPage() {
                       </div>
                     </div>
 
-                    {/* 디자이너가 견적 작성 시 남긴 메모 */}
+                    {/* 디자이너가 견적 작성 시 남긴 메모 + 금액을 댓글 형태로 강조 */}
                     {quote.message && (
                       <div className="quote-designer-note">
-                        <h4>디자이너 메모</h4>
-                        <p>{quote.message}</p>
+                        <span className="designer-note-label">디자이너 의견</span>
+                        {typeof quote.price === 'number' && quote.price > 0 && (
+                          <div className="designer-note-price-row">
+                            <span className="designer-note-price">{quote.price.toLocaleString('ko-KR')}원</span>
+                          </div>
+                        )}
+                        <div className="designer-note-body">
+                          <p className="designer-note-text">{quote.message}</p>
+                        </div>
                       </div>
                     )}
 
                     <div className="quote-actions">
-                      {quote.status !== 'confirmed' && (
-                        <>
-                          <button
-                            className="quote-accept-btn"
-                            onClick={() =>
-                              navigate('/quote-request', {
-                                state: {
-                                  designerId: quote.designerId,
-                                  designerName: quote.designerName,
-                                  originalRequest: quote,
-                                },
-                              })
-                            }
-                          >
-                            수정 제안하기
-                          </button>
-                          <button
-                            className="quote-contact-btn"
-                            onClick={() => handleConfirmQuote(quote)}
-                          >
-                            견적 확정하기
-                          </button>
-                        </>
+                      {quote.status === 'pending' ? (
+                        <button
+                          className="quote-accept-btn"
+                          onClick={() =>
+                            navigate('/quote-request', {
+                              state: {
+                                designerId: quote.designerId,
+                                designerName: quote.designerName,
+                                originalRequest: quote,
+                              },
+                            })
+                          }
+                        >
+                          수정하여 다시 보내기
+                        </button>
+                      ) : (
+                        quote.status !== 'confirmed' && (
+                          <>
+                            <button
+                              className="quote-accept-btn"
+                              onClick={() =>
+                                navigate('/quote-request', {
+                                  state: {
+                                    designerId: quote.designerId,
+                                    designerName: quote.designerName,
+                                    originalRequest: quote,
+                                  },
+                                })
+                              }
+                            >
+                              수정하여 다시 보내기
+                            </button>
+                            <button
+                              className="quote-contact-btn"
+                              onClick={() => handleConfirmQuote(quote)}
+                            >
+                              견적 확정하기
+                            </button>
+                          </>
+                        )
                       )}
                     </div>
                   </div>
-                ))
+                );
+                })
               ) : (
                 <div className="no-quotes">
                   <p>아직 받은 견적이 없습니다</p>

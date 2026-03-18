@@ -105,6 +105,12 @@
   border: 1px solid #c8e6c9;
 }
 
+/* 디자이너가 응답한 견적 카드 강조 */
+.quote-card.has-designer-reply {
+  background-color: white; /* 기본 카드와 동일하게 유지 */
+  border-color: #ddd6fe;   /* 테두리 색만 살짝 강조 */
+}
+
 .quote-header {
   display: flex;
   justify-content: space-between;
@@ -187,6 +193,70 @@
   border-radius: 4px;
   font-size: 11px;
   color: #666;
+}
+
+.quote-summary h4,
+.quote-services h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #222;
+  margin: 12px 0 6px 0;
+}
+
+.quote-summary p {
+  margin: 2px 0;
+  font-size: 12px;
+  color: #444;
+}
+
+.summary-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* 디자이너 메모를 댓글 형태로 강조 */
+.quote-designer-note {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.designer-note-header {
+  display: none; /* 헤더 구조 제거 (기존 스타일 무력화) */
+}
+
+.designer-note-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4f46e5;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.designer-note-price-row {
+  margin-bottom: 4px;
+}
+
+.designer-note-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.designer-note-body {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background-color: #eef2ff;
+  border: 1px solid #e0e7ff;
+  margin-top: 2px;
+}
+
+.designer-note-text {
+  margin: 0;
+  font-size: 12px;
+  color: #1f2933;
+  line-height: 1.5;
+  white-space: pre-line;
 }
 
 .quote-actions {

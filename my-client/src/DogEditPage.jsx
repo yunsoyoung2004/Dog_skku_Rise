@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { updateDog, deleteDog, getDog } from './services';
+import { updateDog, deleteDog, getDog, uploadDogImage } from './services';
 import './DogEditPage.css';
 
 export default function DogEditPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user] = useAuthState(auth);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     name: '',
     breed: '',
@@ -27,6 +28,8 @@ export default function DogEditPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
 
   const dogId = location.state?.dogId || 'default';
 
@@ -51,6 +54,10 @@ export default function DogEditPage() {
             environmentAdaptation: dog.environmentAdaptation ?? '',
             skinSensitivity: dog.skinSensitivity ?? ''
           });
+
+          if (dog.photoUrl) {
+            setImagePreviewUrl(dog.photoUrl);
+          }
         }
       } catch (err) {
         console.error('강아지 데이터 로드 실패:', err);
@@ -86,12 +93,43 @@ export default function DogEditPage() {
       await updateDog(user.uid, dogId, formData);
       setIsEditing(false);
       console.log('✅ 강아지 정보 저장 완료');
+
+      // 새 프로필 사진이 선택된 경우 업로드 후 URL을 강아지 데이터에 반영
+      if (imageFile) {
+        try {
+          const uploadResult = await uploadDogImage(user.uid, dogId, imageFile);
+          if (uploadResult?.success && uploadResult.url) {
+            await updateDog(user.uid, dogId, { photoUrl: uploadResult.url });
+            setImagePreviewUrl(uploadResult.url);
+          }
+        } catch (imgErr) {
+          console.warn('강아지 프로필 사진 업로드 실패(무시 가능):', imgErr);
+        }
+      }
     } catch (err) {
       console.error('❌ 강아지 정보 저장 실패:', err);
       setError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhotoClick = () => {
+    // 뷰 모드에서도 사진을 누르면 수정 모드로 전환 후 파일 선택창을 띄움
+    if (!isEditing) {
+      setIsEditing(true);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setImageFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreviewUrl(previewUrl);
   };
 
   const handleDelete = async () => {
@@ -141,46 +179,68 @@ export default function DogEditPage() {
         
         {/* Profile Picture */}
         <div className="dog-edit-profile">
-          <div className="dog-edit-avatar">
-            <svg
-              className="dog-edit-avatar-icon"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <rect
-                x="3"
-                y="5"
-                width="18"
-                height="14"
-                rx="2"
-                ry="2"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
+          <div
+            className="dog-edit-avatar"
+            onClick={handlePhotoClick}
+          >
+            {imagePreviewUrl ? (
+              <img
+                src={imagePreviewUrl}
+                alt="강아지 사진"
+                className="dog-edit-avatar-img"
               />
-              <circle
-                cx="10"
-                cy="11"
-                r="2.3"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-              <path
-                d="M21 16.2 16.2 11.5 11 17"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            ) : (
+              <svg
+                className="dog-edit-avatar-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <rect
+                  x="3"
+                  y="5"
+                  width="18"
+                  height="14"
+                  rx="2"
+                  ry="2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+                <circle
+                  cx="10"
+                  cy="11"
+                  r="2.3"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M21 16.2 16.2 11.5 11 17"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
           </div>
           {isEditing && (
-            <button className="dog-edit-photo-btn">
+            <button
+              className="dog-edit-photo-btn"
+              type="button"
+              onClick={handlePhotoClick}
+            >
               📷 사진 변경
             </button>
           )}
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            className="dog-edit-photo-input"
+            onChange={handlePhotoChange}
+          />
         </div>
 
         {/* Form Fields */}
@@ -415,14 +475,28 @@ export default function DogEditPage() {
         )}
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="dog-edit-nav">
-         <button onClick={() => navigate('/dashboard')}>🏠</button>
-         <button onClick={() => navigate('/search')}>💼</button>
-         <button onClick={() => navigate('/chat')}>💬</button>
-         <button onClick={() => navigate('/mypage')}>
-          <span className="nav-user-icon">👤</span>
-         </button>
+      {/* Bottom Navigation - PageLayout 과 동일한 컴포넌트 구조 사용 */}
+      <div className="page-layout-bottom-nav">
+        <button className="nav-btn" onClick={() => navigate('/dashboard')} title="대시보드">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </button>
+        <button className="nav-btn" onClick={() => navigate('/search')} title="검색">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </button>
+        <button className="nav-btn" onClick={() => navigate('/chat')} title="채팅">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+        <button className="nav-btn" onClick={() => navigate('/mypage')} title="마이페이지">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
       </div>
     </div>
   );

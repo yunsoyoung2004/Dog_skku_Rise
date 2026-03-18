@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
@@ -18,6 +18,7 @@ export default function QuoteRequestPage() {
   const [selectedDogId, setSelectedDogId] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
+  const fileInputRef = useRef(null);
 
   const { designerId, designerName, originalRequest, roomId, fromChat } = location.state || {};
 
@@ -622,12 +623,17 @@ export default function QuoteRequestPage() {
             </div>
             <div className="quote-step-question">사진 등록하기</div>
             <div className="quote-photo-upload">
-              <div className="photo-upload-area">
+              <div 
+                className="photo-upload-area"
+                onClick={() => fileInputRef.current?.click()}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="photo-upload-icon">+</div>
                 <p className="photo-upload-text">사진을 업로드해 강아지의 상태를 보여주세요.</p>
                 <p className="photo-upload-subtext">※ 참고용 사진을 여러 장 등록하셔도 좋아요.</p>
               </div>
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoSelect}

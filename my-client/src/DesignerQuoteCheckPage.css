@@ -129,12 +129,23 @@
   padding: 10px 0;
   border-radius: 999px;
   border: none;
-  background: linear-gradient(90deg, #111827, #4b5563);
-  color: #ffffff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   text-align: center;
+}
+
+/* 아직 견적을 보내지 않은 요청 - 심플한 다크 톤 버튼 */
+.dq-send-btn-new {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+/* 이미 견적을 보낸 요청(수정하기) - 은은한 아웃라인 버튼 */
+.dq-send-btn-sent {
+  background-color: #f9fafb;
+  color: #374151;
+  border: 1px solid #e5e7eb;
 }
 
 .dq-send-btn:active {

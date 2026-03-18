@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, query, getDocs } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from './firebase';
-import { getGroomingStats, getAllDesigners, getUserQuotes } from './services';
+import { getGroomingStats, getAllDesigners, getUserQuotes, getUserQuoteRequestsCount } from './services';
 import PageLayout from './PageLayout';
 import './DashboardPage.css';
 
@@ -119,6 +119,7 @@ export default function DashboardPage() {
   const [currentZone, setCurrentZone] = useState('강남구');
   const [currentDistrict, setCurrentDistrict] = useState('강남');
   const [nearbyDesignerCount, setNearbyDesignerCount] = useState(0);
+  const [sentQuoteCount, setSentQuoteCount] = useState(0);
   const [receivedQuoteCount, setReceivedQuoteCount] = useState(0);
 
   // 레이더 차트용 값 (0~100, 없으면 0)
@@ -140,6 +141,7 @@ export default function DashboardPage() {
           setHasDogData(false);
           setGroomingCount(0);
           setNearbyDesignerCount(0);
+          setSentQuoteCount(0);
           setReceivedQuoteCount(0);
           return;
         }
@@ -185,12 +187,22 @@ export default function DashboardPage() {
           console.warn('받은 견적 수를 불러오지 못했습니다:', e);
           setReceivedQuoteCount(0);
         }
+
+        // 사용자가 보낸 견적 요청 수 (quoteRequests 기준)
+        try {
+          const sentCount = await getUserQuoteRequestsCount(user.uid);
+          setSentQuoteCount(sentCount || 0);
+        } catch (e) {
+          console.warn('보낸 견적 수를 불러오지 못했습니다:', e);
+          setSentQuoteCount(0);
+        }
       } catch (error) {
         console.error('강아지 데이터 확인 오류:', error);
         setHasDogData(false);
         setPrimaryDog(null);
         setGroomingCount(0);
         setNearbyDesignerCount(0);
+        setSentQuoteCount(0);
         setReceivedQuoteCount(0);
       } finally {
         setLoading(false);
@@ -518,8 +530,8 @@ export default function DashboardPage() {
               <p className="stat-value">{groomingCount}회</p>
             </div>
             <div className="dashboard-stat-item">
-              <p className="stat-label">인정 근처</p>
-              <p className="stat-value">{nearbyDesignerCount}번</p>
+              <p className="stat-label">견적 보낸 횟수</p>
+              <p className="stat-value">{sentQuoteCount}번</p>
             </div>
           </div>
 

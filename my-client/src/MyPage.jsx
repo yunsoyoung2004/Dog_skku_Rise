@@ -517,7 +517,7 @@ export default function MyPage() {
 
                   return (
                     <div className={`booking-alert-content ${alertClass}`}>
-                      <p className="alert-message">✅ 예약이 확정되었습니다.</p>
+                      <p className="alert-message">예약이 확정되었습니다.</p>
                       <p className="alert-detail">
                         다가오는 예약 일정 · {upcomingBooking.designerName || '디자이너'}
                         {whenLabel ? ` · ${whenLabel}` : ''}
@@ -525,7 +525,7 @@ export default function MyPage() {
                       <button
                         type="button"
                         className="alert-btn"
-                        onClick={() => navigate('/quote-detail')}
+                        onClick={() => navigate('/booking-confirmation', { state: { booking: upcomingBooking } })}
                       >
                         예약 일정 확인
                       </button>

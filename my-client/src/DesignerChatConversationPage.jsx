@@ -12,6 +12,7 @@ export default function DesignerChatConversationPage() {
   const navigate = useNavigate();
   const { roomId } = useParams();
   const [user] = useAuthState(auth);
+  const scrollContainerRef = useRef(null);
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -19,6 +20,7 @@ export default function DesignerChatConversationPage() {
   const [error, setError] = useState('');
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const messagesEndRef = useRef(null);
+  const shouldAutoScrollRef = useRef(true);
   // const [booking, setBooking] = useState(null);
   
   // 최근 예약 모달
@@ -31,12 +33,27 @@ export default function DesignerChatConversationPage() {
   );
   const hasQuoteRequestMessage = messages.some(
     (msg) => msg.messageType === 'quoteRequest'
-  ) && !hasDesignerQuoteMessage;  // 이미 응답했으면 새 요청으로 표시하지 않음
+  );
   const hasBookingConfirmedMessage = messages.some(
     (msg) => msg.messageType === 'bookingConfirmed'
   );
 
   const hasBooking = hasBookingConfirmedMessage;
+
+  // 가장 최근 시스템 상태(견적 요청 / 견적 전송 / 예약 완료)를 계산
+  let latestStatus = null; // 'bookingConfirmed' | 'quoteReceived' | 'quoteRequest' | null
+
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const t = messages[i].messageType;
+    if (t === 'bookingConfirmed' || t === 'quoteReceived' || t === 'quoteRequest') {
+      latestStatus = t;
+      break;
+    }
+  }
+
+  const latestIsBooking = latestStatus === 'bookingConfirmed';
+  const latestIsDesignerQuote = latestStatus === 'quoteReceived';
+  const latestIsQuoteRequest = latestStatus === 'quoteRequest';
 
   // 채팅방 정보 로드
   useEffect(() => {
@@ -128,9 +145,37 @@ export default function DesignerChatConversationPage() {
     return () => unsubscribe();
   }, [user]);
 
+  // Track whether the user is near the bottom of the scroll container
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const threshold = 80; // px from bottom considered "near bottom"
+      const distanceFromBottom =
+        container.scrollHeight - (container.scrollTop + container.clientHeight);
+      shouldAutoScrollRef.current = distanceFromBottom <= threshold;
+    };
+
+    // Initialize flag based on initial position
+    handleScroll();
+
+    container.addEventListener('scroll', handleScroll);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   // 새 메시지 도착 시 스크롤
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    // Only auto-scroll if the user is already near the bottom
+    if (!shouldAutoScrollRef.current) return;
+    const id = setTimeout(() => {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }, 50);
+    return () => clearTimeout(id);
   }, [messages]);
 
   // 이 채팅방과 연결된 예약 정보 로드 (예약일/시간 배너 표시용)
@@ -304,10 +349,10 @@ export default function DesignerChatConversationPage() {
         </button>
       </div>
 
-      <div className="dc-content">
+      <div className="dc-content" ref={scrollContainerRef}>
         {/* 견적 진행 상태 배너 (디자이너 뷰) */}
         <div
-          className={`quote-banner ${hasDesignerQuoteMessage ? 'quote-banner-sent' : ''}`}
+          className={`quote-banner ${latestIsDesignerQuote ? 'quote-banner-sent' : ''}`}
           onClick={() => {
             // 배너 전체 클릭 시에도 현재 채팅방과 연결된 견적만 보이도록 roomId 전달
             navigate('/designer-quotes-check', {
@@ -319,8 +364,18 @@ export default function DesignerChatConversationPage() {
             <div className="quote-banner-icon">💌</div>
             <div>
               <div className="quote-banner-title">
-                {hasBooking && bookingDateLabel
+                {latestIsBooking && bookingDateLabel
                   ? `${bookingDateLabel} 예약된 사용자입니다.`
+                  : latestIsBooking
+                  ? '예약이 확정되었어요'
+                  : latestIsDesignerQuote
+                  ? '견적을 전송했습니다'
+                  : latestIsQuoteRequest
+                  ? '고객이 견적을 보냈어요'
+                  : hasBooking && bookingDateLabel
+                  ? `${bookingDateLabel} 예약된 사용자입니다.`
+                  : hasBooking
+                  ? '예약이 확정되었어요'
                   : !hasQuoteRequestMessage && !hasDesignerQuoteMessage
                   ? '고객 견적 요청을 기다리는 중이에요'
                   : hasQuoteRequestMessage && !hasDesignerQuoteMessage
@@ -328,7 +383,13 @@ export default function DesignerChatConversationPage() {
                   : '견적을 전송했습니다'}
               </div>
               <div className="quote-banner-desc">
-                {hasBooking
+                {latestIsBooking
+                  ? '예약이 확정되었습니다. 예약 내역은 마이페이지에서 확인할 수 있어요.'
+                  : latestIsDesignerQuote
+                  ? '고객에게 견적을 전송했습니다.\n고객이 조건과 금액을 검토 중입니다.'
+                  : latestIsQuoteRequest
+                  ? '요청 내역을 확인하고 금액과 메모를 작성해 견적서를 보내주세요.'
+                  : hasBooking
                   ? '예약이 확정되었습니다. 예약 내역은 마이페이지에서 확인할 수 있어요.'
                   : !hasQuoteRequestMessage && !hasDesignerQuoteMessage
                   ? '고객이 견적 폼을 보내면 이 채팅에서 내용을 확인할 수 있어요.'

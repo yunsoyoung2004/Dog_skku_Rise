@@ -62,11 +62,6 @@ export default function DesignerQuoteCheckPage() {
           return bTs - aTs;
         });
 
-        // 특정 고객/채팅방에서 진입한 경우에는 최신 1개만 노출
-        if ((fromRoomId || customerUserId) && list.length > 0) {
-          list = [list[0]];
-        }
-
         setQuotes(list);
       } catch (e) {
         console.error('견적 요청 로드 실패:', e);
@@ -79,21 +74,6 @@ export default function DesignerQuoteCheckPage() {
 
     loadQuotes();
   }, [user, customerUserId, fromRoomId, navigate]);
-
-  // 채팅 배너에서 진입한 경우: 목록 대신 바로 해당 견적 작성/수정 페이지로 이동
-  useEffect(() => {
-    if (!fromRoomId) return;
-    if (loading || error) return;
-    if (!quotes || quotes.length === 0) return;
-
-    const target = quotes[0];
-    // 채팅 → 견적 수정으로 올 때는 중간 페이지를 history에서 교체해서
-    // 뒤로가기가 다시 채팅으로 바로 돌아가도록 처리
-    navigate(`/designer-send-quote/${target.id}`, {
-      replace: true,
-      state: { quote: target, roomId: fromRoomId },
-    });
-  }, [fromRoomId, loading, error, quotes, navigate]);
 
   const filteredCards = quotes; // 필터 로직은 추후 확장
 
@@ -152,7 +132,7 @@ export default function DesignerQuoteCheckPage() {
                 <div className="dq-send-row">
                   <button
                     type="button"
-                    className="dq-send-btn"
+                    className={`dq-send-btn ${card.status === 'responded' ? 'dq-send-btn-sent' : 'dq-send-btn-new'}`}
                     onClick={() => navigate(`/designer-send-quote/${card.id}`, { state: { quote: card } })}
                   >
                     {card.status === 'responded' ? '견적 수정하기' : '견적서 보내기'}
