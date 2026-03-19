@@ -4,6 +4,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+import AlertModal from './components/AlertModal';
 import './DesignerPageNav.css';
 import './DesignerProfilePage.css';
 
@@ -20,6 +21,8 @@ export default function DesignerProfilePage() {
     priceMax: 0
   });
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -34,10 +37,17 @@ export default function DesignerProfilePage() {
       const userRef = doc(db, 'users', user.uid);
       const snap = await getDoc(userRef);
       if (snap.exists()) {
-        setProfile(snap.data());
+        const data = snap.data();
+        setProfile(data);
+        // 디자이너 알림 갯수 로드
+        setUnreadNotificationCount(data?.unreadNotificationCount || 0);
       }
     } catch (err) {
       console.error('프로필 로드 실패:', err);
+      setAlert({
+        title: '프로필 로드 실패',
+        text: '프로필 정보를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
+      });
     }
   };
 
@@ -54,6 +64,13 @@ export default function DesignerProfilePage() {
 
   return (
     <div className="designer-page">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title}
+        text={alert?.text}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+      />
       <div className="designer-page-header">
         <button onClick={() => navigate(-1)}>←</button>
         <h1>마이 페이지</h1>

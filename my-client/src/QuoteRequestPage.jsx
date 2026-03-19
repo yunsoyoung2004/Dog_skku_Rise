@@ -172,21 +172,30 @@ export default function QuoteRequestPage() {
     // 단계별 필수 값 검증
     if (step === 0) {
       if (!selectedDogId) {
-        alert('어떤 강아지에 대한 미용인지 선택해 주세요.');
+        setAlert({
+          title: '강아지 선택',
+          text: '단계별 필수 값 검증'
+        });
         return;
       }
     }
 
     if (step === 1) {
       if (!quoteData.knowledge) {
-        alert('미용 진행 장소를 선택해 주세요.');
+        setAlert({
+          title: '미용 장소 선택',
+          text: '미용 진행 장소를 선택해 주세요.'
+        });
         return;
       }
     }
 
     if (step === 2) {
       if (!quoteData.groomingStyle) {
-        alert('원하시는 미용 방식을 선택해 주세요.');
+        setAlert({
+          title: '미용 방식 선택',
+          text: '원하시는 미용 방식을 선택해 주세요.'
+        });
         return;
       }
     }
@@ -198,24 +207,35 @@ export default function QuoteRequestPage() {
 
   const handleSubmit = async () => {
     if (!user) {
-      alert('로그인이 필요합니다.');
-      navigate('/login');
+      setAlert({
+        title: '로그인 필요',
+        text: '로그인이 필요합니다.'
+      });
       return;
     }
 
     if (!selectedDogId) {
-      alert('강아지를 선택해주세요');
+      setAlert({
+        title: '강아지 선택',
+        text: '강아지를 선택해주세요'
+      });
       return;
     }
 
     // 희망 일정 필수 입력 및 오늘 이후 날짜만 허용
     if (!quoteData.preferredDate) {
-      alert('희망 일자를 선택해 주세요.');
+      setAlert({
+        title: '일자 선택',
+        text: '희망 일자를 선택해 주세요.'
+      });
       return;
     }
 
     if (!quoteData.preferredTime) {
-      alert('희망 시간을 선택해 주세요.');
+      setAlert({
+        title: '시간 선택',
+        text: '희망 시간을 선택해 주세요.'
+      });
       return;
     }
 
@@ -223,7 +243,10 @@ export default function QuoteRequestPage() {
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(quoteData.preferredDate);
     if (selectedDate < today) {
-      alert('오늘 이후 날짜만 선택할 수 있어요.');
+      setAlert({
+        title: '날짜 오류',
+        text: '오늘 이후 날짜만 선택할 수 있어요.'
+      });
       return;
     }
 
@@ -381,7 +404,10 @@ export default function QuoteRequestPage() {
 
         if (!Array.isArray(designers) || designers.length === 0) {
           console.warn('⚠️ 견적을 보낼 디자이너가 없습니다.');
-          alert('현재 견적을 받을 수 있는 디자이너가 없습니다.');
+          setAlert({
+            title: '디자이너 부재',
+            text: '현재 견적을 받을 수 있는 디자이너가 없습니다.'
+          });
         } else {
           const nowIso = new Date().toISOString();
           const tasks = designers.map(async (d) => {
@@ -436,8 +462,11 @@ export default function QuoteRequestPage() {
         }
       }
     } catch (err) {
-      console.error('👹 견적 요청 실패:', err);
-      alert('견적 요청에 실패했습니다');
+      console.error('� 견적 요청 실패:', err);
+      setAlert({
+        title: '연라 발생',
+        text: '견적 요청에 실패했습니다'
+      });
     } finally {
       setLoading(false);
     }
@@ -454,6 +483,13 @@ export default function QuoteRequestPage() {
 
   return (
     <div className="quote-request-page">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title}
+        text={alert?.text}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+      />
       {/* Header */}
       <div className="quote-request-header">
         <div className="quote-request-logo">

@@ -49,6 +49,44 @@
   flex: 1;
 }
 
+.designer-header-notification {
+  position: relative;
+  border: none;
+  background: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.designer-header-notification:hover {
+  color: #222;
+}
+
+.designer-header-notification svg {
+  width: 22px;
+  height: 22px;
+}
+
+.designer-notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background-color: #ff3b30;
+  color: #fff;
+  font-size: 9px;
+  line-height: 14px;
+  text-align: center;
+  padding: 0 3px;
+  font-weight: 600;
+}
+
 .designer-content {
   flex: 1;
   overflow-y: auto;

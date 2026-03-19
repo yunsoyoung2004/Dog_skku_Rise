@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
 import { getAllDesigners, addFavorite, removeFavorite, getUserFavorites } from './services';
+import AlertModal from './components/AlertModal';
 import PageLayout from './PageLayout';
 import './DesignerListPage.css';
 
@@ -15,6 +16,7 @@ export default function DesignerListPage() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [alert, setAlert] = useState(null);
   const [sortBy, setSortBy] = useState('all');
   const [mode, setMode] = useState('all');
   const [districtLabel, setDistrictLabel] = useState('');
@@ -52,7 +54,10 @@ export default function DesignerListPage() {
       setFilteredDesigners(baseList);
     } catch (err) {
       console.error('디자이너 목록 로드 실패:', err);
-      setError('디자이너 목록을 불러올 수 없습니다.');
+      setAlert({
+        title: '디자이너 목록 로드 실패',
+        text: '디자이너 목록을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
+      });
     } finally {
       setLoading(false);
     }
@@ -119,6 +124,13 @@ export default function DesignerListPage() {
 
   return (
     <PageLayout title="멍빗어">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title}
+        text={alert?.text}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+      />
       <div className="designer-list-page" data-node-id="designer-list">
         {mode === 'custom' && (
           <div style={{ fontSize: '12px', color: '#777', margin: '8px 4px 4px' }}>

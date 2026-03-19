@@ -1,4 +1,6 @@
 /* Input Component Styles */
+@import './Animations.css';
+
 .input-group {
   display: flex;
   flex-direction: column;
@@ -12,6 +14,7 @@
   color: #222;
   margin: 0;
   padding: 0;
+  animation: textSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .input {
@@ -20,27 +23,57 @@
   color: #222;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #222;
+  border-bottom: 2px solid #ddd;
   padding: 8px 0;
   outline: none;
-  transition: border-color 0.3s ease;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.input::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #ff7f50 0%, #ff6b3a 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .input:focus {
-  border-bottom-color: #595959;
+  border-bottom-color: #ff7f50;
+}
+
+.input:focus::before {
+  transform: scaleX(1);
+}
+
+.input::placeholder {
+  color: #999;
+  transition: color 0.3s ease;
+}
+
+.input:focus::placeholder {
+  color: #bbb;
 }
 
 .input:disabled {
   color: #999;
   cursor: not-allowed;
+  border-bottom-color: #eee;
 }
 
 .input--error {
   border-bottom-color: #e74c3c;
+  animation: formError 0.5s ease;
 }
 
 .input--error:focus {
   border-bottom-color: #e74c3c;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);
 }
 
 .input-error {
@@ -50,4 +83,5 @@
   color: #e74c3c;
   margin: 0;
   padding: 0;
+  animation: formError 0.5s ease;
 }

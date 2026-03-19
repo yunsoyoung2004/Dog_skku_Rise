@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import AlertModal from './components/AlertModal';
 
 const img2 = "/vite.svg";
 
@@ -19,6 +20,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [alert, setAlert] = useState(null);
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -87,8 +89,11 @@ export default function SignUpPage() {
       });
 
       console.log('✅ 회원가입 성공:', user.email);
-      alert('회원가입이 완료되었습니다!');
-      navigate('/');
+      setAlert({
+        title: '회원가입 완료',
+        text: '회원가입이 완료되었습니다!'
+      });
+      setTimeout(() => navigate('/'), 1500);
     } catch (err) {
       console.error('❌ 회원가입 실패:', err.code, err.message);
       if (err.code === 'auth/email-already-in-use') {
@@ -107,6 +112,13 @@ export default function SignUpPage() {
 
   return (
     <div className="signup-page" data-name="회원가입" data-node-id="405:3339">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title}
+        text={alert?.text}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+      />
       {/* 로고 */}
       <button 
         className="signup-logo-container signup-logo-button"

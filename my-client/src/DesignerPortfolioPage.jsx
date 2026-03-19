@@ -124,6 +124,13 @@ export default function DesignerPortfolioPage() {
 
   return (
     <div className="designer-page">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title}
+        text={alert?.text}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+      />
       <div className="designer-page-header">
         <button onClick={() => navigate(-1)}>←</button>
         <h1>포트폴리오</h1>

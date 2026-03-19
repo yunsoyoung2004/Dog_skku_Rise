@@ -1,0 +1,627 @@
+/* ========== SOPHISTICATED ANIMATIONS SYSTEM ========== */
+/* Comprehensive animations for the entire application */
+
+/* ===== PAGE TRANSITION ANIMATIONS ===== */
+@keyframes pageSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pageSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pageSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== BUTTON & INTERACTIVE ANIMATIONS ===== */
+@keyframes buttonPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 127, 80, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 127, 80, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 127, 80, 0);
+  }
+}
+
+@keyframes buttonHoverGlow {
+  from {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  to {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+}
+
+@keyframes buttonScale {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes buttonClick {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ===== CARD ANIMATIONS ===== */
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardHoverLift {
+  from {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  to {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@keyframes cardBorderGlow {
+  from {
+    border-color: rgba(255, 127, 80, 0);
+    box-shadow: 0 0 0 0 rgba(255, 127, 80, 0);
+  }
+  to {
+    border-color: rgba(255, 127, 80, 0.3);
+    box-shadow: 0 0 12px rgba(255, 127, 80, 0.2);
+  }
+}
+
+/* ===== INPUT & FORM ANIMATIONS ===== */
+@keyframes inputFocus {
+  from {
+    border-color: #ddd;
+    box-shadow: 0 0 0 0 rgba(255, 127, 80, 0);
+  }
+  to {
+    border-color: #ff7f50;
+    box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.1);
+  }
+}
+
+@keyframes inputFloatLabel {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes formError {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes formSuccess {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ===== LOADING & SPINNER ANIMATIONS ===== */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* ===== MODAL & POPUP ANIMATIONS ===== */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalBounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalZoom {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== TEXT & TYPOGRAPHY ANIMATIONS ===== */
+@keyframes textFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes textSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes textTypewriter {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ===== ICON ANIMATIONS ===== */
+@keyframes iconRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes iconBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes iconGlow {
+  0% {
+    filter: drop-shadow(0 0 0 rgba(255, 127, 80, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(255, 127, 80, 0.6));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 rgba(255, 127, 80, 0));
+  }
+}
+
+/* ===== NAVIGATION & MENU ANIMATIONS ===== */
+@keyframes navSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes navItemSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes menuDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scaleY(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+/* ===== TOAST & NOTIFICATION ANIMATIONS ===== */
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+}
+
+@keyframes notificationPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-20px);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ===== IMAGE & MEDIA ANIMATIONS ===== */
+@keyframes imageZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes imageFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===== SCROLL & PARALLAX ANIMATIONS ===== */
+@keyframes scrollIndicator {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(8px);
+  }
+}
+
+/* ===== UTILITY ANIMATION CLASSES ===== */
+
+/* Page entry animations */
+.animate-page-enter {
+  animation: pageSlideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-page-enter-fade {
+  animation: pageFadeIn 0.4s ease;
+}
+
+.animate-page-enter-up {
+  animation: pageSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button animations */
+.animate-button-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-button-hover:hover {
+  animation: buttonHoverGlow 0.3s ease forwards;
+}
+
+.animate-button-active {
+  animation: buttonClick 0.2s ease;
+}
+
+.animate-button-pulse {
+  animation: buttonPulse 2s infinite;
+}
+
+/* Card animations */
+.animate-card-enter {
+  animation: cardSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-card-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-card-hover:hover {
+  animation: cardHoverLift 0.4s ease forwards;
+}
+
+.animate-card-border-glow {
+  animation: cardBorderGlow 2s ease-in-out infinite;
+}
+
+/* Input animations */
+.animate-input-focus {
+  animation: inputFocus 0.3s ease;
+}
+
+.animate-form-error {
+  animation: formError 0.5s ease;
+}
+
+.animate-form-success {
+  animation: formSuccess 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Icon animations */
+.animate-icon-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-icon-bounce {
+  animation: iconBounce 1.5s ease-in-out infinite;
+}
+
+.animate-icon-pulse {
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+.animate-icon-glow {
+  animation: iconGlow 2s ease-in-out infinite;
+}
+
+/* Loading & spinner */
+.animate-spinner {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Modal animations */
+.animate-modal-open {
+  animation: modalBounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-modal-fade {
+  animation: modalFadeIn 0.3s ease;
+}
+
+.animate-modal-zoom {
+  animation: modalZoom 0.4s ease;
+}
+
+.animate-modal-slide-up {
+  animation: modalSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Text animations */
+.animate-text-fade {
+  animation: textFadeIn 0.6s ease;
+}
+
+.animate-text-slide-up {
+  animation: textSlideUp 0.6s ease;
+}
+
+/* Notification animations */
+.animate-notification-pop {
+  animation: notificationPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Image animations */
+.animate-image-zoom {
+  animation: imageZoomIn 0.5s ease;
+}
+
+.animate-image-fade {
+  animation: imageFade 0.6s ease;
+}
+
+/* Smooth transitions */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-transition-fast {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-transition-slow {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Easing functions */
+.ease-in-out {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ease-out {
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+.ease-in {
+  transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+.ease-elastic {
+  transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
