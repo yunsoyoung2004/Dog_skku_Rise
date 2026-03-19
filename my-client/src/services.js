@@ -319,11 +319,30 @@ export const cancelBooking = async (bookingDocId) => {
     const bookingRef = doc(db, 'bookings', bookingDocId);
     await updateDoc(bookingRef, {
       status: 'cancelled',
-      cancelledAt: Timestamp.now()
+      cancelledAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
     });
     return { success: true };
   } catch (error) {
     console.error('예약 취소 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 예약 완료 처리 (미용 완료)
+ */
+export const completeBooking = async (bookingDocId) => {
+  try {
+    const bookingRef = doc(db, 'bookings', bookingDocId);
+    await updateDoc(bookingRef, {
+      status: 'completed',
+      completedAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('예약 완료 처리 오류:', error);
     throw error;
   }
 };

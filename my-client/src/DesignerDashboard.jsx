@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import AlertModal from './components/AlertModal';
 import './DesignerPageNav.css';
 import './DesignerDashboard.css';
 
@@ -242,62 +243,32 @@ export default function DesignerDashboard() {
       </header>
 
       {showQuoteAlert && (
-        <div className="dd-quote-alert-overlay">
-          <div className="dd-quote-alert-modal">
-            <h2 className="dd-quote-alert-title">새 견적 요청이 있습니다</h2>
-            <p className="dd-quote-alert-text">
-              고객이 보낸 견적서를 확인하고 응답해 주세요.
-            </p>
-            <div className="dd-quote-alert-actions">
-              <button
-                type="button"
-                className="dd-quote-alert-primary"
-                onClick={() => {
-                  setShowQuoteAlert(false);
-                  navigate('/designer-quotes-check');
-                }}
-              >
-                견적서 바로 확인하기
-              </button>
-              <button
-                type="button"
-                className="dd-quote-alert-secondary"
-                onClick={() => setShowQuoteAlert(false)}
-              >
-                나중에 볼게요
-              </button>
-            </div>
-          </div>
-        </div>
+        <AlertModal
+          isOpen={showQuoteAlert}
+          title="새 견적 요청이 있습니다"
+          text="고객이 보낸 견적서를 확인하고 응답해 주세요."
+          primaryButtonText="견적서 바로 확인하기"
+          onPrimaryClick={() => {
+            setShowQuoteAlert(false);
+            navigate('/designer-quotes-check');
+          }}
+          secondaryButtonText="나중에 볼게요"
+          onSecondaryClick={() => setShowQuoteAlert(false)}
+          variant="quote"
+        />
       )}
 
       {showProfileReminder && (
-        <div className="dd-profile-reminder-overlay">
-          <div className="dd-profile-reminder-modal">
-            <h2 className="dd-profile-reminder-title">프로필 정보를 먼저 입력해 주세요</h2>
-            <p className="dd-profile-reminder-text">
-              위치, 소개, 전문 분야 등이 입력되지 않으면
-              <br />
-              고객님들께 디자이너 정보가 제대로 표시되지 않습니다.
-            </p>
-            <div className="dd-profile-reminder-actions">
-              <button
-                type="button"
-                className="dd-profile-reminder-primary"
-                onClick={() => navigate('/designer-profile')}
-              >
-                마이페이지에서 정보 입력하기
-              </button>
-              <button
-                type="button"
-                className="dd-profile-reminder-secondary"
-                onClick={() => setShowProfileReminder(false)}
-              >
-                나중에 할게요
-              </button>
-            </div>
-          </div>
-        </div>
+        <AlertModal
+          isOpen={showProfileReminder}
+          title="프로필 정보를 먼저 입력해 주세요"
+          text="위치, 소개, 전문 분야 등이 입력되지 않으면 고객님들께 디자이너 정보가 제대로 표시되지 않습니다."
+          primaryButtonText="마이페이지에서 정보 입력하기"
+          onPrimaryClick={() => navigate('/designer-profile')}
+          secondaryButtonText="나중에 할게요"
+          onSecondaryClick={() => setShowProfileReminder(false)}
+          variant="profile"
+        />
       )}
 
       <main className="designer-content dd-main">
@@ -462,12 +433,8 @@ export default function DesignerDashboard() {
 
           <button 
             className="designer-menu-item"
-            onClick={() => {
-              if (stats.quotes > 0 || stats.reservations > 0) {
-                navigate('/designer-analytics');
-              }
-            }}
-            disabled={!(stats.quotes > 0 || stats.reservations > 0)}
+            onClick={() => {}}
+            disabled
           >
             <span className="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -478,11 +445,7 @@ export default function DesignerDashboard() {
             </span>
             <span className="label">통계</span>
             <div className="menu-subtext">
-              {stats.quotes > 0 || stats.reservations > 0 ? (
-                <span>분석 가능</span>
-              ) : (
-                <span className="menu-lock">🔒 잠금</span>
-              )}
+              <span className="menu-lock">🔒 잠금</span>
             </div>
           </button>
 

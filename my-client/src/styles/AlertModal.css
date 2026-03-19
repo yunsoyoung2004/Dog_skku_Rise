@@ -1,0 +1,151 @@
+/* ========== Alert Modal - 공통 스타일 ========== */
+
+.alert-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.alert-modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px 20px 20px;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.alert-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #222;
+  margin: 0 0 12px 0;
+}
+
+.alert-modal-text {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.alert-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ===== Default Alert - 기본 스타일 ===== */
+.alert-modal-default .alert-modal-primary {
+  background: #333;
+  color: #ffffff;
+  flex: 1;
+}
+
+.alert-modal-default .alert-modal-primary:hover {
+  background: #111;
+}
+
+.alert-modal-default .alert-modal-secondary {
+  background: #ffffff;
+  color: #333;
+  border: 1px solid #ddd;
+  flex: 1;
+}
+
+.alert-modal-default .alert-modal-secondary:hover {
+  background: #f5f5f5;
+}
+
+/* ===== Quote Alert - 견적 알림 ===== */
+.alert-modal-quote .alert-modal-primary {
+  background: #ff7f50;
+  color: #ffffff;
+  flex: 1;
+}
+
+.alert-modal-quote .alert-modal-primary:hover {
+  background: #ff6b3a;
+}
+
+.alert-modal-quote .alert-modal-secondary {
+  background: #ffffff;
+  color: #333;
+  border: 1px solid #ddd;
+  flex: 1;
+}
+
+.alert-modal-quote .alert-modal-secondary:hover {
+  background: #f5f5f5;
+}
+
+/* ===== Profile Alert - 프로필 알림 ===== */
+.alert-modal-profile .alert-modal-primary {
+  background: #111827;
+  color: #ffffff;
+  flex: 1;
+}
+
+.alert-modal-profile .alert-modal-primary:hover {
+  background: #000;
+}
+
+.alert-modal-profile .alert-modal-secondary {
+  background: #ffffff;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  flex: 1;
+}
+
+.alert-modal-profile .alert-modal-secondary:hover {
+  background: #f9fafb;
+}
+
+/* ===== Button Base Styling ===== */
+.alert-modal-primary,
+.alert-modal-secondary {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.alert-modal-primary {
+  border: none;
+}
+
+.alert-modal-secondary {
+  border: 1px solid #dddddd;
+}

@@ -2,31 +2,31 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { getLatestGroomingHistory, addGroomingHistory, deleteGroomingHistory } from './services';
+import { getLatestGroomingHistory, getUserBookings, getUserReviews, uploadDogImage } from './services';
+import AlertModal from './components/AlertModal';
 import './MyPageGroomingPage.css';
 
 export default function MyPageGroomingPage() {
   const navigate = useNavigate();
   const [user] = useAuthState(auth);
   const [history, setHistory] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    dogName: '',
-    date: '',
-    designerName: '',
-    title: '',
-    metrics: {
-      matting: '',
-      coatQuality: '',
-      shedding: '',
-      environmentAdaptation: '',
-      skinSensitivity: '',
-    },
-    comment: '',
-  });
+  const [uploadingBookingId, setUploadingBookingId] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewServices, setReviewServices] = useState([]);
+  const [alert, setAlert] = useState(null);
+
+  const toDate = (tsOrDate) => {
+    if (!tsOrDate) return null;
+    return tsOrDate.toDate ? tsOrDate.toDate() : new Date(tsOrDate);
+  };
 
   useEffect(() => {
     loadGroomingHistory();
@@ -41,91 +41,208 @@ export default function MyPageGroomingPage() {
     setLoading(true);
     setError('');
     try {
-      const latest = await getLatestGroomingHistory(user.uid);
-      setHistory(latest || null);
-    } catch (err) {
-      console.error('미용 내역 로드 실패:', err);
-      setError('미용 내역을 불러올 수 없습니다.');
+      try {
+        const latest = await getLatestGroomingHistory(user.uid);
+        setHistory(latest || null);
+      } catch (err) {
+        console.warn('디자이너 미용 내역 로드 실패(무시 가능):', err);
+      }
+
+      try {
+        const userBookings = await getUserBookings(user.uid);
+        setBookings(userBookings || []);
+      } catch (err) {
+        console.warn('예약 기반 미용 내역 로드 실패(무시 가능):', err);
+      }
+      try {
+        const userReviews = await getUserReviews(user.uid);
+        setReviews(userReviews || []);
+      } catch (err) {
+        console.warn('리뷰 데이터 로드 실패(무시 가능):', err);
+        setReviews([]);
+      }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    if (
-      name === 'matting' ||
-      name === 'coatQuality' ||
-      name === 'shedding' ||
-      name === 'environmentAdaptation' ||
-      name === 'skinSensitivity'
-    ) {
-      setFormData((prev) => ({
-        ...prev,
-        metrics: {
-          ...prev.metrics,
-          [name]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    setSaving(true);
-    setError('');
-    try {
-      await addGroomingHistory(user.uid, formData);
-      // 새로 등록 후 최신 내역 다시 불러오기
-      await loadGroomingHistory();
-      setShowForm(false);
-    } catch (err) {
-      console.error('미용 내역 저장 실패:', err);
-      setError('미용 내역 저장에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!user || !history?.id) return;
-    if (!window.confirm('이 미용 내역을 삭제하시겠습니까?')) return;
-
-    setSaving(true);
-    setError('');
-    try {
-      await deleteGroomingHistory(user.uid, history.id);
-      await loadGroomingHistory();
-    } catch (err) {
-      console.error('미용 내역 삭제 실패:', err);
-      setError('삭제에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setSaving(false);
     }
   };
   
   const displayDate = history?.date || '2026. 02. 02.';
   const displayDesigner = history?.designerName || '김민지 디자이너';
 
+  const now = new Date();
+  const validBookings = Array.isArray(bookings) ? bookings : [];
+  const allPastBookings = validBookings
+    .filter((b) => {
+      const d = toDate(b.bookingDate || b.preferredDate);
+      if (!d) return false;
+      if (b.status === 'completed') return true;
+      return d < now && b.status !== 'cancelled';
+    })
+    .sort((a, b) => {
+      const da = toDate(a.bookingDate || a.preferredDate);
+      const db = toDate(b.bookingDate || b.preferredDate);
+      return db - da;
+    });
+
+  const handleUploadBookingPhoto = async (booking, file) => {
+    if (!user || !booking || !file) return;
+    try {
+      if (!file.type.startsWith('image/')) {
+        setAlert({
+          title: '파일 형식 오류',
+          text: '이미지 파일만 업로드 가능합니다.'
+        });
+        return;
+      }
+      setUploadingBookingId(booking.id);
+      setSaving(true);
+
+      const dogId = booking.dogId || 'default';
+      const result = await uploadDogImage(user.uid, dogId, file);
+
+      if (result?.url) {
+        const updated = bookings.map((b) =>
+          b.id === booking.id ? { ...b, photoUrl: result.url } : b
+        );
+        setBookings(updated);
+      }
+    } catch (err) {
+      console.error('미용 사진 업로드 실패:', err);
+      setAlert({
+        title: '업로드 실패',
+        text: '사진 업로드에 실패했습니다. 다시 시도해주세요.'
+      });
+    } finally {
+      setSaving(false);
+      setUploadingBookingId(null);
+    }
+  };
+
+  const handleGroomingCardClick = (booking) => {
+    setSelectedBooking(booking);
+    const existingReview = reviews.find((r) => r.bookingId === booking.id);
+    if (existingReview) {
+      setReviewRating(existingReview.rating || 0);
+      setReviewText(existingReview.text || '');
+      setReviewServices(existingReview.services || []);
+    } else {
+      setReviewRating(0);
+      setReviewText('');
+      setReviewServices([]);
+    }
+    setShowReviewModal(true);
+  };
+
   return (
     <div className="mypage-grooming" data-node-id="511:2993">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title}
+        text={alert?.text}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+      />
       {/* Header */}
       <div className="mypage-grooming-header">
         <button className="back-btn" onClick={() => navigate(-1)}>←</button>
         <h1 className="title">우리집 강아지 미용 내역</h1>
+        <button
+          type="button"
+          className="header-bell-btn"
+          onClick={() => navigate('/notifications')}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </button>
       </div>
 
       {/* Content */}
       <div className="mypage-grooming-container">
+        {selectedBooking && showReviewModal && (
+          <div className="modal-overlay">
+            <div className="modal-content mypage-review-modal">
+              <div className="modal-header">
+                <h2>미용 내역</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => setShowReviewModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="grooming-info">
+                <h3>미용 내역 정보</h3>
+                {selectedBooking.bookingId && (
+                  <div className="info-item">
+                    <span className="label">예약 번호:</span>
+                    <span className="value">{selectedBooking.bookingId}</span>
+                  </div>
+                )}
+                <div className="info-item">
+                  <span className="label">날짜:</span>
+                  <span className="value">
+                    {toDate(selectedBooking.bookingDate || selectedBooking.preferredDate)?.toLocaleDateString('ko-KR') || '-'}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="label">시간:</span>
+                  <span className="value">{selectedBooking.timeSlot || ''}</span>
+                </div>
+                {selectedBooking.dogName && (
+                  <div className="info-item">
+                    <span className="label">강아지:</span>
+                    <span className="value">{selectedBooking.dogName}</span>
+                  </div>
+                )}
+                <div className="info-item">
+                  <span className="label">디자이너:</span>
+                  <span className="value">{selectedBooking.designerName || '-'}</span>
+                </div>
+              </div>
+
+              <hr style={{ margin: '20px 0', borderColor: '#eee' }} />
+
+              <div className="review-section">
+                <h3>리뷰</h3>
+                {reviewRating > 0 || reviewText || (reviewServices && reviewServices.length > 0) ? (
+                  <div className="review-display">
+                    {reviewRating > 0 && (
+                      <div className="review-rating-display">
+                        {'⭐'.repeat(reviewRating)} <span>{reviewRating}점</span>
+                      </div>
+                    )}
+                    {reviewText && (
+                      <p className="review-text-display">{reviewText}</p>
+                    )}
+                    {reviewServices && reviewServices.length > 0 && (
+                      <div className="review-services-display">
+                        {reviewServices.map((service, idx) => (
+                          <span key={idx} className="service-tag">{service}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 12, color: '#777' }}>
+                    아직 작성된 리뷰가 없습니다. 마이페이지에서 리뷰를 작성해 보세요.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
             로딩 중...
@@ -136,138 +253,14 @@ export default function MyPageGroomingPage() {
           </div>
         ) : (
           <>
-            {/* 새 미용 내역 등록 토글 */}
-            <button
-              type="button"
-              className="grooming-add-btn"
-              onClick={() => setShowForm((prev) => !prev)}
-            >
-              {showForm ? '입력 접기' : '새 미용 내역 등록하기'}
-            </button>
-
-            {showForm && (
-              <div className="grooming-form">
-                <div className="grooming-form-row">
-                  <label>강아지 이름</label>
-                  <input
-                    type="text"
-                    name="dogName"
-                    value={formData.dogName}
-                    onChange={handleFormChange}
-                    placeholder="우리집 강아지"
-                  />
-                </div>
-                <div className="grooming-form-row">
-                  <label>미용 일자</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleFormChange}
-                  />
-                </div>
-                <div className="grooming-form-row">
-                  <label>디자이너 이름</label>
-                  <input
-                    type="text"
-                    name="designerName"
-                    value={formData.designerName}
-                    onChange={handleFormChange}
-                    placeholder="김OO 디자이너"
-                  />
-                </div>
-                <div className="grooming-form-row">
-                  <label>제목</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleFormChange}
-                    placeholder="미용 상태 분석 제목"
-                  />
-                </div>
-
-                <div className="grooming-form-grid">
-                  <div className="grooming-form-row">
-                    <label>털 엉킴</label>
-                    <input
-                      type="number"
-                      name="matting"
-                      value={formData.metrics.matting}
-                      onChange={handleFormChange}
-                      placeholder="0 ~ 100"
-                    />
-                  </div>
-                  <div className="grooming-form-row">
-                    <label>모질</label>
-                    <input
-                      type="number"
-                      name="coatQuality"
-                      value={formData.metrics.coatQuality}
-                      onChange={handleFormChange}
-                      placeholder="0 ~ 100"
-                    />
-                  </div>
-                  <div className="grooming-form-row">
-                    <label>털 빠짐</label>
-                    <input
-                      type="number"
-                      name="shedding"
-                      value={formData.metrics.shedding}
-                      onChange={handleFormChange}
-                      placeholder="0 ~ 100"
-                    />
-                  </div>
-                  <div className="grooming-form-row">
-                    <label>환경 적응도</label>
-                    <input
-                      type="number"
-                      name="environmentAdaptation"
-                      value={formData.metrics.environmentAdaptation}
-                      onChange={handleFormChange}
-                      placeholder="0 ~ 100"
-                    />
-                  </div>
-                  <div className="grooming-form-row">
-                    <label>피부 민감도</label>
-                    <input
-                      type="number"
-                      name="skinSensitivity"
-                      value={formData.metrics.skinSensitivity}
-                      onChange={handleFormChange}
-                      placeholder="0 ~ 100"
-                    />
-                  </div>
-                </div>
-
-                <div className="grooming-form-row">
-                  <label>디자이너 코멘트</label>
-                  <textarea
-                    name="comment"
-                    value={formData.comment}
-                    onChange={handleFormChange}
-                    rows={3}
-                    placeholder="오늘 미용은 어땠나요?"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  className="grooming-save-btn"
-                  onClick={handleCreate}
-                  disabled={saving}
-                >
-                  {saving ? '저장 중...' : '미용 내역 저장하기'}
-                </button>
-              </div>
-            )}
-
             {history ? (
               <>
                 <div className="grooming-top-photo">
-                  <div className="arrow-left">&lt;</div>
-                  <div className="photo-card" />
-                  <div className="arrow-right">&gt;</div>
+                  <div className="photo-card">
+                    {history?.dogName && (
+                      <span className="photo-dog-name">{history.dogName}</span>
+                    )}
+                  </div>
                 </div>
                 <p className="grooming-photo-meta">{displayDate} {displayDesigner}</p>
 
@@ -305,29 +298,97 @@ export default function MyPageGroomingPage() {
                     </p>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  className="grooming-delete-btn"
-                  onClick={handleDelete}
-                  disabled={saving}
-                >
-                  삭제하기
-                </button>
-
-                <button
-                  className="review-btn"
-                  type="button"
-                  onClick={() => navigate('/write-review')}
-                >
-                  리뷰 쓰기
-                </button>
               </>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '16px', color: '#777' }}>
-                아직 등록된 미용 내역이 없습니다.
-              </div>
-            )}
+            ) : null}
+
+            <div style={{ marginTop: '24px' }}>
+              <p className="small-label">지난 미용 예약 전체 보기</p>
+              {allPastBookings.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '12px', color: '#777', fontSize: '11px' }}>
+                  아직 미용 예약 내역이 없습니다.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {allPastBookings.map((item) => {
+                    const d = toDate(item.bookingDate || item.preferredDate);
+                    const dateLabel = d ? d.toLocaleDateString('ko-KR') : '-';
+                    return (
+                      <div
+                        key={item.docId || item.id}
+                        style={{
+                          backgroundColor: '#fff',
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          display: 'flex',
+                          flexDirection: 'row',
+                          gap: '10px',
+                          fontSize: '11px',
+                        }}
+                        onClick={() => handleGroomingCardClick(item)}
+                      >
+                        <div
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 8,
+                            backgroundColor: '#eee',
+                            overflow: 'hidden',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {item.photoUrl ? (
+                            <img
+                              src={item.photoUrl}
+                              alt="미용 사진"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <label
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 10,
+                                color: '#999',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              사진 등록
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleUploadBookingPhoto(item, file);
+                                  }
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 600 }}>{dateLabel}</span>
+                            <span style={{ color: '#999' }}>{item.timeSlot || ''}</span>
+                          </div>
+                          <div style={{ color: '#555' }}>
+                            {item.dogName && <span>{item.dogName} · </span>}
+                            <span>{item.designerName || '디자이너'}</span>
+                          </div>
+                          <div style={{ color: '#888' }}>
+                            {item.hasReview ? '✓ 리뷰 작성됨' : '리뷰 미작성'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

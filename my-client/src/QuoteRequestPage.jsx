@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
 import { createQuoteRequest, getUserDogs, sendMessage, createNotification, createOrGetChatRoom, getAllDesigners } from './services';
+import AlertModal from './components/AlertModal';
 import './QuoteRequestPage.css';
 
 const logoImg = "/vite.svg";
@@ -32,6 +33,7 @@ export default function QuoteRequestPage() {
     preferredTime: '', // 희망 시간
     notes: '', // 추가 사항 텍스트
   });
+  const [alert, setAlert] = useState(null);
 
   useEffect(() => {
     if (user) {

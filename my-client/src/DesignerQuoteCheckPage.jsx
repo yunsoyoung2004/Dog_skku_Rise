@@ -56,10 +56,17 @@ export default function DesignerQuoteCheckPage() {
           list = all.filter((item) => item.userId === customerUserId);
         }
 
+        // 정렬: 최신순(createdAt 내림차순)으로만 정렬
+        // 상태 관계없이 원래 요청된 순서대로 유지
         list = list.sort((a, b) => {
           const aTs = a.createdAt?.toMillis?.() ?? 0;
           const bTs = b.createdAt?.toMillis?.() ?? 0;
           return bTs - aTs;
+        });
+
+        console.log('[DesignerQuoteCheckPage] 데이터 로드 완료 (상태별 정렬됨):', {
+          totalCount: list.length,
+          statuses: list.map(l => ({ id: l.id, status: l.status }))
         });
 
         setQuotes(list);
@@ -73,6 +80,20 @@ export default function DesignerQuoteCheckPage() {
     };
 
     loadQuotes();
+
+    // 페이지가 다시 포커스될 때마다 데이터를 새로 로드하도록 리스너 추가
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('[DesignerQuoteCheckPage] 페이지가 다시 포커스됨, 데이터 재로드');
+        loadQuotes();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user, customerUserId, fromRoomId, navigate]);
 
   const filteredCards = quotes; // 필터 로직은 추후 확장
@@ -111,8 +132,35 @@ export default function DesignerQuoteCheckPage() {
           </div>
         ) : (
           <div className="dq-card-list">
-            {filteredCards.map((card) => (
-              <div key={card.id} className="dq-card">
+            {filteredCards.map((card) => {
+              const isConfirmed = card.status === 'confirmed';
+              const isResponded = card.status === 'responded';
+              
+              console.log(`[DesignerQuoteCheckPage] 카드 ${card.id}:`, {
+                status: card.status,
+                isConfirmed,
+                isResponded,
+                btnLabel: isConfirmed ? '응답 완료' : isResponded ? '견적 수정하기' : '견적서 보내기'
+              });
+
+              const btnClass = `dq-send-btn ${
+                isConfirmed ? 'dq-send-btn-confirmed' : isResponded ? 'dq-send-btn-sent' : 'dq-send-btn-new'
+              }`;
+
+              const btnLabel = isConfirmed
+                ? '응답 완료'
+                : isResponded
+                ? '견적 수정하기'
+                : '견적서 보내기';
+
+              return (
+                <div 
+                  key={card.id} 
+                  className="dq-card"
+                  style={{
+                    backgroundColor: isConfirmed || isResponded ? '#f0f8f5' : '#fff'
+                  }}
+                >
                 <p className="dq-card-title">
                   {card.dogName || '반려견'}
                   {card.breed ? ` | ${card.breed}` : ''}
@@ -126,20 +174,31 @@ export default function DesignerQuoteCheckPage() {
                     <p><span className="label">희망 일정:</span> {card.preferredDate || '-'} {card.preferredTime || ''}</p>
                     <p><span className="label">강아지 태그:</span> {(card.dogTags || []).join(', ') || '-'}</p>
                     <p><span className="label">추가 사항:</span> {(card.additionalOptions || []).join(', ') || '-'}</p>
+                    {isResponded && card.lastQuotedAt && (
+                      <p style={{ fontSize: '12px', color: '#666', marginTop: '8px', borderTop: '1px solid #eee', paddingTop: '8px' }}>
+                        <span className="label">보낸 시간:</span> {new Date(card.lastQuotedAt.toMillis()).toLocaleString('ko-KR')}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="dq-send-row">
                   <button
                     type="button"
-                    className={`dq-send-btn ${card.status === 'responded' ? 'dq-send-btn-sent' : 'dq-send-btn-new'}`}
-                    onClick={() => navigate(`/designer-send-quote/${card.id}`, { state: { quote: card } })}
+                    className={btnClass}
+                    disabled={isConfirmed}
+                    onClick={() => {
+                      if (!isConfirmed) {
+                        navigate(`/designer-send-quote/${card.id}`, { state: { quote: card } });
+                      }
+                    }}
                   >
-                    {card.status === 'responded' ? '견적 수정하기' : '견적서 보내기'}
+                    {btnLabel}
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

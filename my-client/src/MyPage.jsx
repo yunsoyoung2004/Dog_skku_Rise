@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
 import { getUserProfile, getUserDogs, getUserBookings, getUserFavorites, notifyPendingReviews, getUserQuotes, getUserReviews, createReview, updateBookingHasReview, createNotification } from './services';
+import AlertModal from './components/AlertModal';
 import PageLayout from './PageLayout';
 import './MyPage.css';
 
@@ -23,6 +24,10 @@ export default function MyPage() {
   const [reviewText, setReviewText] = useState('');
   const [reviewServices, setReviewServices] = useState([]);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [showAllPastBookings, setShowAllPastBookings] = useState(false);
+  const [pendingReviewBookings, setPendingReviewBookings] = useState([]);
+  const [showPendingReviewPopup, setShowPendingReviewPopup] = useState(false);
+  const [alert, setAlert] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -35,6 +40,11 @@ export default function MyPage() {
       navigate('/login');
       return;
     }
+
+    const toDateLocal = (tsOrDate) => {
+      if (!tsOrDate) return null;
+      return tsOrDate.toDate ? tsOrDate.toDate() : new Date(tsOrDate);
+    };
 
     setLoading(true);
     try {
@@ -68,6 +78,25 @@ export default function MyPage() {
       // 지난 예약 중 리뷰가 없는 건에 대해 리뷰 알림 생성
       await notifyPendingReviews(user.uid);
 
+      // 아직 작성하지 않은 리뷰가 있는 지난 예약을 찾아, 마이페이지 진입 시 팝업으로 알려줌
+      try {
+        const now = new Date();
+        const pending = (userBookings || []).filter((b) => {
+          const d = toDateLocal(b.bookingDate || b.preferredDate);
+          if (!d) return false;
+          const isPast = d < now;
+          const isCancelled = b.status === 'cancelled';
+          const hasReview = b.hasReview === true;
+          return isPast && !isCancelled && !hasReview;
+        });
+        setPendingReviewBookings(pending);
+        setShowPendingReviewPopup(pending.length > 0);
+      } catch (pendingErr) {
+        console.warn('미완료 리뷰 체크 실패(무시 가능):', pendingErr);
+        setPendingReviewBookings([]);
+        setShowPendingReviewPopup(false);
+      }
+
       const userFavorites = await getUserFavorites(user.uid);
       setFavorites(userFavorites || []);
 
@@ -96,7 +125,7 @@ export default function MyPage() {
     .filter((b) => {
       // bookingDate가 없으면 preferredDate를 보조로 사용
       const d = toDate(b.bookingDate || b.preferredDate);
-      return d && d >= now && b.status !== 'cancelled';
+      return d && d >= now && b.status !== 'cancelled' && b.status !== 'completed';
     })
     .sort((a, b) => {
       const da = toDate(a.bookingDate || a.preferredDate);
@@ -104,26 +133,25 @@ export default function MyPage() {
       return da - db;
     })[0] || null;
 
-  const pastBookings = validBookings
+  const allPastBookings = validBookings
     .filter((b) => {
       const d = toDate(b.bookingDate || b.preferredDate);
+      // 완료된 예약은 날짜와 상관없이 미용 내역에 바로 포함
+      if (b.status === 'completed') return true;
       return d && d < now && b.status !== 'cancelled';
     })
     .sort((a, b) => {
       const da = toDate(a.bookingDate);
       const db = toDate(b.bookingDate);
       return db - da;
-    })
-    .slice(0, 3);
+    });
+
+  const pastBookings = showAllPastBookings
+    ? allPastBookings
+    : allPastBookings.slice(0, 3);
 
   // 미용 내역 카드 클릭 핸들러
   const handleGroomingCardClick = (booking) => {
-    // 리뷰가 없는 경우 확인 대화상자 표시
-    if (!booking.hasReview) {
-      const confirmed = window.confirm('리뷰가 없습니다. 리뷰를 작성하시겠습니까?');
-      if (!confirmed) return;
-    }
-
     setSelectedBooking(booking);
     setShowReviewModal(true);
     // 이미 리뷰가 있으면 그 리뷰를 로드
@@ -146,12 +174,18 @@ export default function MyPage() {
     if (!selectedBooking || !user) return;
 
     if (reviewRating === 0) {
-      alert('별점을 선택해주세요');
+      setAlert({
+        title: '별점 선택',
+        text: '별점을 선택해주세요.',
+      });
       return;
     }
 
     if (!reviewText.trim()) {
-      alert('리뷰를 입력해주세요');
+      setAlert({
+        title: '리뷰 입력',
+        text: '리뷰를 입력해주세요.',
+      });
       return;
     }
 
@@ -188,7 +222,10 @@ export default function MyPage() {
       }
     } catch (err) {
       console.error('리뷰 제출 실패:', err);
-      alert('리뷰 작성에 실패했습니다.');
+      setAlert({
+        title: '제출 실패',
+        text: '리뷰 작성에 실패했습니다.',
+      });
     } finally {
       setReviewSubmitting(false);
     }
@@ -198,7 +235,8 @@ export default function MyPage() {
   // 단, 이 경우에도 이미 시간이 지난 예약은 다가오는 예약으로 표시하지 않음
   let upcomingFromQuote = null;
   const validQuotes = Array.isArray(quotes) ? quotes : [];
-  if (!upcomingFromBookings && validQuotes.length > 0) {
+  // 실제 bookings 레코드가 전혀 없을 때만 견적을 보조로 사용
+  if (!upcomingFromBookings && validBookings.length === 0 && validQuotes.length > 0) {
     // 1순위: 확정된 견적, 없으면 2순위: 가장 최근 견적(확정 전이라도 사용)
     const confirmedQuote = validQuotes.find((q) => q.status === 'confirmed');
     const baseQuote = confirmedQuote || validQuotes[0];
@@ -234,8 +272,36 @@ export default function MyPage() {
     return num;
   };
 
+  const getBookingStatusLabel = (status) => {
+    if (!status) return '-';
+    switch (status) {
+      case 'pending':
+        return '예약 예정';
+      case 'completed':
+        return '미용 완료';
+      case 'cancelled':
+        return '예약 취소됨';
+      default:
+        return '기타';
+    }
+  };
+
+  const formatPrice = (price) => {
+    if (price === null || price === undefined) return null;
+    const num = typeof price === 'number' ? price : Number(price);
+    if (Number.isNaN(num)) return null;
+    return num.toLocaleString('ko-KR');
+  };
+
   return (
     <PageLayout title="마이 페이지">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title}
+        text={alert?.text}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+      />
       {/* Content */}
       <div className="mypage-main-container">
         {showDogModal && (
@@ -265,6 +331,36 @@ export default function MyPage() {
             </div>
           </div>
         )}
+        {showPendingReviewPopup && pendingReviewBookings && pendingReviewBookings.length > 0 && (
+          <div className="modal-overlay">
+            <div className="modal-content mypage-dog-modal">
+              <h2>아직 작성하지 않은 리뷰가 있어요</h2>
+              <p>최근 미용 {pendingReviewBookings.length}건에 대한 리뷰를 남겨주세요.</p>
+              <div className="mypage-dog-modal-actions">
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => {
+                    const target = pendingReviewBookings[0];
+                    setShowPendingReviewPopup(false);
+                    if (target) {
+                      handleGroomingCardClick(target);
+                    }
+                  }}
+                >
+                  지금 리뷰 쓰러 가기
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setShowPendingReviewPopup(false)}
+                >
+                  나중에 할게요
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {selectedBooking && showReviewModal && (
           <div className="modal-overlay">
             <div className="modal-content mypage-review-modal">
@@ -281,6 +377,12 @@ export default function MyPage() {
               {/* 미용 내역 정보 */}
               <div className="grooming-info">
                 <h3>미용 내역 정보</h3>
+                {selectedBooking.bookingId && (
+                  <div className="info-item">
+                    <span className="label">예약 번호:</span>
+                    <span className="value">{selectedBooking.bookingId}</span>
+                  </div>
+                )}
                 <div className="info-item">
                   <span className="label">날짜:</span>
                   <span className="value">
@@ -291,9 +393,27 @@ export default function MyPage() {
                   <span className="label">시간:</span>
                   <span className="value">{selectedBooking.timeSlot || '-'}</span>
                 </div>
+                {selectedBooking.dogName && (
+                  <div className="info-item">
+                    <span className="label">강아지:</span>
+                    <span className="value">{selectedBooking.dogName}</span>
+                  </div>
+                )}
                 <div className="info-item">
                   <span className="label">디자이너:</span>
                   <span className="value">{selectedBooking.designerName || '-'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">현재 상태:</span>
+                  <span className="value">{getBookingStatusLabel(selectedBooking.status)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">예상 금액:</span>
+                  <span className="value">
+                    {formatPrice(selectedBooking.price)
+                      ? `${formatPrice(selectedBooking.price)}원`
+                      : '-'}
+                  </span>
                 </div>
                 {selectedBooking.location && (
                   <div className="info-item">
@@ -305,6 +425,12 @@ export default function MyPage() {
                   <div className="info-item">
                     <span className="label">미용 방식:</span>
                     <span className="value">{selectedBooking.groomingStyle}</span>
+                  </div>
+                )}
+                {selectedBooking.notes && (
+                  <div className="info-item">
+                    <span className="label">요청/메모:</span>
+                    <span className="value">{selectedBooking.notes}</span>
                   </div>
                 )}
               </div>
@@ -603,6 +729,17 @@ export default function MyPage() {
                       );
                     })}
                   </div>
+                  {allPastBookings.length > 3 && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        className="link-text-btn"
+                        type="button"
+                        onClick={() => navigate('/mypage-grooming')}
+                      >
+                        더보기
+                      </button>
+                    </div>
+                  )}
                   <button
                     className="link-text-btn"
                     onClick={() => navigate('/mypage-grooming')}
@@ -665,15 +802,7 @@ export default function MyPage() {
                   return `다가오는 예약 | ${label}`;
                 })()}
               </button>
-            ) : hasUpcomingFromQuoteOnly ? null : (
-              <button
-                className="mypage-upcoming-btn"
-                type="button"
-                disabled
-              >
-                🔒 다가오는 예약이 없습니다.
-              </button>
-            )}
+            ) : null}
 
             {/* 하단 버튼들 */}
             <div className="mypage-bottom-buttons">

@@ -4,6 +4,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, updateDoc, Timestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { getUserQuotes, getUserBookings, createBooking, sendMessage, createNotification } from './services';
+import AlertModal from './components/AlertModal';
 import './QuoteDetailPage.css';
 
 export default function QuoteDetailPage() {
@@ -15,6 +16,7 @@ export default function QuoteDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedDog, setSelectedDog] = useState(null);
+  const [alert, setAlert] = useState(null);
 
   useEffect(() => {
     loadQuotes();
@@ -156,8 +158,10 @@ export default function QuoteDetailPage() {
 
     // 이미 확정된 견적에 대해 다시 수락을 시도하는 경우 방어
     if (quote.status === 'confirmed') {
-      alert('이미 수락된 견적입니다.');
-      alert('수락은 완료된 후 취소할 수 없습니다.');
+      setAlert({
+        title: '수락 불가',
+        text: '이미 수락된 견적입니다. 수락은 완료된 후 취소할 수 없습니다.'
+      });
       return;
     }
 
@@ -181,6 +185,8 @@ export default function QuoteDetailPage() {
       const bookingPayload = {
         designerId: quote.designerId,
         designerName: quote.designerName || '',
+        customerName: user?.displayName || '',
+        userName: user?.displayName || '',
         dogId: quote.dogId || '',
         dogName: quote.dogName || '',
         quoteId: quote.id,
@@ -196,8 +202,10 @@ export default function QuoteDetailPage() {
       const bookingResult = await createBooking(user.uid, bookingPayload);
 
       // 예약/수락 성공 팝업
-      alert('견적이 수락되었습니다!');
-      alert('수락은 완료된 후 취소할 수 없습니다.');
+      setAlert({
+        title: '수락 완료',
+        text: '견적이 수락되었습니다. 수락은 완료된 후 취소할 수 없습니다.'
+      });
 
       // 디자이너/사용자 모두에게 예약 확정 알림 생성
       try {
@@ -247,7 +255,10 @@ export default function QuoteDetailPage() {
         // 확정 후 바로 해당 채팅방으로 이동해 변경된 배너/메시지를 보여줌
         navigate(`/chat/${effectiveChatRoomId}`);
       } else {
-        alert('예약이 생성되었습니다. 예약 내역은 마이페이지에서 확인할 수 있습니다.');
+        setAlert({
+          title: '예약 완료',
+          text: '예약이 생성되었습니다. 예약 내역은 마이페이지에서 확인할 수 있습니다.'
+        });
       }
 
       // 로컬 상태에서도 해당 견적을 확정 상태로 표시해, 재수락을 막고 UI를 일관되게 유지
@@ -261,19 +272,48 @@ export default function QuoteDetailPage() {
 
       // Firestore 상에서도 해당 견적 상태를 확정으로 반영
       try {
+        console.log('[QuoteDetailPage] 견적 상태 업데이트 시작:', { quoteId: quote.id, requestId: quote.requestId });
         const quoteRef = doc(db, 'quotes', quote.id);
         await updateDoc(quoteRef, { status: 'confirmed' });
+        console.log('[QuoteDetailPage] quotes 문서 업데이트 완료');
+
+        // 연결된 견적 요청(quoteRequests)도 확정 상태로 동기화
+        if (quote.requestId) {
+          try {
+            console.log('[QuoteDetailPage] quoteRequests 동기화 시작:', quote.requestId);
+            const requestRef = doc(db, 'quoteRequests', quote.requestId);
+            await updateDoc(requestRef, {
+              status: 'confirmed',
+              confirmedAt: Timestamp.now(),
+            });
+            console.log('[QuoteDetailPage] quoteRequests 동기화 완료');
+          } catch (e) {
+            console.warn('견적 요청 상태 업데이트 실패(무시 가능):', e);
+          }
+        } else {
+          console.warn('[QuoteDetailPage] requestId가 없어서 quoteRequests 동기화 스킵');
+        }
       } catch (e) {
         console.warn('견적 상태 업데이트 실패(무시 가능):', e);
       }
     } catch (err) {
       console.error('견적 확정/예약 생성 실패:', err);
-      alert('견적을 확정하는 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      setAlert({
+        title: '오류 발생',
+        text: '견적을 확정하는 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+      });
     }
   };
 
   return (
     <div className="quote-detail-page" data-node-id="quote-detail">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title}
+        text={alert?.text}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+      />
       {/* Header */}
       <div className="quote-detail-header">
         <button className="quote-detail-back-btn" onClick={() => navigate(-1)}>←</button>

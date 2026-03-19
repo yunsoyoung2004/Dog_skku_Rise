@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
+import { cancelBooking, completeBooking } from './services';
+import AlertModal from './components/AlertModal';
 import './BookingConfirmationPage.css';
 
 export default function BookingConfirmationPage() {
@@ -10,13 +12,15 @@ export default function BookingConfirmationPage() {
   const [user] = useAuthState(auth);
   const [bookingInfo, setBookingInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState(null);
 
   useEffect(() => {
     // 예약 정보는 location.state에서 전달됨 (booking 객체 우선)
     if (location.state?.booking) {
       const b = location.state.booking;
       setBookingInfo({
-        bookingId: b.id || location.state.bookingId || '예약번호 미지정',
+        bookingDocId: b.docId || b.id || null,
+        bookingId: b.bookingId || b.id || location.state.bookingId || '예약번호 미지정',
         designerName: b.designerName || '디자이너',
         dogName: b.dogName || b.dog || '반려견',
         date: (b.bookingDate || b.preferredDate)
@@ -33,6 +37,7 @@ export default function BookingConfirmationPage() {
     if (location.state?.bookingId) {
       // TODO: bookingId로 Firestore에서 예약 상세를 조회하는 로직 추가 가능
       setBookingInfo({
+        bookingDocId: null,
         bookingId: location.state.bookingId,
         designerName: '미용사 홍길동',
         dogName: '우리 귀여운 강아지 (푸들)',
@@ -53,8 +58,73 @@ export default function BookingConfirmationPage() {
     );
   }
 
+  const handleComplete = async () => {
+    if (!bookingInfo?.bookingDocId) {
+      setAlert({
+        title: '정보 없음',
+        text: '예약 정보를 찾을 수 없습니다.\n나중에 마이페이지에서 다시 시도해 주세요.',
+      });
+      return;
+    }
+
+    const ok = window.confirm('미용을 완료 처리하시겠습니까?\n완료 처리된 예약은 다가오는 예약에서 사라지고, 미용 내역에 저장됩니다.');
+    if (!ok) return;
+
+    try {
+      await completeBooking(bookingInfo.bookingDocId);
+      setAlert({
+        title: '완료',
+        text: '미용이 완료 처리되었습니다.',
+      });
+      setTimeout(() => navigate('/mypage'), 1000);
+    } catch (e) {
+      console.error('미용 완료 처리 실패:', e);
+      setAlert({
+        title: '처리 실패',
+        text: '미용 완료 처리에 실패했습니다.\n잠시 후 다시 시도해 주세요.',
+      });
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!bookingInfo?.bookingDocId) {
+      setAlert({
+        title: '정보 없음',
+        text: '예약 정보를 찾을 수 없습니다.\n나중에 마이페이지에서 다시 시도해 주세요.',
+      });
+      return;
+    }
+
+    const ok = window.confirm('정말 예약을 철회하시겠습니까?\n합의된 내용입니까?');
+    if (!ok) return;
+
+    try {
+      await cancelBooking(bookingInfo.bookingDocId);
+      setAlert({
+        title: '철회 완료',
+        text: '예약이 철회되었습니다.',
+      });
+      setTimeout(() => navigate('/mypage'), 1000);
+    } catch (e) {
+      console.error('예약 철회 실패:', e);
+      setAlert({
+        title: '철회 실패',
+        text: '예약 철회에 실패했습니다.\n잠시 후 다시 시도해 주세요.',
+      });
+    }
+  };
+
   return (
     <div className="booking-confirmation-page" data-node-id="booking-confirmation">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title || '알림'}
+        text={alert?.text || ''}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+        variant="default"
+      />
+
       {/* Header */}
       <div className="confirmation-header">
         <button className="confirmation-back-btn" onClick={() => navigate('/dashboard')}>←</button>
@@ -127,21 +197,15 @@ export default function BookingConfirmationPage() {
           </button>
           <button
             className="action-btn secondary"
-            onClick={() => {
-              // TODO: 실제 미용 완료 처리/리뷰 유도 페이지로 연결
-              navigate('/mypage');
-            }}
+            onClick={handleComplete}
           >
             미용 완료 처리하기
           </button>
           <button
-            className="action-btn secondary"
-            onClick={() => {
-              // TODO: 실제 예약 취소/결렬 처리 로직과 연동
-              navigate('/mypage');
-            }}
+            className="action-btn danger"
+            onClick={handleCancel}
           >
-            예약 결렬하기
+            예약 철회하기
           </button>
           <button
             className="action-btn secondary"

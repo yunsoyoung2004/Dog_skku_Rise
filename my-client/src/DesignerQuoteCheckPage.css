@@ -148,6 +148,14 @@
   border: 1px solid #e5e7eb;
 }
 
+/* 사용자가 확정한 견적 요청 - 응답 완료, 수정 불가 */
+.dq-send-btn-confirmed {
+  background-color: #e5f9f0;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  cursor: default;
+}
+
 .dq-send-btn:active {
   opacity: 0.85;
 }

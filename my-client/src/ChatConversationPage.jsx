@@ -4,6 +4,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { sendMessage, createNotification } from './services';
+import AlertModal from './components/AlertModal';
 import PageLayout from './PageLayout';
 import './DesignerChatConversationPage.css';
 
@@ -16,6 +17,7 @@ export default function ChatConversationPage() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [alert, setAlert] = useState(null);
   const lastQuoteReceivedIdRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [booking, setBooking] = useState(null);
@@ -168,7 +170,10 @@ export default function ChatConversationPage() {
       }
     } catch (e) {
       console.error('메시지 전송 실패:', e);
-      alert('메시지 전송에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setAlert({
+        title: '전송 실패',
+        text: '메시지 전송에 실패했습니다.\n잠시 후 다시 시도해주세요.',
+      });
     }
   };
 
@@ -374,21 +379,30 @@ export default function ChatConversationPage() {
   }
 
   return (
-    <PageLayout 
-      title={title}
-      customHeader={
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-          padding: '16px',
-          backgroundColor: 'white',
-          borderBottom: '1px solid #e0e0e0',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10
-        }}>
+    <>
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title || '알림'}
+        text={alert?.text || ''}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+        variant="default"
+      />
+      <PageLayout 
+        title={title}
+        customHeader={
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            padding: '16px',
+            backgroundColor: 'white',
+            borderBottom: '1px solid #e0e0e0',
+            position: 'sticky',
+            top: 0,
+            zIndex: 10
+          }}>
           <button
             type="button"
             onClick={() => navigate(-1)}
@@ -512,5 +526,6 @@ export default function ChatConversationPage() {
         </button>
       </div>
     </PageLayout>
+    </>
   );
 }

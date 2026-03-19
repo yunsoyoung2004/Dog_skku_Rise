@@ -4,6 +4,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { createOrGetChatRoom, getDesignerReviews } from './services';
+import AlertModal from './components/AlertModal';
 import './DesignerDetailPage.css';
 
 export default function DesignerDetailPage({ isOpen = true, onClose }) {
@@ -16,6 +17,7 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
   const [activeTab, setActiveTab] = useState('info'); // info | portfolio | reviews
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [alert, setAlert] = useState(null);
 
   const searchParams = new URLSearchParams(location.search);
   const designerId = searchParams.get('id');
@@ -101,7 +103,10 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
       return;
     }
     if (!designerId || !designer) {
-      alert('디자이너 정보를 찾을 수 없습니다.');
+      setAlert({
+        title: '정보 없음',
+        text: '디자이너 정보를 찾을 수 없습니다.',
+      });
       return;
     }
 
@@ -113,7 +118,10 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
       navigate(`/chat/${room.id}`);
     } catch (e) {
       console.error('채팅 시작 실패:', e);
-      alert('채팅방을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      setAlert({
+        title: '멌닁 실패',
+        text: '채팅방을 생성할 수 없습니다.\n잠시 후 다시 시도해 주세요.',
+      });
     }
   };
 
@@ -123,7 +131,10 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
       return;
     }
     if (!designerId || !designer) {
-      alert('견적서를 보낼 디자이너를 찾을 수 없습니다.');
+      setAlert({
+        title: '정보 없음',
+        text: '견적서를 미난 디자이너를 \ucc3e을 수 없습니다.',
+      });
       return;
     }
 
@@ -159,6 +170,14 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
 
   return (
     <div className="designer-detail-overlay">
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title || '알림'}
+        text={alert?.text || ''}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+        variant="default"
+      />
       <div className="designer-detail-container">
         {/* Header */}
         <div className="designer-detail-header">

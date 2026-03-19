@@ -4,6 +4,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc, collection, query, orderBy, onSnapshot, onSnapshot as onUserSnapshot, getDocs, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { sendMessage, createNotification } from './services';
+import AlertModal from './components/AlertModal';
 import './DesignerChatConversationPage.css';
 
 const logoImg = "/vite.svg";
@@ -21,6 +22,7 @@ export default function DesignerChatConversationPage() {
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const messagesEndRef = useRef(null);
   const shouldAutoScrollRef = useRef(true);
+  const [alert, setAlert] = useState(null);
   // const [booking, setBooking] = useState(null);
   
   // 최근 예약 모달
@@ -240,7 +242,10 @@ export default function DesignerChatConversationPage() {
       }
     } catch (e) {
       console.error('메시지 전송 실패:', e);
-      alert('메시지 전송에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setAlert({
+        title: '전송 실패',
+        text: '메시지 전송에 실패했습니다.\n잠시 후 다시 시도해주세요.',
+      });
     }
   };
 
@@ -319,20 +324,29 @@ export default function DesignerChatConversationPage() {
   }
 
   return (
-    <div className="designer-page">
-      <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-          <img 
-            src={logoImg} 
-            alt="멍빗어" 
-            style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} 
-          />
-          <h1>{room.userName || room.roomName || room.title || '채팅'}</h1>
-        </div>
-        <button 
-          className="dc-notification-btn"
-          onClick={() => {
+    <>
+      <AlertModal
+        isOpen={!!alert}
+        title={alert?.title || '알림'}
+        text={alert?.text || ''}
+        primaryButtonText="확인"
+        onPrimaryClick={() => setAlert(null)}
+        variant="default"
+      />
+      <div className="designer-page">
+        <div className="designer-page-header">
+          <button onClick={() => navigate(-1)}>←</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+            <img 
+              src={logoImg} 
+              alt="멍빗어" 
+              style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} 
+            />
+            <h1>{room.userName || room.roomName || room.title || '채팅'}</h1>
+          </div>
+          <button 
+            className="dc-notification-btn"
+            onClick={() => {
             console.log('🔔 알림 페이지 열기', new Date().toLocaleString('ko-KR'));
             navigate('/notification');
           }}
@@ -384,13 +398,13 @@ export default function DesignerChatConversationPage() {
               </div>
               <div className="quote-banner-desc">
                 {latestIsBooking
-                  ? '예약이 확정되었습니다. 예약 내역은 마이페이지에서 확인할 수 있어요.'
+                  ? '예약이 확정되었어요. 예약 내역은 마이페이지에서 확인할 수 있습니다.'
                   : latestIsDesignerQuote
                   ? '고객에게 견적을 전송했습니다.\n고객이 조건과 금액을 검토 중입니다.'
                   : latestIsQuoteRequest
                   ? '요청 내역을 확인하고 금액과 메모를 작성해 견적서를 보내주세요.'
                   : hasBooking
-                  ? '예약이 확정되었습니다. 예약 내역은 마이페이지에서 확인할 수 있어요.'
+                  ? '예약이 확정되었어요. 예약 내역은 마이페이지에서 확인할 수 있습니다.'
                   : !hasQuoteRequestMessage && !hasDesignerQuoteMessage
                   ? '고객이 견적 폼을 보내면 이 채팅에서 내용을 확인할 수 있어요.'
                   : hasQuoteRequestMessage && !hasDesignerQuoteMessage
@@ -536,6 +550,7 @@ export default function DesignerChatConversationPage() {
           </svg>
         </button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

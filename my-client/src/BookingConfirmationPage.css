@@ -187,3 +187,13 @@
 .action-btn.secondary:hover {
   background-color: #f5f5f5;
 }
+
+.action-btn.danger {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.action-btn.danger:hover {
+  background-color: #fecaca;
+}

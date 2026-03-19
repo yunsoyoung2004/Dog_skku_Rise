@@ -153,14 +153,45 @@ export default function DesignerSchedulePage() {
           </div>
         ) : (
           <div className="schedule-list">
-            {dailyBookings.map((item) => (
-              <div key={item.id} className="schedule-item">
-                <div className="schedule-time">{item.timeSlot || item.time}</div>
-                <div className="schedule-details">
-                  고객: {item.customerName || item.userName || '-'} | 강아지: {item.dogName || '-'}
+            {dailyBookings.map((item) => {
+              const customer = item.customerName || item.userName || '이름 미등록';
+              const dog = item.dogName || '반려견';
+
+              const breed = item.breed || item.dogBreed || null;
+              const weight =
+                typeof item.weight === 'number'
+                  ? `${item.weight}kg`
+                  : item.weight || null;
+
+              let statusLabel = '예정';
+              if (item.status === 'completed') statusLabel = '미용 완료';
+              else if (item.status === 'cancelled') statusLabel = '취소됨';
+
+              const priceLabel =
+                typeof item.price === 'number'
+                  ? `${item.price.toLocaleString('ko-KR')}원`
+                  : '가격 미정';
+
+              const timeLabel = item.timeSlot || item.time || item.preferredTime || '';
+
+              return (
+                <div key={item.id} className="schedule-item">
+                  <div className="schedule-time">{timeLabel}</div>
+                  <div className="schedule-details">
+                    <div>고객: {customer}</div>
+                    <div>
+                      강아지: {dog}
+                      {breed && ` (${breed}`}
+                      {breed && weight ? `, ${weight})` : ''}
+                      {!breed && weight && ` (${weight})`}
+                    </div>
+                    <div>
+                      상태: {statusLabel} · {priceLabel}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
