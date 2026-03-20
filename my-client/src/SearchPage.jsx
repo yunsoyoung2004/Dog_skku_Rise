@@ -17,20 +17,10 @@ function SearchIcon() {
       type="button"
       className="search-icon-btn"
       aria-label="검색"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        border: 'none',
-        background: 'none',
-        padding: '4px 8px',
-        cursor: 'pointer',
-        color: '#999'
-      }}
     >
       <svg
-        width="20"
-        height="20"
+        width="24"
+        height="24"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -156,7 +146,7 @@ export default function SearchPage() {
   };
 
   return (
-    <PageLayout title="검색">
+    <PageLayout title="검색" homePath="/dashboard">
       {/* Search Bar */}
       <div className="search-bar-container">
         <div className="search-bar">

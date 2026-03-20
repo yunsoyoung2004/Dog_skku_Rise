@@ -10,6 +10,7 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  animation: page-fade-up var(--anim-duration-page) var(--anim-ease-smooth);
 }
 
 .review-header {

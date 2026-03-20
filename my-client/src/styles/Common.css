@@ -1,6 +1,7 @@
+@import './Animations.css';
+
 /* ========== COMMON PAGE STYLES ========== */
 /* All pages should use these base styles */
-@import './Animations.css';
 
 .page-container {
   width: 100%;
@@ -12,7 +13,7 @@
   color: var(--color-text-dark);
   display: flex;
   flex-direction: column;
-  animation: pageSlideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: page-fade-up var(--anim-duration-page) var(--anim-ease-smooth);
 }
 
 .page-header {
@@ -26,18 +27,6 @@
   background-color: var(--color-bg-white);
   border-bottom: 1px solid var(--color-border-light);
   gap: 12px;
-  animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .page-header-logo {
@@ -45,18 +34,12 @@
   align-items: center;
   gap: 8px;
   flex: 1;
-  animation: fadeIn 0.5s ease;
 }
 
 .page-header-logo img {
   width: 32px;
   height: 32px;
   object-fit: contain;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.page-header-logo img:hover {
-  transform: scale(1.05) rotate(2deg);
 }
 
 .page-header-title {
@@ -64,7 +47,6 @@
   font-weight: 400;
   font-size: 16px;
   color: var(--color-text-dark);
-  animation: textSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-header-actions {
@@ -83,16 +65,11 @@
   justify-content: center;
   color: var(--color-text-dark);
   border-radius: 6px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s ease;
 }
 
 .page-header-btn:hover {
   background-color: var(--color-bg-light);
-  transform: scale(1.08);
-}
-
-.page-header-btn:active {
-  animation: buttonClick 0.2s ease;
 }
 
 /* ========== PAGE CONTENT AREA ========== */
@@ -100,7 +77,6 @@
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  animation: pageSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-content.full-height {
@@ -116,7 +92,6 @@
   color: var(--color-text-dark);
   margin: 16px 0 12px 0;
   padding: 0 16px;
-  animation: textSlideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .section-subtitle {
@@ -126,7 +101,6 @@
   color: var(--color-text-light);
   margin: 0;
   padding: 0 16px;
-  animation: textSlideUp 0.7s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ========== CARDS & BOXES ========== */
@@ -137,11 +111,13 @@
   padding: 16px;
   margin: 12px 0;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.25s var(--anim-ease-smooth);
+  animation: card-pop var(--anim-duration-medium) var(--anim-ease-smooth);
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
 }
 
 /* ========== BUTTONS ========== */
@@ -157,6 +133,7 @@
   cursor: pointer;
   box-shadow: var(--shadow-lg);
   transition: all 0.3s ease;
+  animation: button-pulse 1.8s ease-in-out infinite;
 }
 
 .btn-primary:hover:not(:disabled) {

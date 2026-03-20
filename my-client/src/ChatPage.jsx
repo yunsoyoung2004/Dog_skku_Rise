@@ -70,7 +70,7 @@ export default function ChatPage() {
   };
 
   return (
-    <PageLayout title="채팅">
+    <PageLayout title="채팅" homePath="/dashboard">
       {/* Filter Tabs */}
       <div className="chat-filter-tabs">
         <button

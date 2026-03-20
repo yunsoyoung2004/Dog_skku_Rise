@@ -1,10 +1,5 @@
 @import './fonts.css';
-@import './styles/Animations.css';
-@import './styles/Components.css';
 @import './styles/Common.css';
-@import './styles/Button.css';
-@import './styles/Input.css';
-@import './styles/AlertModal.css';
 
 /* ========== GLOBAL COLOR TOKENS ========== */
 :root {
@@ -91,10 +86,9 @@ a:hover {
 }
 
 button {
-  all: unset;
-  cursor: pointer;
   font-family: 'Paperlogy', inherit;
   font-weight: 400;
+  cursor: pointer;
 }
 
 button:focus,

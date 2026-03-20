@@ -6,7 +6,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfi
 import { auth, db } from './firebase';
 import { setDoc, doc, getDoc } from 'firebase/firestore';
 
-const logoImg = "/vite.svg";
+const logoImg = "https://www.figma.com/api/mcp/asset/3536782b-2696-4419-ba6a-95a020af5338";
 
 export default function DesignerLoginPage() {
   const [user] = useAuthState(auth);

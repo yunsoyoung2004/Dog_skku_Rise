@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import AlertModal from './components/AlertModal';
 import './DesignerPageNav.css';
 import './DesignerReservationsPage.css';
+import DesignerNotificationButton from './components/DesignerNotificationButton';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 const styles = `
 .designer-page {
@@ -104,8 +105,6 @@ export default function DesignerReservationsPage() {
   const [user] = useAuthState(auth);
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState(null);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -114,7 +113,6 @@ export default function DesignerReservationsPage() {
     }
     loadReservations();
   }, [user, navigate]);
-
   const loadReservations = async () => {
     try {
       setLoading(true);
@@ -132,16 +130,6 @@ export default function DesignerReservationsPage() {
       console.error('예약 로드 실패:', err);
     } finally {
       setLoading(false);
-      // 디자이너 알림 갯수 로드
-      if (user) {
-        try {
-          const userRef = doc(db, 'users', user.uid);
-          const userSnap = await getDoc(userRef);
-          setUnreadNotificationCount(userSnap.data()?.unreadNotificationCount || 0);
-        } catch (e) {
-          console.warn('디자이너 알림을 로드 실패:', e);
-        }
-      }
     }
   };
 
@@ -152,26 +140,18 @@ export default function DesignerReservationsPage() {
       loadReservations();
     } catch (err) {
       console.error('취소 실패:', err);
-      setAlert({
-        title: '예약 취소 실패',
-        text: '예약을 취소할 수 없습니다. 잠시 후 다시 시도해 주세요.'
-      });
     }
   };
 
   return (
     <div className="designer-page">
-      <AlertModal
-        isOpen={!!alert}
-        title={alert?.title}
-        text={alert?.text}
-        primaryButtonText="확인"
-        onPrimaryClick={() => setAlert(null)}
-      />
       {/* Header */}
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
-        <h1>예약 관리</h1>
+        <DesignerHeaderBrand />
+        <h1>예약 내역</h1>
+        <div className="designer-header-right">
+          <DesignerNotificationButton />
+        </div>
       </div>
 
       {/* Content */}

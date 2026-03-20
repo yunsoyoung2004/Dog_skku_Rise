@@ -57,7 +57,7 @@ export default function QuoteAlertPage() {
   };
 
   return (
-    <PageLayout title="견적 알림">
+    <PageLayout title="견적 알림" homePath="/dashboard">
       <div className="notification-page">
         <div className="notification-container">
           {loading ? (

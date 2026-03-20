@@ -10,6 +10,7 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  animation: page-fade-up var(--anim-duration-page) var(--anim-ease-smooth);
 }
 
 .designer-list-header {
@@ -71,6 +72,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s;
+  animation: list-item-in 0.35s var(--anim-ease-smooth);
 }
 
 .filter-btn:hover {
@@ -101,12 +103,15 @@
   background-color: white;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.2s var(--anim-ease-smooth), box-shadow 0.2s ease;
   align-items: center;
+  animation: list-item-in 0.35s var(--anim-ease-smooth);
 }
 
 .designer-list-item:hover {
   background-color: #fafafa;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .designer-list-avatar {

@@ -50,12 +50,15 @@
   background-color: white;
   border-bottom: 1px solid #e0e0e0;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.2s var(--anim-ease-smooth), box-shadow 0.2s ease;
+  animation: list-item-in 0.35s var(--anim-ease-smooth);
   position: relative;
 }
 
 .chat-room-item:hover {
   background-color: #fafafa;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .room-avatar {

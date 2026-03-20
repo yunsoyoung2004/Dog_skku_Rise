@@ -2,11 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 
 // https://vite.dev/config/
+
 export default defineConfig({
   plugins: [react()],
   server: {
-    hmr: {
-      overlay: false, // 오류 오버레이(빨간 화면) 비활성화
-    },
-  },
+    host: '0.0.0.0',  // 모든 네트워크 인터페이스에서 수신
+    port: 5173,
+    strictPort: false,
+  }
 })

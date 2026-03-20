@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import AlertModal from './components/AlertModal';
 import './DesignerPageNav.css';
 import './DesignerDashboard.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "https://www.figma.com/api/mcp/asset/3536782b-2696-4419-ba6a-95a020af5338";
 
 // 달력 컴포넌트
 function DesignerCalendar({ reservationsByDate, onDateSelect }) {
@@ -84,6 +84,7 @@ export default function DesignerDashboard() {
     reviews: 0,
     messages: 0
   });
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [reservationsByDate, setReservationsByDate] = useState({});
   
   // 특정 고객의 예약만 보이는 모드
@@ -93,8 +94,6 @@ export default function DesignerDashboard() {
   const [loading, setLoading] = useState(true);
   const [showProfileReminder, setShowProfileReminder] = useState(false);
   const [showQuoteAlert, setShowQuoteAlert] = useState(false);
-  const [alert, setAlert] = useState(null);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -104,6 +103,28 @@ export default function DesignerDashboard() {
 
     loadDesignerData();
   }, [user, navigate]);
+
+  // 디자이너용 알림(종 아이콘) 뱃지 카운트 실시간 구독
+  useEffect(() => {
+    if (!user) {
+      setUnreadNotificationCount(0);
+      return;
+    }
+
+    const userRef = doc(db, 'users', user.uid);
+    const unsubscribe = onSnapshot(
+      userRef,
+      (docSnap) => {
+        const count = docSnap.data()?.unreadNotificationCount || 0;
+        setUnreadNotificationCount(count);
+      },
+      (error) => {
+        console.warn('디자이너 알림 수 로드 실패:', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
 
   const loadDesignerData = async () => {
     try {
@@ -134,9 +155,6 @@ export default function DesignerDashboard() {
           specialty: specialty || '일반 미용',
           location: location || '위치 미설정'
         });
-
-        // 알림 막실 로드
-        setUnreadNotificationCount(userData.unreadNotificationCount || 0);
       }
 
       setShowProfileReminder(!isProfileComplete);
@@ -212,10 +230,6 @@ export default function DesignerDashboard() {
       setShowQuoteAlert(pendingQuotesCount > 0);
     } catch (err) {
       console.error('데이터 로드 실패:', err);
-      setAlert({
-        title: '데이터 로드 실패',
-        text: '디자이너 정보를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
-      });
     } finally {
       setLoading(false);
     }
@@ -231,13 +245,6 @@ export default function DesignerDashboard() {
 
   return (
     <div className="designer-page">
-      <AlertModal
-        isOpen={!!alert}
-        title={alert?.title}
-        text={alert?.text}
-        primaryButtonText="확인"
-        onPrimaryClick={() => setAlert(null)}
-      />
       {/* Header (사용자 헤더와 동일 구조) */}
       <header className="dd-header">
         {customerUserId && (
@@ -253,34 +260,27 @@ export default function DesignerDashboard() {
           className="dd-header-left"
           onClick={() => navigate('/designer-dashboard')}
         >
-          <img src={logoImg} alt="멕비뜸" className="dd-logo-img" />
-          <h1 className="dd-logo-text">{customerUserId ? '예약 일정' : '멕비래'}</h1>
+          <img src={logoImg} alt="멍빗어" className="dd-logo-img" />
+          <h1 className="dd-logo-text">{customerUserId ? '예약 일정' : '멍빗어'}</h1>
         </div>
-        <button
-          type="button"
-          className="dd-header-notification"
-          onClick={() => navigate('/notification')}
-          aria-label="알림"
-        >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="dd-header-right">
+          <button 
+            className="dd-notification-btn"
+            onClick={() => navigate('/notification')}
+            type="button"
+            aria-label="알림"
           >
-            <path d="M18 8a6 6 0 0 0-12 0c0 5-2 7-2 7h16s-2-2-2-7" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          {unreadNotificationCount > 0 && (
-            <span className="dd-notification-badge">
-              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-            </span>
-          )}
-        </button>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {unreadNotificationCount > 0 && (
+              <span className="dd-notification-badge">
+                {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
       {showQuoteAlert && (

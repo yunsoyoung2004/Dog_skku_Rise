@@ -3,8 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { getDog } from './services';
+import DesignerNotificationButton from './components/DesignerNotificationButton';
 import './DesignerPageNav.css';
 import './DesignerQuoteCheckPage.css';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 export default function DesignerQuoteCheckPage() {
   const navigate = useNavigate();
@@ -64,12 +67,36 @@ export default function DesignerQuoteCheckPage() {
           return bTs - aTs;
         });
 
-        console.log('[DesignerQuoteCheckPage] 데이터 로드 완료 (상태별 정렬됨):', {
-          totalCount: list.length,
-          statuses: list.map(l => ({ id: l.id, status: l.status }))
+        // 각 견적 요청에 연결된 반려견 프로필/사진 정보를 함께 불러온다.
+        const dogMap = {};
+        await Promise.all(
+          list.map(async (item) => {
+            if (!item.userId || !item.dogId) return;
+            const key = `${item.userId}_${item.dogId}`;
+            if (dogMap[key]) return;
+            try {
+              const dog = await getDog(item.userId, item.dogId);
+              if (dog) {
+                dogMap[key] = dog;
+              }
+            } catch (dogErr) {
+              console.warn('[DesignerQuoteCheckPage] 강아지 정보 로드 실패(무시 가능):', dogErr);
+            }
+          })
+        );
+
+        const enhancedList = list.map((item) => {
+          const key = item.userId && item.dogId ? `${item.userId}_${item.dogId}` : null;
+          const dogProfile = key ? dogMap[key] || null : null;
+          return { ...item, dogProfile };
         });
 
-        setQuotes(list);
+        console.log('[DesignerQuoteCheckPage] 데이터 로드 완료 (상태별 정렬됨):', {
+          totalCount: enhancedList.length,
+          statuses: enhancedList.map(l => ({ id: l.id, status: l.status }))
+        });
+
+        setQuotes(enhancedList);
       } catch (e) {
         console.error('견적 요청 로드 실패:', e);
         setError('견적 요청을 불러오지 못했습니다.');
@@ -96,25 +123,75 @@ export default function DesignerQuoteCheckPage() {
     };
   }, [user, customerUserId, fromRoomId, navigate]);
 
-  const filteredCards = quotes; // 필터 로직은 추후 확장
+  const filteredCards = (() => {
+    let list = [...quotes];
+
+    if (filter === 'tag') {
+      list.sort((a, b) => (b.dogTags?.length || 0) - (a.dogTags?.length || 0));
+    } else if (filter === 'price') {
+      list.sort((a, b) => {
+        const aPrice = typeof a.price === 'number' ? a.price : Number.POSITIVE_INFINITY;
+        const bPrice = typeof b.price === 'number' ? b.price : Number.POSITIVE_INFINITY;
+        return aPrice - bPrice;
+      });
+    } else if (filter === 'location') {
+      const order = { '샵': 0, '집': 1 };
+      list.sort((a, b) => {
+        const aKey = a.knowledge || '';
+        const bKey = b.knowledge || '';
+        const aRank = order[aKey] ?? 99;
+        const bRank = order[bKey] ?? 99;
+        if (aRank !== bRank) return aRank - bRank;
+        return aKey.localeCompare(bKey);
+      });
+    }
+
+    return list;
+  })();
 
   return (
     <div className="designer-page">
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
+        <DesignerHeaderBrand />
         <h1>{customerUserId ? '고객 견적 요청' : '견적서 확인하기'}</h1>
+        <div className="designer-header-right">
+          <DesignerNotificationButton />
+        </div>
       </div>
 
       <div className="designer-content">
         <div className="dq-filter-row">
           {!customerUserId && (
-            <button
-              type="button"
-              className={`dq-filter-pill ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => setFilter('all')}
-            >
-              전체
-            </button>
+            <>
+              <button
+                type="button"
+                className={`dq-filter-pill ${filter === 'all' ? 'active' : ''}`}
+                onClick={() => setFilter('all')}
+              >
+                전체
+              </button>
+              <button
+                type="button"
+                className={`dq-filter-pill ${filter === 'tag' ? 'active' : ''}`}
+                onClick={() => setFilter('tag')}
+              >
+                태그순
+              </button>
+              <button
+                type="button"
+                className={`dq-filter-pill ${filter === 'price' ? 'active' : ''}`}
+                onClick={() => setFilter('price')}
+              >
+                가격순
+              </button>
+              <button
+                type="button"
+                className={`dq-filter-pill ${filter === 'location' ? 'active' : ''}`}
+                onClick={() => setFilter('location')}
+              >
+                위치순
+              </button>
+            </>
           )}
         </div>
 
@@ -135,6 +212,28 @@ export default function DesignerQuoteCheckPage() {
             {filteredCards.map((card) => {
               const isConfirmed = card.status === 'confirmed';
               const isResponded = card.status === 'responded';
+              const dogProfile = card.dogProfile || {};
+
+              const dogPhotoUrl =
+                card.photoUrl ||
+                dogProfile.imageUrl ||
+                dogProfile.photoUrl ||
+                '';
+
+              const healthInfo = dogProfile.healthInfo || {};
+              const vaccinationInfo = dogProfile.vaccinationInfo || {};
+
+              const skinSensitivityLabel = healthInfo.skinSensitivity || '';
+              const skinDiseaseLabel = healthInfo.skinDisease || '';
+              const bitingLabel = healthInfo.biting || '';
+              const healthNotesLabel = healthInfo.notes || '';
+
+              const vaccinations = [];
+              if (vaccinationInfo.combo) vaccinations.push('종합백신');
+              if (vaccinationInfo.rabies) vaccinations.push('광견병');
+              if (vaccinationInfo.kennelCough) vaccinations.push('켄넬코프');
+              if (vaccinationInfo.influenza) vaccinations.push('신종인플루엔자');
+              if (vaccinationInfo.corona) vaccinations.push('코로나');
               
               console.log(`[DesignerQuoteCheckPage] 카드 ${card.id}:`, {
                 status: card.status,
@@ -163,20 +262,60 @@ export default function DesignerQuoteCheckPage() {
                 >
                 <p className="dq-card-title">
                   {card.dogName || '반려견'}
-                  {card.breed ? ` | ${card.breed}` : ''}
-                  {card.weight ? ` | ${card.weight}kg` : ''}
+                  {(card.breed || dogProfile.breed) ? ` | ${card.breed || dogProfile.breed}` : ''}
+                  {(card.weight || dogProfile.weight) ? ` | ${(card.weight || dogProfile.weight)}kg` : ''}
+                  {dogProfile.age ? ` | ${dogProfile.age}살` : ''}
                 </p>
 
                 <div className="dq-card-main">
+                  <div className="dq-card-images">
+                    <div className="dq-dog-img main">
+                      {dogPhotoUrl ? (
+                        <img src={dogPhotoUrl} alt={card.dogName || '반려견 사진'} />
+                      ) : (
+                        <span role="img" aria-hidden="true">🐶</span>
+                      )}
+                    </div>
+                    <div className="dq-dog-img sub">
+                      {dogPhotoUrl ? (
+                        <img src={dogPhotoUrl} alt={card.dogName || '반려견 사진'} />
+                      ) : (
+                        <span role="img" aria-hidden="true">🐶</span>
+                      )}
+                    </div>
+                  </div>
                   <div className="dq-card-text-group">
+                    <p><span className="label">피부 민감도:</span> {skinSensitivityLabel || '정보 없음'}</p>
+                    <p><span className="label">피부 질환 :</span> {skinDiseaseLabel || '없음'}</p>
+                    <p><span className="label">입질 여부:</span> {bitingLabel || '정보 없음'}</p>
+                    <p><span className="label">기타 지병 및 주의사항:</span> {healthNotesLabel || '없음'}</p>
+                    <p><span className="label">예방 접종:</span> {vaccinations.length > 0 ? vaccinations.join(', ') : '정보 없음'}</p>
                     <p><span className="label">미용 진행 장소:</span> {card.knowledge || '-'}</p>
                     <p><span className="label">미용 방식:</span> {card.groomingStyle || '-'}</p>
                     <p><span className="label">희망 일정:</span> {card.preferredDate || '-'} {card.preferredTime || ''}</p>
                     <p><span className="label">강아지 태그:</span> {(card.dogTags || []).join(', ') || '-'}</p>
                     <p><span className="label">추가 사항:</span> {(card.additionalOptions || []).join(', ') || '-'}</p>
+                  </div>
+                </div>
+
+                {(card.dogTags && card.dogTags.length > 0) && (
+                  <div className="dq-tag-row">
+                    {card.dogTags.map((tag) => (
+                      <span key={tag} className="dq-tag-pill">{tag}</span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="dq-bottom-info">
+                  <div className="dq-bottom-text">
                     {isResponded && card.lastQuotedAt && (
-                      <p style={{ fontSize: '12px', color: '#666', marginTop: '8px', borderTop: '1px solid #eee', paddingTop: '8px' }}>
+                      <p>
                         <span className="label">보낸 시간:</span> {new Date(card.lastQuotedAt.toMillis()).toLocaleString('ko-KR')}
+                      </p>
+                    )}
+                    {card.price && (
+                      <p>
+                        <span className="label">제안 금액:</span> {card.price.toLocaleString('ko-KR')}원
                       </p>
                     )}
                   </div>

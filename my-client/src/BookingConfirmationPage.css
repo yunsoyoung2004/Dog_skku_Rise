@@ -10,6 +10,7 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  animation: page-zoom-in var(--anim-duration-page) var(--anim-ease-smooth);
 }
 
 .confirmation-header {
@@ -54,6 +55,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  animation: card-pop var(--anim-duration-medium) var(--anim-ease-bouncy);
+  position: relative;
+  overflow: hidden;
 }
 
 .success-icon {
@@ -67,6 +71,7 @@
   border-radius: 50%;
   background-color: #f0c8d8;
   line-height: 1;
+  animation: card-float 2.2s ease-in-out infinite;
 }
 
 .success-box h2 {

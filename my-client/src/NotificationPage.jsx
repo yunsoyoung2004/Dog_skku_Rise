@@ -136,7 +136,7 @@ export default function NotificationPage() {
   };
 
   return (
-    <PageLayout title="알림">
+    <PageLayout title="알림" homePath="/dashboard">
       <div className="notification-page" data-node-id="notification-page">
         {/* Notifications Container */}
         <div className="notification-container">
@@ -173,8 +173,14 @@ export default function NotificationPage() {
                     // 예약 확정 알림은 연결된 채팅방으로 이동
                     navigate(`/chat/${notif.chatRoomId}`);
                   } else if (notif.type === 'quote') {
-                    // 견적 알림은 견적 알림 전용 페이지로 이동
-                    navigate('/quote-alerts');
+                    // 견적 알림: 디자이너/고객 역할에 따라 분기
+                    // - 디자이너: quoteRequestId 가 있는 견적 요청 알림 → 디자이너 견적 확인 화면
+                    // - 고객: 디자이너가 보낸 견적 알림(quoteId) → 고객용 견적 알림 목록
+                    if (notif.quoteRequestId) {
+                      navigate('/designer-quotes-check');
+                    } else {
+                      navigate('/quote-alerts');
+                    }
                   } else if (notif.chatRoomId) {
                     // 그 외 채팅방이 연결된 알림은 해당 채팅방으로 이동
                     navigate(`/chat/${notif.chatRoomId}`);

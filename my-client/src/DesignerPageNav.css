@@ -15,7 +15,7 @@
 
 .designer-page-header {
   background-color: #ffffff;
-  padding: 12px 14px;
+  padding: 16px;
   border-bottom: 1px solid #e0e0e0;
   position: sticky;
   top: 0;
@@ -24,18 +24,20 @@
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
-  height: 56px;
   box-sizing: border-box;
 }
 
 .designer-page-header button {
   background: none;
   border: none;
-  font-size: 18px;
   cursor: pointer;
-  padding: 8px;
+  padding: 0;
   color: #222;
   transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
 }
 
 .designer-page-header button:active {
@@ -44,34 +46,69 @@
 
 .designer-page-header h1 {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
-  flex: 1;
-}
-
-.designer-header-notification {
-  position: relative;
-  border: none;
-  background: none;
-  padding: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: all 0.3s ease;
-}
-
-.designer-header-notification:hover {
   color: #222;
 }
 
-.designer-header-notification svg {
-  width: 22px;
-  height: 22px;
+.designer-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
 }
 
-.designer-notification-badge {
+.designer-header-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.designer-header-title {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0;
+  color: #222;
+  font-family: 'Paperlogy', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  display: none;
+}
+
+.designer-header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.designer-header-notification-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #222;
+  padding: 0;
+  transition: opacity 0.2s ease;
+}
+
+.designer-header-notification-btn:active {
+  opacity: 0.6;
+}
+
+.designer-header-notification-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.designer-header-notification-badge {
   position: absolute;
   top: 2px;
   right: 2px;
@@ -84,7 +121,31 @@
   line-height: 14px;
   text-align: center;
   padding: 0 3px;
+}
+}
+
+.designer-header-notification-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+}
+
+.designer-header-notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+  color: #ffffff;
+  border-radius: 999px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
   font-weight: 600;
+  box-shadow: 0 2px 6px rgba(255, 107, 107, 0.35);
 }
 
 .designer-content {

@@ -6,6 +6,8 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { uploadDesignerProfileImage, upsertDesignerPublicProfile } from './services';
 import './DesignerPageNav.css';
 import './DesignerPortfolioPage.css';
+import DesignerNotificationButton from './components/DesignerNotificationButton';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 export default function DesignerPortfolioPage() {
   const navigate = useNavigate();
@@ -124,16 +126,12 @@ export default function DesignerPortfolioPage() {
 
   return (
     <div className="designer-page">
-      <AlertModal
-        isOpen={!!alert}
-        title={alert?.title}
-        text={alert?.text}
-        primaryButtonText="확인"
-        onPrimaryClick={() => setAlert(null)}
-      />
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
+        <DesignerHeaderBrand />
         <h1>포트폴리오</h1>
+        <div className="designer-header-right">
+          <DesignerNotificationButton />
+        </div>
       </div>
 
       <div className="designer-content designer-portfolio-page">

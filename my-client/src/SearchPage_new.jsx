@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './SearchPage.css';
 
-const imgSearch = "/vite.svg";
+const imgSearch = "/dog-logo.png";
 
 const TEMP_DESIGNERS = [
   {

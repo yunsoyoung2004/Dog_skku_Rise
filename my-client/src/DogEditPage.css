@@ -11,6 +11,7 @@
   flex-direction: column;
   box-sizing: border-box;
   margin: 0 auto;
+  animation: page-fade-up var(--anim-duration-page) var(--anim-ease-smooth);
 }
 
 .dog-edit-header {

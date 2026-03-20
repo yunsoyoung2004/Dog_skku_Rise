@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import './DesignerPageNav.css';
 import './DesignerAnnouncementsPage.css';
+import DesignerNotificationButton from './components/DesignerNotificationButton';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 export default function DesignerAnnouncementsPage() {
   const navigate = useNavigate();
@@ -8,8 +10,11 @@ export default function DesignerAnnouncementsPage() {
   return (
     <div className="designer-page">
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
+        <DesignerHeaderBrand />
         <h1>공지사항 및 이벤트</h1>
+        <div className="designer-header-right">
+          <DesignerNotificationButton />
+        </div>
       </div>
 
       <div className="designer-content designer-announcements-page">

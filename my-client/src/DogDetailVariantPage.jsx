@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DogDetailVariantPage.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "/dog-logo.png";
 
 export default function DogDetailVariantPage() {
   const navigate = useNavigate();

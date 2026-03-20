@@ -5,6 +5,8 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import './DesignerPageNav.css';
 import './DesignerSchedulePage.css';
+import DesignerNotificationButton from './components/DesignerNotificationButton';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 export default function DesignerSchedulePage() {
   const navigate = useNavigate();
@@ -84,8 +86,11 @@ export default function DesignerSchedulePage() {
   return (
     <div className="designer-page">
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
-        <h1>일정</h1>
+        <DesignerHeaderBrand />
+        <h1>스케줄 관리</h1>
+        <div className="designer-header-right">
+          <DesignerNotificationButton />
+        </div>
       </div>
 
       <div className="designer-content">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, getDocs } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -7,8 +7,25 @@ import { getGroomingStats, getAllDesigners, getUserQuotes, getUserQuoteRequestsC
 import PageLayout from './PageLayout';
 import './DashboardPage.css';
 
-// Figma에서 사용하던 원래 TOP 카드 이미지
-const topCardImage = '/vite.svg';
+// TOP 카드 이미지들 (Figma 디자인 슬라이드)
+const TOP_CARD_SLIDES = [
+  {
+    image: 'https://www.figma.com/api/mcp/asset/8f30f6b9-6d45-47eb-a2db-c89304abb3bf',
+    title: ['예민견 미용샵', 'TOP 5'],
+    subtitle: '가장 전문적인 샵을 만나보세요',
+    cardClassName: 'dashboard-top-card-slide-primary',
+    imageClassName: 'dashboard-top-card-image-primary',
+  },
+  {
+    image: 'https://www.figma.com/api/mcp/asset/c65bdfa2-7f2b-4ea6-9eda-a8dad37701c4',
+    title: ['예민견 미용샵', 'TOP 5'],
+    subtitle: '가장 전문적인 샵을 만나보세요',
+    cardClassName: 'dashboard-top-card-slide-secondary',
+    imageClassName: 'dashboard-top-card-image-secondary',
+  },
+];
+
+const TOP_CARD_DEFAULT_IMAGE = TOP_CARD_SLIDES[0].image;
 
 // 지역/구/동 정보 (LocationSelectModal과 동일 구조)
 const locations = {
@@ -115,12 +132,15 @@ export default function DashboardPage() {
     district: '역삼동',
   });
   const [bannerIndex, setBannerIndex] = useState(0); // 0: 프로모션 배너, 1: 지역 선택 배너
+  const [topImageIndex, setTopImageIndex] = useState(0); // TOP 카드 내 이미지 슬라이드 인덱스
   const [currentRegion, setCurrentRegion] = useState('서울');
   const [currentZone, setCurrentZone] = useState('강남구');
   const [currentDistrict, setCurrentDistrict] = useState('강남');
   const [nearbyDesignerCount, setNearbyDesignerCount] = useState(0);
   const [sentQuoteCount, setSentQuoteCount] = useState(0);
   const [receivedQuoteCount, setReceivedQuoteCount] = useState(0);
+  const topCardCarouselRef = useRef(null);
+  const topCardTouchStartXRef = useRef(null);
 
   // 레이더 차트용 값 (0~100, 없으면 0)
   const radarValues = RADAR_METRICS.map((m) => {
@@ -236,8 +256,83 @@ export default function DashboardPage() {
     setBannerIndex(0);
   };
 
+  const scrollTopCardToIndex = (index) => {
+    const container = topCardCarouselRef.current;
+    if (!container) return;
+
+    const firstSlide = container.firstElementChild;
+    if (!firstSlide) return;
+
+    const gap = 16;
+    const slideWidth = firstSlide.clientWidth + gap;
+    container.scrollTo({
+      left: slideWidth * index,
+      behavior: 'smooth',
+    });
+  };
+
+  const handleTopCardScroll = (e) => {
+    const container = e.currentTarget;
+    const firstSlide = container.firstElementChild;
+    if (!firstSlide) return;
+
+    const slideGap = 12;
+    const slideWidth = firstSlide.clientWidth + slideGap;
+    if (slideWidth <= 0) return;
+
+    const nextIndex = Math.round(container.scrollLeft / slideWidth);
+    setTopImageIndex(Math.max(0, Math.min(TOP_CARD_SLIDES.length - 1, nextIndex)));
+  };
+
+  const handleTopCardTouchStart = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    topCardTouchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTopCardTouchEnd = (e) => {
+    if (topCardTouchStartXRef.current == null || !e.changedTouches || e.changedTouches.length === 0) {
+      return;
+    }
+
+    const diffX = e.changedTouches[0].clientX - topCardTouchStartXRef.current;
+    const swipeThreshold = 30;
+
+    if (Math.abs(diffX) <= swipeThreshold) {
+      topCardTouchStartXRef.current = null;
+      return;
+    }
+
+    if (diffX < 0 && topImageIndex < TOP_CARD_SLIDES.length - 1) {
+      const nextIndex = topImageIndex + 1;
+      setTopImageIndex(nextIndex);
+      scrollTopCardToIndex(nextIndex);
+    }
+
+    if (diffX > 0 && topImageIndex > 0) {
+      const nextIndex = topImageIndex - 1;
+      setTopImageIndex(nextIndex);
+      scrollTopCardToIndex(nextIndex);
+    }
+
+    topCardTouchStartXRef.current = null;
+  };
+
   return (
-    <PageLayout title="멍빗어">
+    <PageLayout
+      title="멍빗어"
+      homePath="/dashboard"
+      footer={
+        !loading && hasDogData && (
+          <button
+            type="button"
+            className="dashboard-cta-button"
+            onClick={() => navigate('/quote-detail')}
+          >
+            도착한 견적 확인하기
+          </button>
+        )
+      }
+    >
       {/* Location Section */}
       <div className="dashboard-location-section">
         <svg
@@ -260,22 +355,49 @@ export default function DashboardPage() {
       <div
         className="dashboard-top-card"
         style={bannerIndex === 1 ? { height: 'auto', minHeight: '110px' } : {}}
-        onClick={bannerIndex === 0 ? () => setBannerIndex(1) : undefined}
       >
         {bannerIndex === 0 ? (
           <>
-            <img
-              src={topCardImage}
-              alt="예민견 미용샵 TOP 5"
-              className="dashboard-top-card-image"
-            />
-            <div className="dashboard-top-card-content">
-              <h2 className="dashboard-top-card-title">
-                예민견 미용샵
-                <br />
-                TOP 5
-              </h2>
-              <p className="dashboard-top-card-subtitle">가장 전문적인 샵을 만나보세요</p>
+            <div
+              ref={topCardCarouselRef}
+              className="dashboard-top-card-carousel"
+              onScroll={handleTopCardScroll}
+              onTouchStart={handleTopCardTouchStart}
+              onTouchEnd={handleTopCardTouchEnd}
+            >
+              {TOP_CARD_SLIDES.map((slide, index) => (
+                <button
+                  key={slide.image}
+                  type="button"
+                  className={`dashboard-top-card-slide ${slide.cardClassName}`}
+                  onClick={() => setBannerIndex(1)}
+                >
+                  <img
+                    src={slide.image}
+                    alt={`예민견 미용샵 TOP 5 ${index + 1}`}
+                    className={`dashboard-top-card-image ${slide.imageClassName}`}
+                  />
+                  <div className="dashboard-top-card-content">
+                    <h2 className="dashboard-top-card-title">
+                      {slide.title[0]}
+                      <br />
+                      {slide.title[1]}
+                    </h2>
+                    <p className="dashboard-top-card-subtitle">{slide.subtitle}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="dashboard-top-card-indicators">
+              {TOP_CARD_SLIDES.map((_, index) => (
+                <span
+                  // eslint-disable-next-line react/no-array-index-key
+                  key={index}
+                  className={`dashboard-top-card-indicator-dot ${
+                    topImageIndex === index ? 'active' : ''
+                  }`}
+                />
+              ))}
             </div>
           </>
         ) : (
@@ -283,7 +405,7 @@ export default function DashboardPage() {
             className="dashboard-location-banner"
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundImage: `url(${topCardImage})`,
+              backgroundImage: `url(${TOP_CARD_DEFAULT_IMAGE})`,
               backgroundSize: 'cover',
               backgroundPosition: 'top left',
               backgroundAttachment: 'fixed',
@@ -535,7 +657,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* CTA Button: 받은 견적 확인하기 버튼 제거 (요청에 따라 삭제) */}
         </>
       ) : (
         // ===== LOCKED STATE (강아지 정보 없음) =====
@@ -569,15 +690,6 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-      )}
-      {!loading && (
-        <button
-          type="button"
-          className="dashboard-cta-button"
-          onClick={() => navigate('/quote-alerts')}
-        >
-          도착한 견적 확인하기
-        </button>
       )}
     </PageLayout>
   );

@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { createQuoteRequest, getUserDogs, sendMessage, createNotification, createOrGetChatRoom, getAllDesigners } from './services';
+import { createQuoteRequest, getUserDogs, sendMessage, createNotification, createOrGetChatRoom, getAllDesigners, uploadDogImage } from './services';
 import AlertModal from './components/AlertModal';
 import './QuoteRequestPage.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "/dog-logo.png";
 
 export default function QuoteRequestPage() {
   const navigate = useNavigate();
@@ -172,30 +172,21 @@ export default function QuoteRequestPage() {
     // 단계별 필수 값 검증
     if (step === 0) {
       if (!selectedDogId) {
-        setAlert({
-          title: '강아지 선택',
-          text: '단계별 필수 값 검증'
-        });
+        alert('어떤 강아지에 대한 미용인지 선택해 주세요.');
         return;
       }
     }
 
     if (step === 1) {
       if (!quoteData.knowledge) {
-        setAlert({
-          title: '미용 장소 선택',
-          text: '미용 진행 장소를 선택해 주세요.'
-        });
+        alert('미용 진행 장소를 선택해 주세요.');
         return;
       }
     }
 
     if (step === 2) {
       if (!quoteData.groomingStyle) {
-        setAlert({
-          title: '미용 방식 선택',
-          text: '원하시는 미용 방식을 선택해 주세요.'
-        });
+        alert('원하시는 미용 방식을 선택해 주세요.');
         return;
       }
     }
@@ -207,35 +198,24 @@ export default function QuoteRequestPage() {
 
   const handleSubmit = async () => {
     if (!user) {
-      setAlert({
-        title: '로그인 필요',
-        text: '로그인이 필요합니다.'
-      });
+      alert('로그인이 필요합니다.');
+      navigate('/login');
       return;
     }
 
     if (!selectedDogId) {
-      setAlert({
-        title: '강아지 선택',
-        text: '강아지를 선택해주세요'
-      });
+      alert('강아지를 선택해주세요');
       return;
     }
 
     // 희망 일정 필수 입력 및 오늘 이후 날짜만 허용
     if (!quoteData.preferredDate) {
-      setAlert({
-        title: '일자 선택',
-        text: '희망 일자를 선택해 주세요.'
-      });
+      alert('희망 일자를 선택해 주세요.');
       return;
     }
 
     if (!quoteData.preferredTime) {
-      setAlert({
-        title: '시간 선택',
-        text: '희망 시간을 선택해 주세요.'
-      });
+      alert('희망 시간을 선택해 주세요.');
       return;
     }
 
@@ -243,10 +223,7 @@ export default function QuoteRequestPage() {
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(quoteData.preferredDate);
     if (selectedDate < today) {
-      setAlert({
-        title: '날짜 오류',
-        text: '오늘 이후 날짜만 선택할 수 있어요.'
-      });
+      alert('오늘 이후 날짜만 선택할 수 있어요.');
       return;
     }
 
@@ -270,6 +247,19 @@ export default function QuoteRequestPage() {
         weight: selectedDog.weight,
       });
 
+      // 사진이 등록된 경우, 강아지 이미지로 업로드 후 URL을 quoteData에 포함
+      let extendedQuoteData = { ...quoteData };
+      if (photoFile) {
+        try {
+          const uploadResult = await uploadDogImage(user.uid, selectedDogId, photoFile);
+          if (uploadResult?.success && uploadResult.url) {
+            extendedQuoteData = { ...extendedQuoteData, photoUrl: uploadResult.url };
+          }
+        } catch (imgErr) {
+          console.warn('견적 요청용 사진 업로드 실패(무시 가능):', imgErr);
+        }
+      }
+
       // 공통 payload 구성
       const basePayload = {
         dogId: selectedDogId,
@@ -278,7 +268,7 @@ export default function QuoteRequestPage() {
         weight: selectedDog.weight,
         // 채팅에서 온 경우, 해당 채팅방 ID를 함께 저장해 이후 견적/예약과 연결
         roomId: roomId || '',
-        quoteData: quoteData,
+        quoteData: extendedQuoteData,
       };
 
       if (designerId) {
@@ -404,10 +394,7 @@ export default function QuoteRequestPage() {
 
         if (!Array.isArray(designers) || designers.length === 0) {
           console.warn('⚠️ 견적을 보낼 디자이너가 없습니다.');
-          setAlert({
-            title: '디자이너 부재',
-            text: '현재 견적을 받을 수 있는 디자이너가 없습니다.'
-          });
+          alert('현재 견적을 받을 수 있는 디자이너가 없습니다.');
         } else {
           const nowIso = new Date().toISOString();
           const tasks = designers.map(async (d) => {
@@ -462,11 +449,8 @@ export default function QuoteRequestPage() {
         }
       }
     } catch (err) {
-      console.error('� 견적 요청 실패:', err);
-      setAlert({
-        title: '연라 발생',
-        text: '견적 요청에 실패했습니다'
-      });
+      console.error('👹 견적 요청 실패:', err);
+      alert('견적 요청에 실패했습니다');
     } finally {
       setLoading(false);
     }
@@ -483,13 +467,6 @@ export default function QuoteRequestPage() {
 
   return (
     <div className="quote-request-page">
-      <AlertModal
-        isOpen={!!alert}
-        title={alert?.title}
-        text={alert?.text}
-        primaryButtonText="확인"
-        onPrimaryClick={() => setAlert(null)}
-      />
       {/* Header */}
       <div className="quote-request-header">
         <div className="quote-request-logo">

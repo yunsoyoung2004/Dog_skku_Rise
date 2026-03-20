@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from './firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import AlertModal from './components/AlertModal';
+import { auth } from './firebase';
 import './DesignerPageNav.css';
 import './DesignerAnalyticsPage.css';
+import DesignerNotificationButton from './components/DesignerNotificationButton';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 const styles = `
 .designer-page {
@@ -117,64 +117,21 @@ const styles = `
 export default function DesignerAnalyticsPage() {
   const navigate = useNavigate();
   const [user] = useAuthState(auth);
-  const [alert, setAlert] = useState(null);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
       navigate('/designer-login');
-      return;
     }
-    // 디자이너 알림 갯수 로드
-    const loadNotifications = async () => {
-      try {
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        setUnreadNotificationCount(userSnap.data()?.unreadNotificationCount || 0);
-      } catch (e) {
-        console.warn('디자이너 알림을 로드 실패:', e);
-      }
-    };
-    loadNotifications();
   }, [user, navigate]);
 
   return (
     <div className="designer-page">
-      <AlertModal
-        isOpen={!!alert}
-        title={alert?.title}
-        text={alert?.text}
-        primaryButtonText="확인"
-        onPrimaryClick={() => setAlert(null)}
-      />
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
+        <DesignerHeaderBrand />
         <h1>통계</h1>
-        <button
-          type="button"
-          className="designer-header-notification"
-          onClick={() => navigate('/notification')}
-          aria-label="알림"
-        >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M18 8a6 6 0 0 0-12 0c0 5-2 7-2 7h16s-2-2-2-7" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          {unreadNotificationCount > 0 && (
-            <span className="designer-notification-badge">
-              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-            </span>
-          )}
-        </button>
+        <div className="designer-header-right">
+          <DesignerNotificationButton />
+        </div>
       </div>
 
       <div className="designer-content">

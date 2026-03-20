@@ -147,8 +147,8 @@
 }
 
 .designer-login-button {
-  width: 235px;
-  height: 39px;
+  width: 220px;
+  height: 34px;
   background-color: var(--color-primary-dark);
   border: none;
   border-radius: 5px;
@@ -159,16 +159,12 @@
   justify-content: center;
   position: relative;
   transition: all 0.3s ease;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .designer-login-button:hover:not(:disabled) {
   background-color: #1a1a1a;
   box-shadow: 3px 7px 35px 0px rgba(196, 196, 196, 0.9);
-}
-
-.designer-login-button:active:not(:disabled) {
-  transform: translateY(1px);
 }
 
 .designer-login-button:disabled {

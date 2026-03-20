@@ -360,7 +360,7 @@ export default function ChatConversationPage() {
 
   if (error || !room) {
     return (
-      <PageLayout title="채팅">
+      <PageLayout title="채팅" homePath="/dashboard">
         <div className="dc-content">
           <p style={{ textAlign: 'center', color: '#999', marginTop: '20px' }}>
             🔒 {error || '채팅방 정보가 없습니다.'}
@@ -390,6 +390,7 @@ export default function ChatConversationPage() {
       />
       <PageLayout 
         title={title}
+        homePath="/dashboard"
         customHeader={
           <div style={{
             display: 'flex',

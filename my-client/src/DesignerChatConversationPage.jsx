@@ -7,7 +7,7 @@ import { sendMessage, createNotification } from './services';
 import AlertModal from './components/AlertModal';
 import './DesignerChatConversationPage.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "/dog-logo.png";
 
 export default function DesignerChatConversationPage() {
   const navigate = useNavigate();
@@ -336,32 +336,10 @@ export default function DesignerChatConversationPage() {
       <div className="designer-page">
         <div className="designer-page-header">
           <button onClick={() => navigate(-1)}>←</button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-            <img 
-              src={logoImg} 
-              alt="멍빗어" 
-              style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} 
-            />
-            <h1>{room.userName || room.roomName || room.title || '채팅'}</h1>
-          </div>
-          <button 
-            className="dc-notification-btn"
-            onClick={() => {
-            console.log('🔔 알림 페이지 열기', new Date().toLocaleString('ko-KR'));
-            navigate('/notification');
-          }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          {unreadNotificationCount > 0 && (
-            <span className="dc-notification-badge">
-              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-            </span>
-          )}
-        </button>
-      </div>
+          <h1 style={{ textAlign: 'center' }}>
+            {room.userName || room.roomName || room.title || '채팅'}
+          </h1>
+        </div>
 
       <div className="dc-content" ref={scrollContainerRef}>
         {/* 견적 진행 상태 배너 (디자이너 뷰) */}

@@ -6,6 +6,7 @@
   align-items: center;
   padding: 40px 24px 24px;
   box-sizing: border-box;
+  animation: page-zoom-in var(--anim-duration-page) var(--anim-ease-smooth);
 }
 
 .success-header {

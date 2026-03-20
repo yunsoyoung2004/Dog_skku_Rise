@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import './ChatVariant1Page.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "/dog-logo.png";
 
 export default function ChatVariant1Page() {
   const navigate = useNavigate();

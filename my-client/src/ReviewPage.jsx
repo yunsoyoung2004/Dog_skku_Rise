@@ -5,7 +5,7 @@ import { auth } from './firebase';
 import { createReview, createNotification, updateBookingHasReview } from './services';
 import './ReviewPage.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "/dog-logo.png";
 
 export default function ReviewPage() {
   const navigate = useNavigate();

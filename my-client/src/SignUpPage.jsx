@@ -1,12 +1,12 @@
+import './DesignerLoginPage.css';
 import './SignUpPage.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import AlertModal from './components/AlertModal';
 
-const img2 = "/vite.svg";
+const img2 = "/dog-logo.png";
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -20,7 +20,6 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [alert, setAlert] = useState(null);
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -89,11 +88,8 @@ export default function SignUpPage() {
       });
 
       console.log('✅ 회원가입 성공:', user.email);
-      setAlert({
-        title: '회원가입 완료',
-        text: '회원가입이 완료되었습니다!'
-      });
-      setTimeout(() => navigate('/'), 1500);
+      alert('회원가입이 완료되었습니다!');
+      navigate('/');
     } catch (err) {
       console.error('❌ 회원가입 실패:', err.code, err.message);
       if (err.code === 'auth/email-already-in-use') {
@@ -111,135 +107,116 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="signup-page" data-name="회원가입" data-node-id="405:3339">
-      <AlertModal
-        isOpen={!!alert}
-        title={alert?.title}
-        text={alert?.text}
-        primaryButtonText="확인"
-        onPrimaryClick={() => setAlert(null)}
-      />
-      {/* 로고 */}
+    <div className="designer-login-page signup-page" data-name="회원가입" data-node-id="405:3339">
+      {/* 로고 - 디자이너 로그인과 동일 스타일 */}
       <button 
-        className="signup-logo-container signup-logo-button"
+        className="designer-login-logo-container designer-login-logo-button"
         onClick={() => navigate('/')}
         title="로그인페이지로 돌아가기"
         data-node-id="405:3396"
       >
-        <img alt="멍빗어 로고" className="signup-logo-img" src={img2} />
+        <img alt="멍빗어 로고" className="designer-login-logo-img" src={img2} />
       </button>
 
-      {/* 인사말 */}
-      <div className="signup-greeting" data-node-id="405:3421">
+      {/* 인사말 - 텍스트만 사용자용으로, 스타일은 동일 */}
+      <div className="designer-login-greeting" data-node-id="405:3421">
         <p>안녕하세요,</p>
         <p>멍빗어 입니다.</p>
       </div>
 
       {/* 에러 메시지 */}
-      {error && <p className="signup-error">{error}</p>}
+      {error && <p className="designer-login-error">{error}</p>}
 
-      {/* 닉네임 입력 */}
-      <div className="signup-input-box" data-node-id="405:3393">
-        <label className="signup-label" data-node-id="405:3398">닉네임</label>
+      {/* 입력 폼 배경 - 디자이너 회원가입과 동일 박스 */}
+      <div className="designer-login-form-bg">
+        <label className="designer-login-label">닉네임</label>
         <input 
           type="text" 
-          className="signup-input"
+          className="designer-login-input"
           name="nickname"
           placeholder="닉네임을 입력해주세요"
           value={formData.nickname}
           onChange={handleInputChange}
           disabled={loading}
         />
-      </div>
 
-      {/* 이메일 입력 */}
-      <div className="signup-input-box" data-node-id="405:3400">
-        <label className="signup-label" data-node-id="405:3402">이메일</label>
+        <label className="designer-login-label">이메일</label>
         <input 
           type="email" 
-          className="signup-input"
+          className="designer-login-input"
           name="email"
           placeholder="example@email.com"
           value={formData.email}
           onChange={handleInputChange}
           disabled={loading}
         />
-      </div>
 
-      {/* 비밀번호 입력 */}
-      <div className="signup-input-box" data-node-id="405:3403">
-        <label className="signup-label" data-node-id="405:3405">비밀번호</label>
+        <label className="designer-login-label">비밀번호</label>
         <input 
           type="password" 
-          className="signup-input"
+          className="designer-login-input"
           name="password"
           placeholder="6자 이상 입력해주세요"
           value={formData.password}
           onChange={handleInputChange}
           disabled={loading}
         />
-      </div>
 
-      {/* 비밀번호 재확인 */}
-      <div className="signup-input-box" data-node-id="405:3406">
-        <label className="signup-label" data-node-id="405:3408">비밀번호 재확인</label>
+        <label className="designer-login-label">비밀번호 재확인</label>
         <input 
           type="password" 
-          className="signup-input"
+          className="designer-login-input"
           name="passwordConfirm"
           placeholder="비밀번호를 다시 입력해주세요"
           value={formData.passwordConfirm}
           onChange={handleInputChange}
           disabled={loading}
         />
-      </div>
 
-      {/* 전화번호 입력 */}
-      <div className="signup-input-box" data-node-id="405:3409">
-        <label className="signup-label" data-node-id="405:3411">전화번호</label>
+        <label className="designer-login-label">전화번호</label>
         <input 
           type="tel" 
-          className="signup-input"
+          className="designer-login-input"
           name="phone"
           placeholder="010-1234-5678"
           value={formData.phone}
           onChange={handleInputChange}
           disabled={loading}
         />
+
+        {/* 약관 동의 - 내부 텍스트 그대로, 폰트/색은 signup CSS가 약간만 보정 */}
+        <label className="signup-terms-label">
+          <input 
+            type="checkbox" 
+            id="terms-agree"
+            className="signup-terms-input"
+            name="termsAgreed"
+            checked={formData.termsAgreed}
+            onChange={handleInputChange}
+          />
+          <div className="signup-terms-checkbox"></div>
+          <span>
+            <button 
+              type="button"
+              className="signup-terms-link"
+              onClick={() => setShowTermsModal(true)}
+            >
+              이용약관
+            </button>
+            에 모두 동의합니다.
+          </span>
+        </label>
       </div>
 
-      {/* 약관 동의 */}
-      <label className="signup-terms-label">
-        <input 
-          type="checkbox" 
-          id="terms-agree"
-          className="signup-terms-input"
-          name="termsAgreed"
-          checked={formData.termsAgreed}
-          onChange={handleInputChange}
-        />
-        <div className="signup-terms-checkbox"></div>
-        <span>
-          <button 
-            type="button"
-            className="signup-terms-link"
-            onClick={() => setShowTermsModal(true)}
-          >
-            이용약관
-          </button>
-          에 모두 동의합니다.
-        </span>
-      </label>
-
-      {/* 다음 버튼 */}
-      <div className="signup-button-container" data-node-id="405:3395">
+      {/* 가입 버튼 - 디자이너와 동일 규격 */}
+      <div className="designer-login-button-container" data-node-id="405:3395">
         <button 
-          className="signup-button" 
+          className="designer-login-button" 
           onClick={handleSignUp} 
           disabled={loading}
           data-node-id="405:3386"
         >
-          <p className="signup-button-text" data-node-id="405:3388">
+          <p className="designer-login-button-text" data-node-id="405:3388">
             {loading ? '가입 중...' : '가입'}
           </p>
         </button>

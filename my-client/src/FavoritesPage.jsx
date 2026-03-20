@@ -5,7 +5,7 @@ import { auth } from './firebase';
 import { getUserFavorites, removeFavorite } from './services';
 import './FavoritesPage.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "/dog-logo.png";
 
 export default function FavoritesPage() {
   const navigate = useNavigate();

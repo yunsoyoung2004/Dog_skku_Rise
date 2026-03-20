@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from './firebase';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getUserQuoteRequests } from './services';
 import './PageLayout.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "https://www.figma.com/api/mcp/asset/3536782b-2696-4419-ba6a-95a020af5338";
 
-export default function PageLayout({ title, children, customHeader }) {
+export default function PageLayout({ title, children, customHeader, homePath, footer }) {
   const navigate = useNavigate();
   const [user] = useAuthState(auth);
   const [quoteCount, setQuoteCount] = useState(0);
@@ -57,14 +57,19 @@ export default function PageLayout({ title, children, customHeader }) {
       return;
     }
 
-    // 사용자 문서에서 unreadNotificationCount 실시간 감시
-    const userRef = doc(db, 'users', user.uid);
-    const unsubscribe = onSnapshot(userRef, (doc) => {
-      const count = doc.data()?.unreadNotificationCount || 0;
-      setUnreadNotificationCount(count);
-    }, (error) => {
-      console.warn('알림 수 로드 실패:', error);
-    });
+    // 알림 서브컬렉션에서 isRead=false 인 문서 수를 실시간으로 집계
+    const notificationsRef = collection(db, `users/${user.uid}/notifications`);
+    const q = query(notificationsRef, where('isRead', '==', false));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setUnreadNotificationCount(snapshot.size || 0);
+      },
+      (error) => {
+        console.warn('알림 수 로드 실패:', error);
+      }
+    );
 
     return () => unsubscribe();
   }, [user]);
@@ -78,7 +83,7 @@ export default function PageLayout({ title, children, customHeader }) {
         <div className="page-layout-header">
           <div
             className="page-layout-header-main"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(homePath || '/dashboard')}
           >
             <img src={logoImg} alt="멍빗어 로고" className="page-layout-logo" />
             <h1 className="page-layout-title">{title}</h1>
@@ -115,6 +120,13 @@ export default function PageLayout({ title, children, customHeader }) {
       <div className="page-layout-content">
         {children}
       </div>
+
+      {/* Optional footer area (e.g. CTA above bottom nav) */}
+      {footer && (
+        <div className="page-layout-footer">
+          {footer}
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       <div className="page-layout-bottom-nav">

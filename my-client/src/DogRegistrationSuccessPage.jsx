@@ -10,7 +10,7 @@ export default function DogRegistrationSuccessPage() {
   };
 
   return (
-    <PageLayout title="멍빗어">
+    <PageLayout title="멍빗어" homePath="/dashboard">
       <div className="dog-registration-success-page" data-node-id="503:1293">
         {/* Content */}
         <div className="success-content">

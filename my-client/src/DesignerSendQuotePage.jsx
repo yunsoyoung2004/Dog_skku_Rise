@@ -7,6 +7,7 @@ import { sendDesignerQuote, sendMessage, createOrGetChatRoom, createNotification
 import AlertModal from './components/AlertModal';
 import './DesignerPageNav.css';
 import './DesignerSendQuotePage.css';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 export default function DesignerSendQuotePage() {
   const navigate = useNavigate();
@@ -203,7 +204,7 @@ export default function DesignerSendQuotePage() {
       />
 
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
+        <DesignerHeaderBrand />
         <h1>{isEdit ? '견적 수정하기' : '견적서 보내기'}</h1>
       </div>
 

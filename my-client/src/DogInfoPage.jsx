@@ -5,7 +5,7 @@ import { auth } from './firebase';
 import { getUserProfile } from './services';
 import './DogInfoPage.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "/dog-logo.png";
 
 export default function DogInfoPage() {
   const navigate = useNavigate();

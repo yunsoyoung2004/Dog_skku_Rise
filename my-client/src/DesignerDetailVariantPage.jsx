@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import './DesignerDetailVariantPage.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "/dog-logo.png";
 
 export default function DesignerDetailVariantPage() {
   const navigate = useNavigate();

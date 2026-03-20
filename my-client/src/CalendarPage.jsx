@@ -5,7 +5,7 @@ import { auth } from './firebase';
 import { createBooking } from './services';
 import './CalendarPage.css';
 
-const logoImg = "/vite.svg";
+const logoImg = "/dog-logo.png";
 
 export default function CalendarPage() {
   const navigate = useNavigate();

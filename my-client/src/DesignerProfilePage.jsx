@@ -4,9 +4,11 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import AlertModal from './components/AlertModal';
 import './DesignerPageNav.css';
 import './DesignerProfilePage.css';
+import DesignerNotificationButton from './components/DesignerNotificationButton';
+import AlertModal from './components/AlertModal';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 export default function DesignerProfilePage() {
   const navigate = useNavigate();
@@ -21,8 +23,7 @@ export default function DesignerProfilePage() {
     priceMax: 0
   });
   const [loading, setLoading] = useState(false);
-  const [alert, setAlert] = useState(null);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -37,43 +38,39 @@ export default function DesignerProfilePage() {
       const userRef = doc(db, 'users', user.uid);
       const snap = await getDoc(userRef);
       if (snap.exists()) {
-        const data = snap.data();
-        setProfile(data);
-        // 디자이너 알림 갯수 로드
-        setUnreadNotificationCount(data?.unreadNotificationCount || 0);
+        setProfile(snap.data());
       }
     } catch (err) {
       console.error('프로필 로드 실패:', err);
-      setAlert({
-        title: '프로필 로드 실패',
-        text: '프로필 정보를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
-      });
     }
   };
 
-  const handleLogout = async () => {
-    if (window.confirm('로그아웃 하시겠습니까?')) {
-      try {
-        await signOut(auth);
-        navigate('/designer-login');
-      } catch (err) {
-        console.error('로그아웃 실패:', err);
-      }
+  const handleLogoutClick = () => {
+    setLogoutModalOpen(true);
+  };
+
+  const confirmLogout = async () => {
+    try {
+      setLoading(true);
+      await signOut(auth);
+      setLogoutModalOpen(false);
+      navigate('/designer-login');
+    } catch (err) {
+      console.error('로그아웃 실패:', err);
+      setLogoutModalOpen(false);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="designer-page">
-      <AlertModal
-        isOpen={!!alert}
-        title={alert?.title}
-        text={alert?.text}
-        primaryButtonText="확인"
-        onPrimaryClick={() => setAlert(null)}
-      />
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
+        <DesignerHeaderBrand />
         <h1>마이 페이지</h1>
+        <div className="designer-header-right">
+          <DesignerNotificationButton />
+        </div>
       </div>
 
       <div className="designer-content designer-profile-page">
@@ -133,7 +130,7 @@ export default function DesignerProfilePage() {
         <button
           type="button"
           className="profile-logout-button"
-          onClick={handleLogout}
+          onClick={handleLogoutClick}
           disabled={loading}
         >
           {loading ? '처리 중...' : '로그아웃'}
@@ -169,6 +166,17 @@ export default function DesignerProfilePage() {
           </svg>
         </button>
       </div>
+
+      <AlertModal
+        isOpen={logoutModalOpen}
+        title="로그아웃"
+        text="로그아웃 하시겠습니까?"
+        primaryButtonText="로그아웃"
+        onPrimaryClick={confirmLogout}
+        secondaryButtonText="취소"
+        onSecondaryClick={() => setLogoutModalOpen(false)}
+        variant="default"
+      />
     </div>
   );
 }

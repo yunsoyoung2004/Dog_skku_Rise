@@ -181,7 +181,7 @@ export default function DogRegistrationPage() {
   };
 
   return (
-    <PageLayout title="멍빗어">
+    <PageLayout title="멍빗어" homePath="/dashboard">
       {/* Greeting */}
       <div className="dog-registration-greeting">
         <p>우리집 강아지 등록하기</p>

@@ -5,6 +5,8 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import './DesignerPageNav.css';
 import './DesignerMessagesPage.css';
+import DesignerNotificationButton from './components/DesignerNotificationButton';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 export default function DesignerMessagesPage() {
   const navigate = useNavigate();
@@ -68,8 +70,11 @@ export default function DesignerMessagesPage() {
   return (
     <div className="designer-page">
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
+        <DesignerHeaderBrand />
         <h1>채팅</h1>
+        <div className="designer-header-right">
+          <DesignerNotificationButton />
+        </div>
       </div>
 
       <div className="designer-content">

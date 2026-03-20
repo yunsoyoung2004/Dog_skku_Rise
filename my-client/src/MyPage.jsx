@@ -294,7 +294,7 @@ export default function MyPage() {
   };
 
   return (
-    <PageLayout title="마이 페이지">
+    <PageLayout title="마이 페이지" homePath="/dashboard">
       <AlertModal
         isOpen={!!alert}
         title={alert?.title}

@@ -1,19 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { collection, query, where, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import AlertModal from './components/AlertModal';
 import './DesignerPageNav.css';
 import './DesignerQuotesPage.css';
+import DesignerNotificationButton from './components/DesignerNotificationButton';
+import DesignerHeaderBrand from './components/DesignerHeaderBrand';
 
 export default function DesignerQuotesPage() {
   const navigate = useNavigate();
   const [user] = useAuthState(auth);
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState(null);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -35,22 +34,8 @@ export default function DesignerQuotesPage() {
         setQuotes(quotesData);
       } catch (error) {
         console.error('Error fetching quotes:', error);
-        setAlert({
-          title: '견적 로드 실패',
-          text: '견적 목록을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
-        });
       } finally {
         setLoading(false);
-        // 디자이너 알림 갯수 로드
-        if (user) {
-          try {
-            const userRef = doc(db, 'users', user.uid);
-            const userSnap = await getDoc(userRef);
-            setUnreadNotificationCount(userSnap.data()?.unreadNotificationCount || 0);
-          } catch (e) {
-            console.warn('디자이너 알림을 로드 실패:', e);
-          }
-        }
       }
     };
 
@@ -70,50 +55,17 @@ export default function DesignerQuotesPage() {
       ));
     } catch (error) {
       console.error('Error updating quote:', error);
-      setAlert({
-        title: '견적 상태 업데이트 실패',
-        text: '견적 상태를 변경할 수 없습니다. 잠시 후 다시 시도해 주세요.'
-      });
     }
   };
 
   return (
     <div className="designer-page">
-      <AlertModal
-        isOpen={!!alert}
-        title={alert?.title}
-        text={alert?.text}
-        primaryButtonText="확인"
-        onPrimaryClick={() => setAlert(null)}
-      />
       <div className="designer-page-header">
-        <button onClick={() => navigate(-1)}>←</button>
-        <h1>견적 요청</h1>
-        <button
-          type="button"
-          className="designer-header-notification"
-          onClick={() => navigate('/notification')}
-          aria-label="알림"
-        >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M18 8a6 6 0 0 0-12 0c0 5-2 7-2 7h16s-2-2-2-7" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          {unreadNotificationCount > 0 && (
-            <span className="designer-notification-badge">
-              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-            </span>
-          )}
-        </button>
+        <DesignerHeaderBrand />
+        <h1>보낸 견적서</h1>
+        <div className="designer-header-right">
+          <DesignerNotificationButton />
+        </div>
       </div>
 
       <div className="designer-content">

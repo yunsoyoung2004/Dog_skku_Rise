@@ -1,5 +1,4 @@
 /* Global app shell to match 393px mobile Figma frame */
-@import './styles/Animations.css';
 
 html,
 body,
@@ -23,5 +22,4 @@ body,
   width: 100%;
   max-width: 393px; /* Figma design width */
   height: 100%;
-  animation: pageSlideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
