@@ -6,7 +6,8 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfi
 import { auth, db } from './firebase';
 import { setDoc, doc, getDoc } from 'firebase/firestore';
 
-const logoImg = "https://www.figma.com/api/mcp/asset/3536782b-2696-4419-ba6a-95a020af5338";
+// 사용자 로그인 페이지와 동일한 로고 이미지 사용
+const logoImg = "/dog-logo.png";
 
 export default function DesignerLoginPage() {
   const [user] = useAuthState(auth);

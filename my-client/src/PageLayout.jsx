@@ -4,6 +4,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from './firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getUserQuoteRequests } from './services';
+import TutorialModal from './components/TutorialModal';
 import './PageLayout.css';
 
 const logoImg = "https://www.figma.com/api/mcp/asset/3536782b-2696-4419-ba6a-95a020af5338";
@@ -13,6 +14,7 @@ export default function PageLayout({ title, children, customHeader, homePath, fo
   const [user] = useAuthState(auth);
   const [quoteCount, setQuoteCount] = useState(0);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
     const loadQuotes = async () => {
@@ -74,6 +76,16 @@ export default function PageLayout({ title, children, customHeader, homePath, fo
     return () => unsubscribe();
   }, [user]);
 
+  // 최초 1회 튜토리얼 자동 오픈 (사용자)
+  useEffect(() => {
+    if (!user) return;
+    const storageKey = `tutorial_seen_user_${user.uid}`;
+    if (!localStorage.getItem(storageKey)) {
+      setShowTutorial(true);
+      localStorage.setItem(storageKey, '1');
+    }
+  }, [user]);
+
   return (
     <div className="page-layout">
       {/* Header */}
@@ -88,31 +100,41 @@ export default function PageLayout({ title, children, customHeader, homePath, fo
             <img src={logoImg} alt="멍빗어 로고" className="page-layout-logo" />
             <h1 className="page-layout-title">{title}</h1>
           </div>
-          <button
-            type="button"
-            className="page-layout-header-notification"
-            onClick={() => navigate('/notification')}
-            aria-label="알림"
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="page-layout-header-actions">
+            <button
+              type="button"
+              className="page-layout-header-help"
+              onClick={() => setShowTutorial(true)}
+              aria-label="튜토리얼 열기"
             >
-              <path d="M18 8a6 6 0 0 0-12 0c0 5-2 7-2 7h16s-2-2-2-7" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            {unreadNotificationCount > 0 && (
-              <span className="page-layout-notification-badge">
-                {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-              </span>
-            )}
-          </button>
+              ?
+            </button>
+            <button
+              type="button"
+              className="page-layout-header-notification"
+              onClick={() => navigate('/notification')}
+              aria-label="알림"
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 8a6 6 0 0 0-12 0c0 5-2 7-2 7h16s-2-2-2-7" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {unreadNotificationCount > 0 && (
+                <span className="page-layout-notification-badge">
+                  {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
@@ -151,6 +173,12 @@ export default function PageLayout({ title, children, customHeader, homePath, fo
           </svg>
         </button>
       </div>
+
+      <TutorialModal
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        variant="user"
+      />
     </div>
   );
 }

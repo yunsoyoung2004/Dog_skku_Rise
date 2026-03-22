@@ -108,7 +108,22 @@ export default function DesignerMessagesPage() {
           </div>
         ) : filterMessages().length === 0 ? (
           <div className="empty-messages">
-            <div className="empty-messages-icon">💬</div>
+            <div className="empty-messages-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="40"
+                height="40"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+                <path d="M8 10h8" />
+                <path d="M8 13h5" />
+              </svg>
+            </div>
             <p className="empty-messages-text">채팅이 없습니다</p>
           </div>
         ) : (

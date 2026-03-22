@@ -1,0 +1,156 @@
+.tutorial-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1200;
+  box-sizing: border-box;
+}
+
+.tutorial-modal {
+  width: min(390px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  padding: 18px;
+  box-sizing: border-box;
+  animation: tutorial-pop 0.18s ease;
+}
+
+@keyframes tutorial-pop {
+  from {
+    transform: translateY(6px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.tutorial-modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tutorial-eyebrow {
+  margin: 0 0 4px 0;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: #7c7c7c;
+  font-weight: 600;
+}
+
+.tutorial-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #222;
+}
+
+.tutorial-subtitle {
+  margin: 6px 0 12px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.4;
+}
+
+.tutorial-close {
+  border: none;
+  background: none;
+  color: #888;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.tutorial-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tutorial-step {
+  display: flex;
+  gap: 10px;
+  background: #f8f8f8;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #ededed;
+}
+
+.tutorial-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #222;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.tutorial-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tutorial-step-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 14px;
+  color: #111;
+}
+
+.tutorial-step-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.45;
+}
+
+.tutorial-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tutorial-secondary,
+.tutorial-primary {
+  min-width: 120px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 14px;
+}
+
+.tutorial-secondary {
+  background: #f6f6f6;
+  border-color: #ededed;
+  color: #333;
+}
+
+.tutorial-primary {
+  background: #222;
+  color: #fff;
+}
+
+.tutorial-secondary:active,
+.tutorial-primary:active {
+  transform: translateY(0.5px);
+}

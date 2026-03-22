@@ -16,6 +16,8 @@ export default function DesignerPortfolioPage() {
     name: '',
     photoURL: '',
     location: '',
+    priceMin: '',
+    priceMax: '',
     bio: '',
     portfolioIntro: '',
     announcements: '',
@@ -43,6 +45,8 @@ export default function DesignerPortfolioPage() {
             name: data.name || prev.name,
             photoURL: data.photoURL || prev.photoURL,
             location: data.location || prev.location,
+            priceMin: data.priceMin?.toString() || prev.priceMin,
+            priceMax: data.priceMax?.toString() || prev.priceMax,
             bio: data.bio || prev.bio,
             portfolioIntro: data.portfolioIntro || prev.portfolioIntro,
             announcements: data.announcements || prev.announcements,
@@ -72,6 +76,17 @@ export default function DesignerPortfolioPage() {
     setSaving(true);
     setSavedMessage('');
     try {
+      if (!values.location.trim()) {
+        setSavedMessage('지역을 선택해 주세요. 설정하지 않으면 고객 화면에 위치가 비어 있게 표시됩니다.');
+        setSaving(false);
+        return;
+      }
+      if (!values.priceMin || !values.priceMax) {
+        setSavedMessage('가격대를 선택해 주세요. 설정하지 않으면 고객 화면에 0원으로 표시됩니다.');
+        setSaving(false);
+        return;
+      }
+
       const userRef = doc(db, 'users', user.uid);
       let photoURL = values.photoURL;
 
@@ -95,6 +110,8 @@ export default function DesignerPortfolioPage() {
       const payload = {
         photoURL,
         location: values.location,
+        priceMin: Number(values.priceMin),
+        priceMax: Number(values.priceMax),
         bio: values.bio,
         portfolioIntro: values.portfolioIntro,
         announcements: values.announcements,
@@ -105,6 +122,8 @@ export default function DesignerPortfolioPage() {
       await upsertDesignerPublicProfile(user.uid, {
         name: values.name || user.displayName || '',
         location: values.location,
+        priceMin: Number(values.priceMin),
+        priceMax: Number(values.priceMax),
         photoURL,
         bio: values.bio,
         portfolioIntro: values.portfolioIntro,
@@ -162,13 +181,62 @@ export default function DesignerPortfolioPage() {
 
           <h2 className="portfolio-editor-title">위치</h2>
           <p className="portfolio-editor-sub">고객에게 보여줄 작업 위치(동네, 시/구 등)를 입력해 주세요.</p>
-          <input
-            className="portfolio-editor-input"
-            type="text"
-            value={values.location}
-            onChange={(e) => setValues({ ...values, location: e.target.value })}
-            placeholder="예) 서울시 강남구 역삼동"
-          />
+            <select
+              className="portfolio-editor-input"
+              value={values.location}
+              onChange={(e) => setValues({ ...values, location: e.target.value })}
+            >
+              <option value="">지역을 선택하세요</option>
+              <option value="시도·전체">시도·전체</option>
+              <option value="서울">서울</option>
+              <option value="경기">경기</option>
+              <option value="인천">인천</option>
+              <option value="강원">강원</option>
+              <option value="대전">대전</option>
+              <option value="구/군·전체">구/군·전체</option>
+              <option value="강남구">강남구</option>
+              <option value="강북구">강북구</option>
+              <option value="강서구">강서구</option>
+              <option value="관악구">관악구</option>
+              <option value="광진구">광진구</option>
+              <option value="동·전체">동·전체</option>
+              <option value="강남">강남</option>
+              <option value="역삼동">역삼동</option>
+              <option value="삼성동">삼성동</option>
+              <option value="논현동">논현동</option>
+              <option value="청담동">청담동</option>
+            </select>
+            <p className="portfolio-editor-hint">※ 지역을 선택하지 않으면 고객 화면에서 위치가 비어 보일 수 있어요.</p>
+
+            <h2 className="portfolio-editor-title" style={{ marginTop: '16px' }}>가격대</h2>
+            <p className="portfolio-editor-sub">대표 시술(미용) 기준 대략적인 가격대를 선택해 주세요.</p>
+            <select
+              className="portfolio-editor-input"
+              value={values.priceMin}
+              onChange={(e) => setValues({ ...values, priceMin: e.target.value })}
+            >
+              <option value="">최소 금액</option>
+              <option value="30000">30,000원</option>
+              <option value="40000">40,000원</option>
+              <option value="50000">50,000원</option>
+              <option value="60000">60,000원</option>
+              <option value="70000">70,000원</option>
+            </select>
+            <select
+              className="portfolio-editor-input"
+              style={{ marginTop: '8px' }}
+              value={values.priceMax}
+              onChange={(e) => setValues({ ...values, priceMax: e.target.value })}
+            >
+              <option value="">최대 금액</option>
+              <option value="60000">60,000원</option>
+              <option value="70000">70,000원</option>
+              <option value="80000">80,000원</option>
+              <option value="90000">90,000원</option>
+              <option value="100000">100,000원</option>
+              <option value="120000">120,000원</option>
+            </select>
+            <p className="portfolio-editor-hint">※ 가격대를 입력하지 않으면 고객에게 0원으로 표시됩니다.</p>
 
           <h2 className="portfolio-editor-title" style={{ marginTop: '16px' }}>소개</h2>
           <p className="portfolio-editor-sub">디자이너님을 한눈에 알 수 있는 짧은 소개를 작성해 주세요.</p>

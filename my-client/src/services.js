@@ -312,6 +312,71 @@ export const getUserBookings = async (userId) => {
 };
 
 /**
+ * 디자이너 이용 횟수 (확정/완료된 예약 건수)
+ */
+export const getDesignerUsageCount = async (designerId) => {
+  try {
+    if (!designerId) return 0;
+    const bookingsRef = collection(db, 'bookings');
+    const q = query(bookingsRef, where('designerId', '==', designerId));
+    const snap = await getDocs(q);
+    const confirmedStatuses = new Set(['confirmed', 'completed', 'done']);
+    let count = 0;
+
+    snap.forEach((docSnap) => {
+      const status = docSnap.data()?.status || '';
+      if (confirmedStatuses.has(status)) {
+        count += 1;
+      }
+    });
+
+    return count;
+  } catch (error) {
+    console.error('디자이너 이용 횟수 조회 오류:', error);
+    return 0;
+  }
+};
+
+/**
+ * 디자이너 예약 사진 조회 (포트폴리오용)
+ */
+export const getDesignerBookingPhotos = async (designerId) => {
+  try {
+    if (!designerId) return [];
+    const bookingsRef = collection(db, 'bookings');
+    const q = query(bookingsRef, where('designerId', '==', designerId));
+    const snap = await getDocs(q);
+    const set = new Set();
+
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      const push = (val) => {
+        if (!val) return;
+        if (typeof val === 'string') {
+          set.add(val);
+        } else if (typeof val === 'object') {
+          const url = val.url || val.imageUrl || val.photoUrl || val.src || val.downloadURL || val.downloadUrl;
+          if (url) set.add(url);
+        }
+      };
+
+      push(data.photoUrl);
+      push(data.photoURL);
+      if (Array.isArray(data.photoUrls)) data.photoUrls.forEach(push);
+      if (Array.isArray(data.photoURLS)) data.photoURLS.forEach(push);
+      if (Array.isArray(data.images)) data.images.forEach(push);
+      if (Array.isArray(data.photos)) data.photos.forEach(push);
+      if (Array.isArray(data.pictures)) data.pictures.forEach(push);
+    });
+
+    return Array.from(set);
+  } catch (error) {
+    console.error('디자이너 예약 사진 조회 오류:', error);
+    return [];
+  }
+};
+
+/**
  * 예약 취소
  */
 export const cancelBooking = async (bookingDocId) => {
@@ -325,6 +390,23 @@ export const cancelBooking = async (bookingDocId) => {
     return { success: true };
   } catch (error) {
     console.error('예약 취소 오류:', error);
+    throw error;
+  }
+};
+
+/**
+ * 예약에 사진 URL 저장
+ */
+export const updateBookingPhotoUrl = async (bookingId, photoUrl) => {
+  try {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      photoUrl,
+      updatedAt: Timestamp.now(),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Booking 사진 URL 업데이트 오류:', error);
     throw error;
   }
 };
@@ -1435,6 +1517,9 @@ export default {
   createBooking,
   getUserBookings,
   cancelBooking,
+  updateBookingPhotoUrl,
+  getDesignerUsageCount,
+  getDesignerBookingPhotos,
   // Quotes
   createQuoteRequest,
   getUserQuotes,

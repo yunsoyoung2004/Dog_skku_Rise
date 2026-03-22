@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase';
-import { getLatestGroomingHistory, getUserBookings, getUserReviews, uploadDogImage } from './services';
+import { getLatestGroomingHistory, getUserBookings, getUserReviews, uploadDogImage, updateBookingPhotoUrl } from './services';
 import AlertModal from './components/AlertModal';
 import './MyPageGroomingPage.css';
 
@@ -101,6 +101,13 @@ export default function MyPageGroomingPage() {
       const result = await uploadDogImage(user.uid, dogId, file);
 
       if (result?.url) {
+        // Firestore 예약 문서에도 photoUrl 저장
+        try {
+          await updateBookingPhotoUrl(booking.id, result.url);
+        } catch (err) {
+          console.error('예약 사진 URL Firestore 저장 실패:', err);
+        }
+
         const updated = bookings.map((b) =>
           b.id === booking.id ? { ...b, photoUrl: result.url } : b
         );
@@ -183,6 +190,23 @@ export default function MyPageGroomingPage() {
               </div>
 
               <div className="grooming-info">
+                {selectedBooking.photoUrl && (
+                  <div
+                    style={{
+                      width: '100%',
+                      marginBottom: '12px',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      backgroundColor: '#eee',
+                    }}
+                  >
+                    <img
+                      src={selectedBooking.photoUrl}
+                      alt="미용 사진"
+                      style={{ width: '100%', maxHeight: 220, objectFit: 'cover' }}
+                    />
+                  </div>
+                )}
                 <h3>미용 내역 정보</h3>
                 {selectedBooking.bookingId && (
                   <div className="info-item">

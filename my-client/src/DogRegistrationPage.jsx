@@ -134,7 +134,7 @@ export default function DogRegistrationPage() {
       setLoading(true);
       try {
         let imageUrl = '';
-        
+
         const result = await addDog(user.uid, {
           name: dogData.name,
           breed: dogData.breed,
@@ -160,8 +160,18 @@ export default function DogRegistrationPage() {
         if (imageFile) {
           try {
             const uploadResult = await uploadDogImage(user.uid, result.dogId, imageFile);
-            if (uploadResult.success) {
+            if (uploadResult.success && uploadResult.url) {
               imageUrl = uploadResult.url;
+              // 강아지 문서에 프로필 사진 URL 저장 (photoUrl / imageUrl 둘 다)
+              try {
+                const { updateDog } = await import('./services');
+                await updateDog(user.uid, result.dogId, {
+                  photoUrl: imageUrl,
+                  imageUrl: imageUrl,
+                });
+              } catch (updateErr) {
+                console.warn('강아지 프로필 사진 URL 저장 실패(무시 가능):', updateErr);
+              }
             }
           } catch (imgErr) {
             console.warn('이미지 업로드 실패:', imgErr);

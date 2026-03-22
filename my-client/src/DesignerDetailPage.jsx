@@ -3,7 +3,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { createOrGetChatRoom, getDesignerReviews } from './services';
+import {
+  createOrGetChatRoom,
+  getDesignerReviews,
+  getDesignerBookingPhotos,
+  getDesignerUsageCount,
+} from './services';
 import AlertModal from './components/AlertModal';
 import './DesignerDetailPage.css';
 
@@ -17,6 +22,8 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
   const [activeTab, setActiveTab] = useState('info'); // info | portfolio | reviews
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [bookingPhotos, setBookingPhotos] = useState([]);
+  const [usageCount, setUsageCount] = useState(null);
   const [alert, setAlert] = useState(null);
 
   const searchParams = new URLSearchParams(location.search);
@@ -74,6 +81,24 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
           setReviews([]);
         } finally {
           setReviewsLoading(false);
+        }
+
+        // 예약 기반으로 업로드된 미용 사진 모으기 (booking.photoUrl 등)
+        try {
+          const photos = await getDesignerBookingPhotos(designerId);
+          setBookingPhotos(Array.isArray(photos) ? photos : []);
+        } catch (err) {
+          console.warn('디자이너 예약 사진 로드 실패(무시 가능):', err);
+          setBookingPhotos([]);
+        }
+
+        // 이용 횟수(확정/완료 예약) 집계
+        try {
+          const count = await getDesignerUsageCount(designerId);
+          setUsageCount(count);
+        } catch (err) {
+          console.warn('디자이너 이용 횟수 로드 실패(무시 가능):', err);
+          setUsageCount(null);
         }
       } catch (e) {
         console.error('디자이너 정보 로드 실패:', e);
@@ -166,6 +191,69 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
     return '0.0';
   })();
 
+  const usageValue = (() => {
+    if (typeof usageCount === 'number') return usageCount;
+    if (designer && typeof designer.usageCount === 'number') return designer.usageCount;
+    if (designer && typeof designer.totalBookings === 'number') return designer.totalBookings;
+    return 0;
+  })();
+
+  const collectReviewImages = (review) => {
+    const set = new Set();
+    if (!review) return [];
+
+    const pushValue = (val) => {
+      if (!val) return;
+      if (typeof val === 'string') {
+        set.add(val);
+      } else if (typeof val === 'object') {
+        const objUrl =
+          val.url ||
+          val.imageUrl ||
+          val.photoUrl ||
+          val.src ||
+          val.downloadURL ||
+          val.downloadUrl;
+        if (objUrl) set.add(objUrl);
+      }
+    };
+
+    const pushAll = (arr) => Array.isArray(arr) && arr.forEach(pushValue);
+
+    pushAll(review.images);
+    pushAll(review.photos);
+    pushAll(review.reviewImages);
+    pushAll(review.reviewPhotos);
+    pushAll(review.imageUrls);
+    pushAll(review.photoUrls);
+    pushAll(review.pictures);
+    pushAll(review.files);
+    pushValue(review.reviewImage);
+    pushValue(review.reviewPhoto);
+    pushValue(review.imageUrl);
+    pushValue(review.photoUrl);
+    pushValue(review.image);
+    pushValue(review.photo);
+    pushValue(review.picture);
+
+    return Array.from(set);
+  };
+
+  const reviewPhotos = (() => {
+    const set = new Set();
+    reviews.forEach((review) => {
+      collectReviewImages(review).forEach((url) => set.add(url));
+    });
+    return Array.from(set);
+  })();
+
+  const portfolioReviewPhotos = (() => {
+    const set = new Set();
+    bookingPhotos.forEach((url) => url && set.add(url));
+    reviewPhotos.forEach((url) => url && set.add(url));
+    return Array.from(set);
+  })();
+
   if (!isOpen) return null;
 
   return (
@@ -229,7 +317,7 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
                 <div className="stat-box">
                   <span className="stat-label">이용 횟수</span>
                   <span className="stat-value">
-                    {designer.usageCount ? `${designer.usageCount}회` : '-'}
+                    {usageValue ? `${usageValue}회` : '-'}
                   </span>
                 </div>
                 <div className="stat-box">
@@ -324,6 +412,26 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
                       </p>
                     </div>
                   )}
+
+                  <div className="review-photo-section">
+                    <h3 className="section-subtitle">리뷰/미용 사진</h3>
+                    {portfolioReviewPhotos.length > 0 ? (
+                      <div className="review-photo-grid">
+                        {portfolioReviewPhotos.map((src, idx) => (
+                          <img
+                            key={idx}
+                            src={src}
+                            alt={`리뷰 사진 ${idx + 1}`}
+                            className="review-photo-card"
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="section-text" style={{ marginTop: '8px' }}>
+                        리뷰나 예약에서 업로드된 사진이 아직 없습니다.
+                      </p>
+                    )}
+                  </div>
                 </section>
               )}
 
@@ -339,7 +447,7 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
                       첫 번째 리뷰를 남겨보세요.
                     </div>
                   ) : (
-                    reviews.slice(0, 3).map((review) => {
+                    reviews.map((review) => {
                       const displayName = review.author || review.userName || '고객';
                       let dateText = '';
 
@@ -365,6 +473,7 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
 
                       const ratingValue = Math.round(review.rating || 0);
                       const photoUrl = review.userPhoto || review.photoURL || review.image || '';
+                      const reviewImages = collectReviewImages(review);
 
                       return (
                         <div key={review.id} className="review-item">
@@ -392,6 +501,18 @@ export default function DesignerDetailPage({ isOpen = true, onClose }) {
                             </div>
                           </div>
                           <p className="review-text">{review.text || review.comment || ''}</p>
+                          {reviewImages.length > 0 && (
+                            <div className="review-photos">
+                              {reviewImages.slice(0, 3).map((img, idx) => (
+                                <img
+                                  key={idx}
+                                  src={img}
+                                  alt={`리뷰 사진 ${idx + 1}`}
+                                  className="review-photo"
+                                />
+                              ))}
+                            </div>
+                          )}
                           {review.services && review.services.length > 0 && (
                             <div className="review-services">
                               {review.services.map((service, idx) => (

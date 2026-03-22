@@ -1,5 +1,6 @@
 const express = require("express");
 const { verifyFirebaseToken } = require("./authMiddleware");
+const { db } = require("./firebaseAdmin");
 const app = express();
 
 // Middleware
@@ -163,6 +164,59 @@ app.post("/api/logout", (req, res) => {
     res.status(500).json({
       success: false,
       message: "로그아웃 중 오류가 발생했습니다."
+    });
+  }
+});
+
+// ============================================
+// FIND ID BY PHONE (Firebase Firestore 기반)
+// ============================================
+app.post("/api/find-id-by-phone", async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "전화번호를 입력해주세요.",
+      });
+    }
+
+    const snap = await db
+      .collection("users")
+      .where("phone", "==", phone)
+      .limit(1)
+      .get();
+
+    if (snap.empty) {
+      return res.status(404).json({
+        success: false,
+        message: "해당 전화번호로 가입된 계정을 찾을 수 없습니다.",
+      });
+    }
+
+    const data = snap.docs[0].data();
+    const email = data.email || null;
+
+    if (!email) {
+      return res.status(404).json({
+        success: false,
+        message: "해당 계정의 이메일 정보를 찾을 수 없습니다.",
+      });
+    }
+
+    const masked = email.replace(/(.{2}).+(@.*)/, "$1***$2");
+
+    return res.json({
+      success: true,
+      emailMasked: masked,
+      email, // 프론트에서는 이 값을 직접 노출하지 않고, 메일 발송 등에만 사용
+    });
+  } catch (error) {
+    console.error("find-id-by-phone error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "아이디를 찾는 중 서버 오류가 발생했습니다.",
     });
   }
 });

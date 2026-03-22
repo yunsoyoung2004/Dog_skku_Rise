@@ -99,7 +99,7 @@ export default function DogEditPage() {
         try {
           const uploadResult = await uploadDogImage(user.uid, dogId, imageFile);
           if (uploadResult?.success && uploadResult.url) {
-            await updateDog(user.uid, dogId, { photoUrl: uploadResult.url });
+            await updateDog(user.uid, dogId, { photoUrl: uploadResult.url, imageUrl: uploadResult.url });
             setImagePreviewUrl(uploadResult.url);
           }
         } catch (imgErr) {

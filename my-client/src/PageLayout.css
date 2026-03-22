@@ -50,6 +50,37 @@
   color: #222;
 }
 
+.page-layout-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-layout-header-help {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #333;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.page-layout-header-help:hover {
+  background: #f3f3f3;
+  color: #111;
+}
+
+.page-layout-header-help:active {
+  transform: translateY(0.5px);
+}
+
 .page-layout-header-notification {
   position: relative;
   border: none;
@@ -60,7 +91,6 @@
   align-items: center;
   justify-content: center;
   color: #666;
-  margin-left: auto;
 }
 
 .page-layout-header-notification svg {

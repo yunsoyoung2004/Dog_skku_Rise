@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from './firebase';
-import { createReview, createNotification, updateBookingHasReview } from './services';
+import { auth, db } from './firebase';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { createReview, createNotification, updateBookingHasReview, uploadReviewImage } from './services';
 import './ReviewPage.css';
 
 const logoImg = "/dog-logo.png";
@@ -16,6 +17,8 @@ export default function ReviewPage() {
   const [selectedServices, setSelectedServices] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   
   const designerId = location.state?.designerId || 'designer_1';
   const designerName = location.state?.designerName || '미용사';
@@ -61,6 +64,26 @@ export default function ReviewPage() {
         services: selectedServices,
         createdAt: new Date().toISOString()
       });
+
+      // 사진이 있으면 업로드 후 리뷰 문서에 이미지 URL 저장
+      if (result.success && result.reviewId && imageFile) {
+        try {
+          const upload = await uploadReviewImage(user.uid, result.reviewId, imageFile);
+          if (upload?.success && upload.url) {
+            const reviewRef = doc(db, 'reviews', result.reviewId);
+            await updateDoc(reviewRef, {
+              images: arrayUnion(upload.url),
+              imageUrls: arrayUnion(upload.url),
+              photos: arrayUnion(upload.url),
+              photoUrls: arrayUnion(upload.url),
+              imageUrl: upload.url,
+              photoUrl: upload.url,
+            });
+          }
+        } catch (imgErr) {
+          console.warn('리뷰 이미지 업로드 실패(텍스트는 저장됨):', imgErr);
+        }
+      }
 
       if (result.success) {
         console.log('✅ 리뷰 작성 완료:', result.reviewId);
@@ -149,6 +172,45 @@ export default function ReviewPage() {
             maxLength={500}
           />
           <p className="char-count">{text.length}/500</p>
+        </div>
+
+        {/* Photo Upload */}
+        <div className="review-photo-section">
+          <label>사진 첨부 (선택)</label>
+          <div className="review-photo-uploader">
+            {imagePreview ? (
+              <div className="review-photo-preview">
+                <img src={imagePreview} alt="리뷰 사진 미리보기" />
+                <button
+                  type="button"
+                  className="review-photo-remove"
+                  onClick={() => {
+                    setImageFile(null);
+                    setImagePreview('');
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <label className="review-photo-picker">
+                <span className="review-photo-plus">+</span>
+                <span className="review-photo-text">사진 추가</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setImageFile(file);
+                    setImagePreview(URL.createObjectURL(file));
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          <p className="review-photo-hint">시술 전·후 사진을 올리면 디자이너 포트폴리오 리뷰 탭에서 함께 보여집니다.</p>
         </div>
 
         {/* Service Checklist */}

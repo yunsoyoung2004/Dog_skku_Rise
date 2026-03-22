@@ -4,6 +4,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { collection, query, where, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import AlertModal from './components/AlertModal';
+import TutorialModal from './components/TutorialModal';
 import './DesignerPageNav.css';
 import './DesignerDashboard.css';
 
@@ -86,6 +87,7 @@ export default function DesignerDashboard() {
   });
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [reservationsByDate, setReservationsByDate] = useState({});
+  const [showTutorial, setShowTutorial] = useState(false);
   
   // 특정 고객의 예약만 보이는 모드
   const customerUserId = location.state?.customerUserId;
@@ -124,6 +126,16 @@ export default function DesignerDashboard() {
     );
 
     return () => unsubscribe();
+  }, [user]);
+
+  // 최초 1회 튜토리얼 자동 오픈 (디자이너)
+  useEffect(() => {
+    if (!user) return;
+    const storageKey = `tutorial_seen_designer_${user.uid}`;
+    if (!localStorage.getItem(storageKey)) {
+      setShowTutorial(true);
+      localStorage.setItem(storageKey, '1');
+    }
   }, [user]);
 
   const loadDesignerData = async () => {
@@ -264,6 +276,14 @@ export default function DesignerDashboard() {
           <h1 className="dd-logo-text">{customerUserId ? '예약 일정' : '멍빗어'}</h1>
         </div>
         <div className="dd-header-right">
+          <button
+            type="button"
+            className="dd-help-btn"
+            onClick={() => setShowTutorial(true)}
+            aria-label="튜토리얼 열기"
+          >
+            ?
+          </button>
           <button 
             className="dd-notification-btn"
             onClick={() => navigate('/notification')}
@@ -311,6 +331,12 @@ export default function DesignerDashboard() {
           variant="profile"
         />
       )}
+
+      <TutorialModal
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        variant="designer"
+      />
 
       <main className="designer-content dd-main">
         {/* 오늘의 AI 인사이트 카드 */}

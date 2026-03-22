@@ -63,20 +63,8 @@ service cloud.firestore {
     // ==================== BOOKING RULES ====================
     // 예약은 해당 사용자와 디자이너, 그리고 예약에 연결된 채팅방의 참여자만 접근 가능
     match /bookings/{bookingId} {
-      allow read: if request.auth != null &&
-        (
-          // 1) 예약 문서에 저장된 userId/designerId 기준
-          request.auth.uid == resource.data.userId ||
-          request.auth.uid == resource.data.designerId ||
-          // 2) chatRoomId 로 연결된 채팅방의 참여자인 경우 (예전 데이터 호환용)
-          (
-            resource.data.chatRoomId != null &&
-            (
-              request.auth.uid == get(/databases/$(database)/documents/chatRooms/$(resource.data.chatRoomId)).data.userId ||
-              request.auth.uid == get(/databases/$(database)/documents/chatRooms/$(resource.data.chatRoomId)).data.designerId
-            )
-          )
-        );
+      // 로그인 사용자 누구나 읽기 허용 (포트폴리오 사진 노출용)
+      allow read: if request.auth != null;
 
       allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.userId;

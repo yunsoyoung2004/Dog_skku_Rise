@@ -167,6 +167,7 @@ function FindModal({ type, onClose }) {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [foundEmail, setFoundEmail] = useState('');
 
   const handleFindEmail = async () => {
     setLoading(true);
@@ -186,12 +187,18 @@ function FindModal({ type, onClose }) {
 
       if (!response.ok || !data.success) {
         setMessage(data.message || '아이디를 찾을 수 없습니다.');
+        setFoundEmail('');
         return;
       }
 
-      if (data.emailMasked) {
+      if (data.emailMasked && data.email) {
+        setFoundEmail(data.email);
+        setMessage(`가입된 아이디는 ${data.emailMasked} 입니다.`);
+      } else if (data.emailMasked) {
+        setFoundEmail('');
         setMessage(`가입된 아이디는 ${data.emailMasked} 입니다.`);
       } else {
+        setFoundEmail('');
         setMessage('해당 계정의 이메일 정보를 찾을 수 없습니다.');
       }
     } catch (err) {
@@ -202,17 +209,19 @@ function FindModal({ type, onClose }) {
     }
   };
 
-  const handleResetPassword = async () => {
+  const handleResetPassword = async (targetEmail) => {
     setLoading(true);
     setMessage('');
     try {
       const { sendPasswordResetEmail } = await import('firebase/auth');
-      if (!email) {
+      const emailToUse = (targetEmail || email || '').trim();
+
+      if (!emailToUse) {
         setMessage('이메일을 입력해주세요.');
         return;
       }
 
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, emailToUse);
       setMessage('비밀번호 재설정 이메일이 발송되었습니다. 이메일을 확인해주세요.');
     } catch (err) {
       console.error('비밀번호 재설정 실패:', err);
@@ -251,6 +260,9 @@ function FindModal({ type, onClose }) {
             >
               {loading ? '확인 중...' : '확인'}
             </button>
+            <p className="login-modal-text" style={{ marginTop: '12px' }}>
+              멍빗허 고객센터로 연락주세요. 고객센터 전화번호 010-8635-3984
+            </p>
           </div>
         ) : (
           <div>
@@ -264,7 +276,7 @@ function FindModal({ type, onClose }) {
             />
             <button 
               className="login-modal-button"
-              onClick={handleResetPassword}
+              onClick={() => handleResetPassword()}
               disabled={loading}
             >
               {loading ? '발송 중...' : '재설정 이메일 발송'}

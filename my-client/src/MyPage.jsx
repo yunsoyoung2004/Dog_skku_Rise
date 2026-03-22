@@ -376,6 +376,23 @@ export default function MyPage() {
               
               {/* 미용 내역 정보 */}
               <div className="grooming-info">
+                {selectedBooking.photoUrl && (
+                  <div
+                    style={{
+                      width: '100%',
+                      marginBottom: '12px',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      backgroundColor: '#eee',
+                    }}
+                  >
+                    <img
+                      src={selectedBooking.photoUrl}
+                      alt="미용 사진"
+                      style={{ width: '100%', maxHeight: 220, objectFit: 'cover' }}
+                    />
+                  </div>
+                )}
                 <h3>미용 내역 정보</h3>
                 {selectedBooking.bookingId && (
                   <div className="info-item">
@@ -542,9 +559,9 @@ export default function MyPage() {
                 >
                   <div className="dog-photo-circle">
                     <div className="dog-photo-inner">
-                      {primaryDog.imageUrl ? (
+                      {(primaryDog.imageUrl || primaryDog.photoUrl) ? (
                         <img
-                          src={primaryDog.imageUrl}
+                          src={primaryDog.imageUrl || primaryDog.photoUrl}
                           alt={primaryDog.name || '강아지 프로필 사진'}
                           style={{
                             width: '100%',
@@ -720,7 +737,15 @@ export default function MyPage() {
                           onClick={() => handleGroomingCardClick(item)}
                           style={{ cursor: 'pointer' }}
                         >
-                          <div className="groom-thumb-photo" />
+                          <div className="groom-thumb-photo">
+                            {item.photoUrl && (
+                              <img
+                                src={item.photoUrl}
+                                alt="미용 사진"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                              />
+                            )}
+                          </div>
                           <p className="groom-thumb-date">{dateLabel}</p>
                           <p className="groom-thumb-designer">
                             {item.hasReview ? '✓ 리뷰 작성됨' : '미용예약'}
@@ -740,12 +765,6 @@ export default function MyPage() {
                       </button>
                     </div>
                   )}
-                  <button
-                    className="link-text-btn"
-                    onClick={() => navigate('/mypage-grooming')}
-                  >
-                    디자이너가 작성한 미용 후기 보러가기
-                  </button>
                 </>
               )}
             </section>
@@ -764,7 +783,15 @@ export default function MyPage() {
                       key={fav.id || fav.designerId}
                       onClick={() => fav.designerId && navigate(`/designer?id=${fav.designerId}`)}
                     >
-                      <div className="favorite-photo" />
+                      <div className="favorite-photo">
+                        {fav.image && (
+                          <img
+                            src={fav.image}
+                            alt={fav.name || '디자이너 사진'}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                          />
+                        )}
+                      </div>
                       <p className="favorite-name">{fav.name || '이름 미등록'}</p>
                     </div>
                   ))}
